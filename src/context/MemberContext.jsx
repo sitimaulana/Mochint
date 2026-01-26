@@ -1,4 +1,4 @@
-// src/context/MemberContext.jsx - SIMPLIFIED
+// src/context/MemberContext.jsx
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { memberAPI } from '../services/api';
 
@@ -17,89 +17,80 @@ export const MemberProvider = ({ children }) => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  // Fetch all members from database
+  // --- LOGIKA DATABASE (DARI ANDA) ---
+
   const fetchMembers = useCallback(async () => {
-    console.log('🔄 Fetching members...');
     setLoading(true);
     setError(null);
     try {
       const response = await memberAPI.getAll();
-      console.log('📡 API Response:', response);
-      
       if (response.data.success) {
         setMembers(response.data.data || []);
-        console.log(`✅ Loaded ${response.data.data?.length || 0} members`);
       } else {
         throw new Error(response.data.error || 'Failed to fetch members');
       }
     } catch (err) {
       setError(err.message || 'Failed to fetch members');
-      console.error('❌ Error fetching members:', err);
     } finally {
       setLoading(false);
     }
   }, []);
 
-  // Add new member
   const addMember = async (memberData) => {
-    setLoading(true);
     try {
       const response = await memberAPI.create(memberData);
       if (response.data.success) {
-        await fetchMembers(); // Refresh
+        await fetchMembers(); 
         return response.data.data;
-      } else {
-        throw new Error(response.data.error || 'Failed to add member');
       }
     } catch (err) {
-      console.error('Error adding member:', err);
       throw err;
-    } finally {
-      setLoading(false);
     }
   };
 
-  // Update member
   const updateMember = async (id, memberData) => {
-    setLoading(true);
     try {
       const response = await memberAPI.update(id, memberData);
       if (response.data.success) {
-        await fetchMembers(); // Refresh
+        await fetchMembers();
         return response.data.data;
-      } else {
-        throw new Error(response.data.error || 'Failed to update member');
       }
     } catch (err) {
-      console.error('Error updating member:', err);
       throw err;
-    } finally {
-      setLoading(false);
     }
   };
 
-  // Delete member
   const deleteMember = async (id) => {
-    setLoading(true);
     try {
       const response = await memberAPI.delete(id);
       if (response.data.success) {
-        await fetchMembers(); // Refresh
+        await fetchMembers();
         return true;
-      } else {
-        throw new Error(response.data.error || 'Failed to delete member');
       }
     } catch (err) {
-      console.error('Error deleting member:', err);
       throw err;
-    } finally {
-      setLoading(false);
     }
   };
 
-  // Fetch on initial load
+  // --- LOGIKA PENCARIAN & STATISTIK (DARI TEMAN) ---
+
+  const getMemberStats = () => {
+    const total = members.length;
+    const active = members.filter(m => m.status === 'active').length;
+    const totalVisits = members.reduce((sum, m) => sum + (m.totalVisits || 0), 0);
+    return { total, active, totalVisits };
+  };
+
+  const searchMembers = (searchTerm) => {
+    if (!searchTerm) return members;
+    const term = searchTerm.toLowerCase();
+    return members.filter(m => 
+      m.name?.toLowerCase().includes(term) || 
+      m.phone?.includes(term)
+    );
+  };
+
   useEffect(() => {
-    console.log('🚀 Initializing MemberContext...');
     fetchMembers();
   }, [fetchMembers]);
 
@@ -108,10 +99,13 @@ export const MemberProvider = ({ children }) => {
       members,
       loading,
       error,
+      stats: getMemberStats(),
       fetchMembers,
       addMember,
       updateMember,
       deleteMember,
+      searchMembers,
+      getMemberStats
     }}>
       {children}
     </MemberContext.Provider>

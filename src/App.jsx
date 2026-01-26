@@ -3,7 +3,7 @@ import AppRoutes from './routes/AppRoutes';
 import { MemberProvider } from './context/MemberContext';
 import { AppointmentProvider } from './context/AppointmentContext';
 import { TherapistProvider } from './context/TherapistContext';
-import { TreatmentProvider } from './context/TreatmentContext'; // Import TreatmentProvider
+import { TreatmentProvider } from './context/TreatmentContext'; 
 
 function App() {
   return (
@@ -11,6 +11,7 @@ function App() {
       <AppointmentProvider>
         <MemberProvider>
           <TherapistProvider>
+            {/* AppRoutes berisi seluruh navigasi Public, Member, dan Admin */}
             <AppRoutes />
           </TherapistProvider>
         </MemberProvider>

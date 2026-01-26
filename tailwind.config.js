@@ -7,10 +7,11 @@ export default {
   theme: {
     extend: {
       fontFamily: {
+        // Teks utama menggunakan Inter
         sans: ['Inter', 'sans-serif'],
-        // Optional: jika ingin variant lain
-        display: ['Inter', 'sans-serif'],
         body: ['Inter', 'sans-serif'],
+        // Judul/Display menggunakan Poppins (Pastikan Poppins sudah diimport di index.css)
+        display: ['Poppins', 'sans-serif'],
       },
       colors: {
         brown: {
