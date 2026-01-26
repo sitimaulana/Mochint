@@ -1,0 +1,131 @@
+// src/api/mockData.js
+
+// 1. Data Produk (Untuk Halaman Skincare)
+export const mockProducts = [
+  {
+    id: 1,
+    name: 'Moisturizer Glowing Cream',
+    category: 'Best Seller',
+    price: '90.000',
+    image: 'https://images.unsplash.com/photo-1620916566398-39f1143ab7be?auto=format&fit=crop&w=500&q=80',
+    is_recommended: true,
+    description: 'Krim pelembab untuk hasil wajah glowing seketika.'
+  },
+  {
+    id: 2,
+    name: 'Acne Defense Night Cream',
+    category: 'Acne',
+    price: '110.000',
+    image: 'https://images.unsplash.com/photo-1608248597279-f99d160bfbc8?auto=format&fit=crop&w=500&q=80',
+    is_recommended: true,
+    description: 'Perawatan malam khusus untuk kulit berjerawat.'
+  },
+  {
+    id: 3,
+    name: 'Brightening Serum C+',
+    category: 'Brightening',
+    price: '150.000',
+    image: 'https://images.unsplash.com/photo-1556228720-1957be6d9776?auto=format&fit=crop&w=500&q=80',
+    is_recommended: false,
+    description: 'Serum pencerah dengan konsentrasi Vitamin C tinggi.'
+  },
+  {
+    id: 4,
+    name: 'Ultimate Glowing Bundle',
+    category: 'Bundling',
+    price: '350.000',
+    image: 'https://images.unsplash.com/photo-1556228578-9c360e1d8d34?auto=format&fit=crop&w=500&q=80',
+    is_recommended: true,
+    description: 'Paket lengkap untuk kulit sehat dan bercahaya.'
+  },
+  {
+    id: 5,
+    name: 'Gentle Cleansing Foam',
+    category: 'Best Seller',
+    price: '85.000',
+    image: 'https://images.unsplash.com/photo-1556228453-efd6c1ff04f6?auto=format&fit=crop&w=500&q=80',
+    is_recommended: true,
+    description: 'Pembersih wajah lembut untuk semua jenis kulit.'
+  }
+];
+
+// 2. Data Appointment (Booking Mendatang)
+export const mockAppointments = [
+  {
+    id: 'A001',
+    userId: 'M0001',
+    treatmentName: 'Facial Detox',
+    date: 'Kamis, 1 Januari 2026',
+    price: 'Rp.135.000',
+    status: 'Pending',
+  },
+  {
+    id: 'A002',
+    userId: 'M0001',
+    treatmentName: 'Facial Mesotherapy',
+    date: 'Jumat, 2 Januari 2026',
+    price: 'Rp.175.000',
+    status: 'Confirmed',
+  },
+  {
+    id: 'A003',
+    userId: 'M0001',
+    treatmentName: 'Facial Micro Diamond',
+    date: 'Sabtu, 3 Januari 2026',
+    price: 'Rp.120.000',
+    status: 'Confirmed',
+  }
+];
+
+// 3. Data History (Booking Selesai)
+export const mockHistory = [
+  {
+    id: 'H001',
+    userId: 'M0001',
+    treatmentName: 'Facial Peeling Ultimate',
+    date: 'Minggu, 21 Desember 2025',
+    price: 'Rp.175.000',
+    status: 'Completed'
+  },
+  {
+    id: 'H002',
+    userId: 'M0001',
+    treatmentName: 'Mochint Signature',
+    date: 'Senin, 15 Desember 2025',
+    price: 'Rp.250.000',
+    status: 'Completed'
+  },
+  {
+    id: 'H003',
+    userId: 'M0001',
+    treatmentName: 'Facial Detox',
+    date: 'Kamis, 11 Desember 2025',
+    price: 'Rp.135.000',
+    status: 'Completed'
+  }
+];
+
+// 4. Data Testimoni (Ditambahkan Kembali)
+export const mockTestimonials = [
+  {
+    id: 1,
+    name: 'Sarah Wijaya',
+    location: 'Jakarta',
+    rating: 5,
+    comment: 'Treatment facial di Mochint benar-benar mengubah kulit saya. Hasilnya natural.'
+  },
+  {
+    id: 2,
+    name: 'Maya Ratnasari',
+    location: 'Bandung',
+    rating: 4.8,
+    comment: 'Skincare produknya sangat cocok untuk kulit sensitif saya. Glowing bertahan lama!'
+  },
+  {
+    id: 3,
+    name: 'Rina Dewi',
+    location: 'Surabaya',
+    rating: 5,
+    comment: 'Booking mudah melalui aplikasi member. Pelayanan sangat memuaskan.'
+  }
+];
