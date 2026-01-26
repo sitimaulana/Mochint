@@ -6,11 +6,12 @@ export default {
   ],
   theme: {
     extend: {
-      // 1. Tambahkan konfigurasi font di sini
       fontFamily: {
-        sans: ['Inter'],
-        // Poppins untuk judul/display
-        display: ['Poppins'],
+        // Teks utama menggunakan Inter
+        sans: ['Inter', 'sans-serif'],
+        body: ['Inter', 'sans-serif'],
+        // Judul/Display menggunakan Poppins (Pastikan Poppins sudah diimport di index.css)
+        display: ['Poppins', 'sans-serif'],
       },
       colors: {
         brown: {

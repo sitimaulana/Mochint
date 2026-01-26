@@ -3,17 +3,20 @@ import AppRoutes from './routes/AppRoutes';
 import { MemberProvider } from './context/MemberContext';
 import { AppointmentProvider } from './context/AppointmentContext';
 import { TherapistProvider } from './context/TherapistContext';
+import { TreatmentProvider } from './context/TreatmentContext'; 
 
 function App() {
   return (
-    <AppointmentProvider>
-      <MemberProvider>
-        <TherapistProvider>
-            {/* AppRoutes di sini sudah bersih, hanya berisi Routing */}
+    <TreatmentProvider>
+      <AppointmentProvider>
+        <MemberProvider>
+          <TherapistProvider>
+            {/* AppRoutes berisi seluruh navigasi Public, Member, dan Admin */}
             <AppRoutes />
-        </TherapistProvider>
-      </MemberProvider>
-    </AppointmentProvider>
+          </TherapistProvider>
+        </MemberProvider>
+      </AppointmentProvider>
+    </TreatmentProvider>
   );
 }
 
