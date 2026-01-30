@@ -4,6 +4,11 @@ import { X, Home, ChevronRight, Sparkles, Clock, CircleDot } from 'lucide-react'
 const TreatmentDetail = ({ isOpen, onClose, treatment }) => {
   if (!isOpen || !treatment) return null;
 
+  // Helper untuk format Rupiah agar rapi
+  const formatPrice = (price) => {
+    return new Intl.NumberFormat('id-ID').format(price);
+  };
+
   return (
     <div className="fixed inset-0 z-[999] flex items-center justify-center p-4">
       {/* Backdrop - Dibuat lebih gelap sedikit agar fokus ke modal */}
@@ -25,7 +30,7 @@ const TreatmentDetail = ({ isOpen, onClose, treatment }) => {
               <ChevronRight size={12} className="opacity-30" />
               <span>Layanan</span>
               <ChevronRight size={12} className="opacity-30" />
-              <span className="text-[#3E2723]"> {/* Warna lebih gelap untuk kontras */}
+              <span className="text-[#3E2723]">
                 {treatment.name}
               </span>
             </nav>
@@ -55,37 +60,41 @@ const TreatmentDetail = ({ isOpen, onClose, treatment }) => {
                 <span className="w-10 h-[2px] bg-[#8D6E63]/30"></span> Detail Layanan
               </h4>
               <p className="font-sans text-[#4E342E] leading-relaxed text-lg font-medium opacity-90">
-                {treatment.longDescription || treatment.description}
+                {treatment.description}
               </p>
             </div>
 
-            {/* Fasilitas */}
+            {/* Fasilitas - Mengambil data ARRAY dari database */}
             <div className="space-y-5">
               <h4 className="text-[11px] font-black uppercase tracking-[0.3em] text-[#A1887F] flex items-center gap-3 font-sans">
                 <span className="w-10 h-[2px] bg-[#8D6E63]/30"></span> Fasilitas Premium
               </h4>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                {['Facial Wash', 'Deep Masker', 'Essence Gold', 'Head Massage'].map((item, index) => (
-                  <div 
-                    key={index} 
-                    className="flex items-center gap-3 px-5 py-3 bg-[#FDFBF7] border-l-4 border-[#8D6E63] rounded-r-2xl text-[12px] font-bold text-[#5D4037] font-sans shadow-sm"
-                  >
-                    <CircleDot size={12} className="text-[#8D6E63]" />
-                    {item}
-                  </div>
-                ))}
+                {treatment.facilities && treatment.facilities.length > 0 ? (
+                  treatment.facilities.map((item, index) => (
+                    <div 
+                      key={index} 
+                      className="flex items-center gap-3 px-5 py-3 bg-[#FDFBF7] border-l-4 border-[#8D6E63] rounded-r-2xl text-[12px] font-bold text-[#5D4037] font-sans shadow-sm"
+                    >
+                      <CircleDot size={12} className="text-[#8D6E63]" />
+                      {item}
+                    </div>
+                  ))
+                ) : (
+                  <p className="text-xs text-gray-400 italic">Fasilitas informasi akan segera diperbarui.</p>
+                )}
               </div>
             </div>
 
-            {/* Harga & Durasi */}
+            {/* Harga & Durasi - Sinkron Database */}
             <div className="pt-10 border-t border-gray-100 flex items-center justify-between">
               <div>
                 <p className="text-[11px] font-black text-[#A1887F] uppercase tracking-widest mb-1 font-sans">Estimasi Investasi</p>
-                <p className="text-3xl font-display font-bold text-[#8D6E63]">Rp {treatment.price}</p>
+                <p className="text-3xl font-display font-bold text-[#8D6E63]">Rp {formatPrice(treatment.price)}</p>
               </div>
               <div className="px-6 py-3 bg-[#5D4037] text-white rounded-2xl flex items-center gap-3 shadow-lg">
                 <Clock size={18} className="text-[#D7CCC8]" />
-                <span className="text-[12px] font-bold font-sans">60 - 90 Menit</span>
+                <span className="text-[12px] font-bold font-sans">{treatment.duration || '60 - 90 Menit'}</span>
               </div>
             </div>
           </div>
