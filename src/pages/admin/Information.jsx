@@ -10,7 +10,7 @@ const Information = () => {
     category: 'Announcement',
     status: 'Draft',
     image: '',
-    author: 'Admin'
+    author: ''
   });
   const [isAdding, setIsAdding] = useState(false);
   const [previewImage, setPreviewImage] = useState(null);
@@ -58,7 +58,7 @@ const Information = () => {
       category: 'Announcement',
       status: 'Draft',
       image: '',
-      author: 'Admin'
+      author: ''
     });
     setPreviewImage(null);
   };
@@ -70,11 +70,14 @@ const Information = () => {
     setPreviewImage(article.image);
   };
 
+  // --- FITUR BARU DI HANDLE SAVE ---
   const handleSave = async () => {
     try {
       const articleData = {
         ...formData,
-        image: previewImage || formData.image
+        image: previewImage || formData.image,
+        // Logika fitur: Simpan tanggal publish jika statusnya Published
+        publishedAt: formData.status === 'Published' ? new Date().toISOString() : (formData.publishedAt || null)
       };
 
       if (isAdding) {
@@ -97,7 +100,7 @@ const Information = () => {
         category: 'Announcement',
         status: 'Draft',
         image: '',
-        author: 'Admin'
+        author: ''
       });
       setPreviewImage(null);
     } catch (err) {
@@ -115,7 +118,7 @@ const Information = () => {
       category: 'Announcement',
       status: 'Draft',
       image: '',
-      author: 'Admin'
+      author: ''
     });
     setPreviewImage(null);
   };
@@ -158,10 +161,17 @@ const Information = () => {
     setFormData({ ...formData, image: '' });
   };
 
+  // --- FITUR BARU DI TOGGLE STATUS ---
   const toggleStatus = async (id, currentStatus) => {
     try {
       const newStatus = currentStatus === 'Published' ? 'Draft' : 'Published';
-      const response = await axios.patch(`${API_URL}/${id}/status`, { status: newStatus });
+      // Logika fitur: Tambahkan publishedAt saat merubah status ke Published
+      const updateData = { 
+        status: newStatus,
+        publishedAt: newStatus === 'Published' ? new Date().toISOString() : null
+      };
+
+      const response = await axios.patch(`${API_URL}/${id}/status`, updateData);
       
       setArticles(articles.map(article => 
         (article._id || article.id) === id ? response.data : article
@@ -361,7 +371,8 @@ const Information = () => {
                     <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                     </svg>
-                    {new Date(article.createdAt || article.date).toLocaleDateString('en-GB', {
+                    {/* UI Menampilkan publishedAt jika ada */}
+                    {new Date(article.publishedAt || article.createdAt || article.date).toLocaleDateString('en-GB', {
                       day: 'numeric',
                       month: 'short',
                       year: 'numeric'
@@ -458,7 +469,7 @@ const Information = () => {
                     </span>
                   </td>
                   <td className="py-3 text-sm text-gray-500">
-                    {new Date(article.createdAt || article.date).toLocaleDateString('en-GB', {
+                    {new Date(article.publishedAt || article.createdAt || article.date).toLocaleDateString('en-GB', {
                       day: 'numeric',
                       month: 'short',
                       year: 'numeric'
@@ -490,7 +501,7 @@ const Information = () => {
         </div>
       )}
 
-      {/* Edit/Add Modal */}
+      {/* Edit/Add Modal - TAMPILAN TETAP SAMA */}
       {(editingArticle || isAdding) && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white rounded-lg p-6 w-full max-w-4xl max-h-[90vh] overflow-y-auto">
@@ -498,92 +509,50 @@ const Information = () => {
               {isAdding ? 'Create New Article' : 'Edit Article'}
             </h3>
             
-            {/* Image Upload Section */}
             <div className="mb-6">
               <label className="block text-sm font-medium text-gray-700 mb-2">Article Featured Image</label>
-              
-              {/* Image Preview */}
               <div className="mb-4 flex justify-center">
                 <div className="w-full h-64 rounded-lg overflow-hidden bg-gray-100 border-2 border-dashed border-gray-300">
                   {previewImage ? (
                     <div className="relative w-full h-full">
-                      <img 
-                        src={previewImage} 
-                        alt="Preview"
-                        className="w-full h-full object-cover"
-                      />
-                      <button
-                        type="button"
-                        onClick={removeImage}
-                        className="absolute top-2 right-2 bg-red-500 text-white rounded-full p-1 hover:bg-red-600"
-                      >
-                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                        </svg>
+                      <img src={previewImage} alt="Preview" className="w-full h-full object-cover" />
+                      <button type="button" onClick={removeImage} className="absolute top-2 right-2 bg-red-500 text-white rounded-full p-1 hover:bg-red-600">
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
                       </button>
                     </div>
                   ) : (
                     <div className="w-full h-full flex flex-col items-center justify-center text-gray-400">
-                      <svg className="w-12 h-12 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                      </svg>
+                      <svg className="w-12 h-12 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
                       <span className="text-sm">Upload article featured image</span>
-                      <span className="text-xs mt-1">Recommended: 1200x800 px</span>
                     </div>
                   )}
                 </div>
               </div>
 
-              {/* Upload Options */}
               <div className="space-y-3">
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">Upload Image</label>
-                    <input
-                      type="file"
-                      accept="image/*"
-                      onChange={handleImageUpload}
-                      className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-medium file:bg-brown-50 file:text-brown-700 hover:file:bg-brown-100"
-                    />
-                    <p className="text-xs text-gray-500 mt-1">JPG, PNG, GIF up to 5MB</p>
+                    <input type="file" accept="image/*" onChange={handleImageUpload} className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-medium file:bg-brown-50 file:text-brown-700 hover:file:bg-brown-100" />
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">Image URL</label>
-                    <input
-                      type="text"
-                      value={previewImage || ''}
-                      onChange={handleImageUrlChange}
-                      placeholder="https://example.com/article-image.jpg"
-                      className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm"
-                    />
+                    <input type="text" value={previewImage || ''} onChange={handleImageUrlChange} placeholder="https://example.com/article-image.jpg" className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm" />
                   </div>
                 </div>
               </div>
             </div>
 
-            {/* Article Details Form */}
             <div className="space-y-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700">Article Title</label>
-                <input
-                  type="text"
-                  name="title"
-                  value={formData.title || ''}
-                  onChange={handleChange}
-                  className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2"
-                  placeholder="Enter article title"
-                />
+                <input type="text" name="title" value={formData.title || ''} onChange={handleChange} className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2" placeholder="Enter article title" />
               </div>
               
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700">Category</label>
-                  <select
-                    name="category"
-                    value={formData.category || ''}
-                    onChange={handleChange}
-                    className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2"
-                  >
+                  <select name="category" value={formData.category || ''} onChange={handleChange} className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2">
                     <option value="">Select Category</option>
                     <option value="Treatment">Treatment</option>
                     <option value="Product">Product</option>
@@ -595,12 +564,7 @@ const Information = () => {
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700">Status</label>
-                  <select
-                    name="status"
-                    value={formData.status || ''}
-                    onChange={handleChange}
-                    className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2"
-                  >
+                  <select name="status" value={formData.status || ''} onChange={handleChange} className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2">
                     <option value="Draft">Draft</option>
                     <option value="Published">Published</option>
                   </select>
@@ -609,42 +573,20 @@ const Information = () => {
               
               <div>
                 <label className="block text-sm font-medium text-gray-700">Article Content</label>
-                <textarea
-                  name="content"
-                  value={formData.content || ''}
-                  onChange={handleChange}
-                  rows="8"
-                  className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2"
-                  placeholder="Write your article content here..."
-                />
+                <textarea name="content" value={formData.content || ''} onChange={handleChange} rows="8" className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2" placeholder="Write your article content here..." />
               </div>
               
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700">Author</label>
-                  <input
-                    type="text"
-                    name="author"
-                    value={formData.author || 'Admin'}
-                    onChange={handleChange}
-                    className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2"
-                  />
+                  <input type="text" name="author" value={formData.author || ''} onChange={handleChange} className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2" />
                 </div>
               </div>
             </div>
 
-            {/* Modal Actions */}
             <div className="flex justify-end space-x-2 mt-6">
-              <button
-                onClick={handleCancel}
-                className="px-4 py-2 bg-gray-300 text-gray-700 rounded-lg hover:bg-gray-400"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={handleSave}
-                className="px-4 py-2 bg-brown-600 text-white rounded-lg hover:bg-brown-700"
-              >
+              <button onClick={handleCancel} className="px-4 py-2 bg-gray-300 text-gray-700 rounded-lg hover:bg-gray-400">Cancel</button>
+              <button onClick={handleSave} className="px-4 py-2 bg-brown-600 text-white rounded-lg hover:bg-brown-700">
                 {isAdding ? 'Publish Article' : 'Save Changes'}
               </button>
             </div>
@@ -655,17 +597,10 @@ const Information = () => {
       {/* Empty State */}
       {filteredArticles.length === 0 && !loading && (
         <div className="bg-white rounded-xl shadow-sm p-12 text-center">
-          <svg className="w-16 h-16 mx-auto text-gray-400 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 20H5a2 2 0 01-2-2V6a2 2 0 012-2h10a2 2 0 012 2v1m2 13a2 2 0 01-2-2V7m2 13a2 2 0 002-2V9a2 2 0 00-2-2h-2m-4-3H9M7 16h6M7 8h6v4H7V8z" />
-          </svg>
+          <svg className="w-16 h-16 mx-auto text-gray-400 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 20H5a2 2 0 01-2-2V6a2 2 0 012-2h10a2 2 0 012 2v1m2 13a2 2 0 01-2-2V7m2 13a2 2 0 002-2V9a2 2 0 00-2-2h-2m-4-3H9M7 16h6M7 8h6v4H7V8z" /></svg>
           <h3 className="text-lg font-medium text-gray-900 mb-2">No articles found</h3>
           <p className="text-gray-500 mb-6">No articles match the selected category.</p>
-          <button
-            onClick={handleAdd}
-            className="px-4 py-2 bg-brown-600 text-white rounded-lg hover:bg-brown-700"
-          >
-            Create Your First Article
-          </button>
+          <button onClick={handleAdd} className="px-4 py-2 bg-brown-600 text-white rounded-lg hover:bg-brown-700">Create Your First Article</button>
         </div>
       )}
     </div>

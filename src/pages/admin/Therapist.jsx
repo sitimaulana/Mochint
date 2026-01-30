@@ -8,10 +8,8 @@ const Therapist = () => {
     name: '',
     email: '',
     phone: '',
-    specialization: '',
-    experienceYears: 0,
     status: 'active',
-    workingHours: ''
+    joinDate: ''
   });
   const [isAdding, setIsAdding] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
@@ -29,50 +27,79 @@ const Therapist = () => {
   const API_URL = 'http://localhost:5000/api/therapists';
   const APPOINTMENTS_API_URL = 'http://localhost:5000/api/appointments';
 
-  // Fetch therapists dari API
+  // Fetch therapists dan appointments dari API
   useEffect(() => {
-    fetchTherapists();
-    fetchAppointments();
+    fetchAllData();
   }, []);
 
-  const fetchTherapists = async () => {
+  const fetchAllData = async () => {
     try {
       setLoading(true);
-      const response = await axios.get(API_URL);
-      setTherapists(response.data);
+      const [therapistsRes, appointmentsRes] = await Promise.all([
+        axios.get(API_URL),
+        axios.get(APPOINTMENTS_API_URL)
+      ]);
+      
+      setTherapists(therapistsRes.data);
+      setAppointments(appointmentsRes.data);
       setError(null);
     } catch (err) {
-      setError('Failed to fetch therapists. Please try again.');
-      console.error('Error fetching therapists:', err);
+      setError('Failed to fetch data. Please try again.');
+      console.error('Error fetching data:', err);
     } finally {
       setLoading(false);
     }
   };
 
-  const fetchAppointments = async () => {
-    try {
-      setAppointmentsLoading(true);
-      const response = await axios.get(APPOINTMENTS_API_URL);
-      setAppointments(response.data);
-    } catch (err) {
-      console.error('Error fetching appointments:', err);
-    } finally {
-      setAppointmentsLoading(false);
-    }
+  // Function untuk menghitung total treatments dari appointments
+  const calculateTherapistTreatments = (therapistName) => {
+    if (!therapistName || !appointments || appointments.length === 0) return 0;
+    
+    const therapistAppointments = appointments.filter(app => 
+      app.therapist && 
+      app.therapist.trim().toLowerCase() === therapistName.trim().toLowerCase() &&
+      app.status === 'completed'
+    );
+    
+    return therapistAppointments.length;
   };
 
-  // Calculate statistics
+  // Function untuk mendapatkan appointment history therapist
+  const getAppointmentsByTherapist = (therapistName) => {
+    if (!therapistName || !appointments || appointments.length === 0) return [];
+    
+    return appointments.filter(app =>
+      app.therapist && 
+      app.therapist.trim().toLowerCase() === therapistName.trim().toLowerCase() &&
+      app.status === 'completed'
+    ).sort((a, b) => new Date(b.date) - new Date(a.date));
+  };
+
+  // Function untuk menghitung total revenue dari appointments therapist
+  const calculateTherapistRevenue = (therapistName) => {
+    const therapistAppointments = getAppointmentsByTherapist(therapistName);
+    return therapistAppointments.reduce((total, app) => total + (parseFloat(app.amount) || 0), 0);
+  };
+
+  // Calculate overall statistics
   const stats = {
     total: therapists.length,
     active: therapists.filter(t => t.status === 'active').length,
-    totalTreatments: therapists.reduce((sum, therapist) => sum + (parseInt(therapist.total_treatments || therapist.totalTreatments) || 0), 0),
+    totalTreatments: therapists.reduce((sum, therapist) => 
+      sum + calculateTherapistTreatments(therapist.name), 0),
     newThisMonth: therapists.filter(t => {
       const joinDate = t.join_date || t.joinDate;
       if (!joinDate) return false;
-      const joinMonth = new Date(joinDate).getMonth();
-      const currentMonth = new Date().getMonth();
-      return joinMonth === currentMonth;
-    }).length
+      try {
+        const joinMonth = new Date(joinDate).getMonth();
+        const currentMonth = new Date().getMonth();
+        return joinMonth === currentMonth;
+      } catch {
+        return false;
+      }
+    }).length,
+    totalRevenue: therapists.reduce((sum, therapist) => 
+      sum + calculateTherapistRevenue(therapist.name), 0)
   };
 
   // Filter therapists
@@ -81,20 +108,12 @@ const Therapist = () => {
       (therapist.name || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
       (therapist.email || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
       (therapist.phone || '').includes(searchTerm) ||
-      (therapist.id || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
-      (therapist.notes || '').toLowerCase().includes(searchTerm.toLowerCase());
+      (therapist.therapist_id || therapist.id || '').toString().toLowerCase().includes(searchTerm.toLowerCase());
 
     const matchesStatus = selectedStatus === 'all' || therapist.status === selectedStatus;
 
     return matchesSearch && matchesStatus;
   });
-
-  // Get appointments by therapist
-  const getAppointmentsByTherapist = (therapistName) => {
-    return appointments.filter(app =>
-      app.therapist === therapistName && app.status === 'completed'
-    );
-  };
 
   const handleAdd = () => {
     setIsAdding(true);
@@ -102,25 +121,24 @@ const Therapist = () => {
       name: '',
       email: '',
       phone: '',
-      specialization: '',
-      experienceYears: 0,
       status: 'active',
-      workingHours: ''
+      joinDate: new Date().toLocaleDateString('en-GB', { 
+        day: 'numeric', 
+        month: 'short', 
+        year: 'numeric' 
+      })
     });
   };
 
   const handleEdit = (therapist) => {
-    setEditingTherapist(therapist._id || therapist.id);
+    setEditingTherapist(therapist.id);
     setIsAdding(false);
     setFormData({
-      id: therapist.id || therapist._id,
       name: therapist.name || '',
       email: therapist.email || '',
       phone: therapist.phone || '',
-      specialization: therapist.specialization || '',
-      experienceYears: therapist.experience_years || 0,
       status: therapist.status || 'active',
-      workingHours: therapist.working_hours || ''
+      joinDate: therapist.join_date || ''
     });
   };
 
@@ -145,18 +163,16 @@ const Therapist = () => {
 
     try {
       if (isAdding) {
-        // Generate ID untuk therapist baru
-        const newId = `TH${String(therapists.length + 1).padStart(3, '0')}`;
-
         const newTherapistData = {
-          id: newId,
           name: formData.name.trim(),
           email: formData.email.trim(),
           phone: formData.phone || '',
-          specialization: formData.specialization || '',
-          experience_years: parseInt(formData.experienceYears) || 0,
           status: formData.status || 'active',
-          working_hours: formData.workingHours || ''
+          join_date: formData.joinDate || new Date().toLocaleDateString('en-GB', { 
+            day: 'numeric', 
+            month: 'short', 
+            year: 'numeric' 
+          })
         };
 
         const response = await axios.post(API_URL, newTherapistData);
@@ -167,21 +183,21 @@ const Therapist = () => {
           name: formData.name.trim(),
           email: formData.email.trim(),
           phone: formData.phone || '',
-          specialization: formData.specialization || '',
-          experience_years: parseInt(formData.experienceYears) || 0,
           status: formData.status || 'active',
-          working_hours: formData.workingHours || ''
+          joinDate: formData.joinDate || ''
         };
 
         const response = await axios.put(`${API_URL}/${editingTherapist}`, updatedTherapistData);
         setTherapists(therapists.map(therapist =>
-          (therapist._id || therapist.id) === editingTherapist ? response.data : therapist
+          therapist.id === editingTherapist ? response.data : therapist
         ));
       }
 
       handleCancel();
+      setError(null);
     } catch (err) {
-      alert(err.response?.data?.error || 'Failed to save therapist');
+      const errorMessage = err.response?.data?.error || 'Failed to save therapist';
+      setError(errorMessage);
       console.error('Error saving therapist:', err);
     } finally {
       setSaveLoading(false);
@@ -195,10 +211,8 @@ const Therapist = () => {
       name: '',
       email: '',
       phone: '',
-      specialization: '',
-      experienceYears: 0,
       status: 'active',
-      workingHours: ''
+      joinDate: ''
     });
   };
 
@@ -210,10 +224,14 @@ const Therapist = () => {
     setDeleteLoading(true);
     try {
       await axios.delete(`${API_URL}/${showDeleteConfirm}`);
-      setTherapists(therapists.filter(therapist => (therapist._id || therapist.id) !== showDeleteConfirm));
+      setTherapists(therapists.filter(therapist => 
+        therapist.id !== showDeleteConfirm
+      ));
       setShowDeleteConfirm(null);
+      setError(null);
     } catch (err) {
-      alert(err.response?.data?.error || 'Failed to delete therapist');
+      const errorMessage = err.response?.data?.error || 'Failed to delete therapist';
+      setError(errorMessage);
       console.error('Error deleting therapist:', err);
     } finally {
       setDeleteLoading(false);
@@ -225,17 +243,22 @@ const Therapist = () => {
   };
 
   const handleChange = (e) => {
-    const { name, value, type } = e.target;
-
-    if (type === 'number') {
-      setFormData({ ...formData, [name]: parseInt(value) || 0 });
-    } else {
-      setFormData({ ...formData, [name]: value });
-    }
+    const { name, value } = e.target;
+    setFormData({ ...formData, [name]: value });
   };
 
   const handleView = (therapist) => {
     setViewingDetails(therapist);
+  };
+
+  // Format currency
+  const formatRupiah = (val) => {
+    if (!val) return 'Rp 0';
+    return new Intl.NumberFormat('id-ID', { 
+      style: 'currency', 
+      currency: 'IDR', 
+      minimumFractionDigits: 0 
+    }).format(val);
   };
 
   // Loading state
@@ -262,7 +285,7 @@ const Therapist = () => {
         <h3 className="text-lg font-medium text-gray-900 mb-2">Error Loading Therapists</h3>
         <p className="text-gray-500 mb-4">{error}</p>
         <button
-          onClick={fetchTherapists}
+          onClick={fetchAllData}
           className="px-4 py-2 bg-brown-600 text-white rounded-lg hover:bg-brown-700 transition-colors duration-200"
         >
           Retry
@@ -319,8 +342,8 @@ const Therapist = () => {
             <div className="text-sm text-gray-600">Total Treatments</div>
           </div>
           <div className="bg-white rounded-lg p-4 shadow-sm border border-gray-200">
-            <div className="text-2xl font-bold text-purple-600">{stats.newThisMonth}</div>
-            <div className="text-sm text-gray-600">New This Month</div>
+            <div className="text-2xl font-bold text-purple-600">{formatRupiah(stats.totalRevenue)}</div>
+            <div className="text-sm text-gray-600">Total Revenue</div>
           </div>
         </div>
       </div>
@@ -338,7 +361,7 @@ const Therapist = () => {
               </div>
               <input
                 type="search"
-                placeholder="Search therapists by name, email, or notes..."
+                placeholder="Search therapists by name, email, or phone..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg bg-gray-50 focus:outline-none focus:ring-2 focus:ring-brown-500 focus:border-transparent transition-colors duration-200"
@@ -356,6 +379,7 @@ const Therapist = () => {
               <option value="all">All Status</option>
               <option value="active">Active</option>
               <option value="inactive">Inactive</option>
+              <option value="on_leave">On Leave</option>
             </select>
           </div>
         </div>
@@ -384,6 +408,7 @@ const Therapist = () => {
                   <th className="pb-3 font-medium">Therapist</th>
                   <th className="pb-3 font-medium">Contact</th>
                   <th className="pb-3 font-medium">Treatments</th>
+                  <th className="pb-3 font-medium">Revenue</th>
                   <th className="pb-3 font-medium">Status</th>
                   <th className="pb-3 font-medium">Join Date</th>
                   <th className="pb-3 font-medium">Actions</th>
@@ -391,13 +416,14 @@ const Therapist = () => {
               </thead>
               <tbody>
                 {filteredTherapists.map((therapist) => {
-                  const therapistAppointments = getAppointmentsByTherapist(therapist.name);
+                  const totalTreatments = calculateTherapistTreatments(therapist.name);
+                  const totalRevenue = calculateTherapistRevenue(therapist.name);
 
                   return (
                     <tr key={therapist.id} className="border-b hover:bg-gray-50 transition-colors duration-200">
                       <td className="py-3">
                         <span className="text-sm font-medium bg-gray-100 px-2 py-1 rounded text-gray-700">
-                          {therapist.id || therapist._id}
+                          {therapist.therapist_id || therapist.id}
                         </span>
                       </td>
                       <td className="py-3">
@@ -405,11 +431,6 @@ const Therapist = () => {
                           <div className="text-2xl mr-3">{therapist.image || '👨‍⚕️'}</div>
                           <div>
                             <div className="font-medium text-gray-800">{therapist.name || 'N/A'}</div>
-                            {therapist.notes && (
-                              <div className="text-xs text-gray-500 truncate max-w-xs">
-                                {therapist.notes}
-                              </div>
-                            )}
                           </div>
                         </div>
                       </td>
@@ -419,20 +440,28 @@ const Therapist = () => {
                       </td>
                       <td className="py-3">
                         <div className="text-lg font-bold text-gray-800">
-                          {therapist.total_treatments || therapist.totalTreatments || 0}
+                          {totalTreatments}
                         </div>
                         <div className="text-xs text-gray-400">completed treatments</div>
                       </td>
                       <td className="py-3">
+                        <div className="text-lg font-bold text-green-700">
+                          {formatRupiah(totalRevenue)}
+                        </div>
+                        <div className="text-xs text-gray-400">total revenue</div>
+                      </td>
+                      <td className="py-3">
                         <span className={`px-2 py-1 rounded-full text-xs font-medium ${therapist.status === 'active'
                           ? 'bg-green-100 text-green-800'
-                          : 'bg-gray-100 text-gray-800'
+                          : therapist.status === 'inactive'
+                            ? 'bg-gray-100 text-gray-800'
+                            : 'bg-yellow-100 text-yellow-800'
                           }`}>
                           {therapist.status || 'inactive'}
                         </span>
                       </td>
                       <td className="py-3 text-sm text-gray-500">
-                        {therapist.join_date || therapist.joinDate || 'N/A'}
+                        {therapist.join_date || 'N/A'}
                       </td>
                       <td className="py-3">
                         <div className="flex space-x-2">
@@ -449,7 +478,7 @@ const Therapist = () => {
                             Edit
                           </button>
                           <button
-                            onClick={() => handleDelete(therapist._id || therapist.id)}
+                            onClick={() => handleDelete(therapist.id)}
                             className="px-3 py-1 bg-red-500 text-white text-xs rounded hover:bg-red-600 transition-colors duration-200"
                           >
                             Delete
@@ -479,7 +508,7 @@ const Therapist = () => {
         )}
       </div>
 
-      {/* Add/Edit Modal */}
+      {/* Add/Edit Modal - FIXED */}
       {(editingTherapist || isAdding) && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-lg p-6 w-full max-w-md max-h-[90vh] overflow-y-auto">
@@ -496,8 +525,8 @@ const Therapist = () => {
                   </label>
                   <input
                     type="text"
-                    name="id"
-                    value={formData.id || ''}
+                    name="therapist_id"
+                    value={therapists.find(t => t.id === editingTherapist)?.therapist_id || ''}
                     disabled
                     className="w-full border border-gray-300 rounded-md px-3 py-2 bg-gray-100"
                   />
@@ -511,7 +540,7 @@ const Therapist = () => {
                 <input
                   type="text"
                   name="name"
-                  value={formData.name || ''}
+                  value={formData.name}
                   onChange={handleChange}
                   className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-brown-500 focus:border-transparent"
                   placeholder="Dr. John Doe"
@@ -526,7 +555,7 @@ const Therapist = () => {
                 <input
                   type="email"
                   name="email"
-                  value={formData.email || ''}
+                  value={formData.email}
                   onChange={handleChange}
                   className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-brown-500 focus:border-transparent"
                   placeholder="doctor@clinic.com"
@@ -541,48 +570,21 @@ const Therapist = () => {
                 <input
                   type="tel"
                   name="phone"
-                  value={formData.phone || ''}
+                  value={formData.phone}
                   onChange={handleChange}
                   className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-brown-500 focus:border-transparent"
                   placeholder="081234567890"
                 />
               </div>
 
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Specialization
-                </label>
-                <input
-                  type="text"
-                  name="specialization"
-                  value={formData.specialization || ''}
-                  onChange={handleChange}
-                  className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-brown-500 focus:border-transparent"
-                  placeholder="Skin Care, Facial Treatment, etc."
-                />
-              </div>
-
               <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Experience (Years)
-                  </label>
-                  <input
-                    type="number"
-                    name="experienceYears"
-                    value={formData.experienceYears || 0}
-                    onChange={handleChange}
-                    className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-brown-500 focus:border-transparent"
-                    min="0"
-                  />
-                </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
                     Status
                   </label>
                   <select
                     name="status"
-                    value={formData.status || 'active'}
+                    value={formData.status}
                     onChange={handleChange}
                     className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-brown-500 focus:border-transparent"
                   >
@@ -591,20 +593,23 @@ const Therapist = () => {
                     <option value="on_leave">On Leave</option>
                   </select>
                 </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Join Date
+                  </label>
+                  <input
+                    type="text"
+                    name="joinDate"
+                    value={formData.joinDate}
+                    onChange={handleChange}
+                    className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-brown-500 focus:border-transparent"
+                    placeholder="01 Jan 2024"
+                  />
+                </div>
               </div>
 
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Working Hours
-                </label>
-                <input
-                  type="text"
-                  name="workingHours"
-                  value={formData.workingHours || ''}
-                  onChange={handleChange}
-                  className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-brown-500 focus:border-transparent"
-                  placeholder="09:00 - 17:00"
-                />
+              <div className="text-xs text-gray-500">
+                <p>Format join date: DD MMM YYYY (contoh: 25 Dec 2024)</p>
               </div>
             </div>
 
@@ -685,7 +690,7 @@ const Therapist = () => {
             <div className="flex justify-between items-center mb-6">
               <div>
                 <h3 className="text-lg font-semibold text-gray-800">{viewingDetails.name}</h3>
-                <p className="text-sm text-gray-600">ID: {viewingDetails.id || viewingDetails._id}</p>
+                <p className="text-sm text-gray-600">ID: {viewingDetails.therapist_id || viewingDetails.id}</p>
               </div>
               <button
                 onClick={() => setViewingDetails(null)}
@@ -726,7 +731,7 @@ const Therapist = () => {
                 <div>
                   <label className="text-sm font-medium text-gray-700">Join Date</label>
                   <div className="text-gray-600 mt-1">
-                    {viewingDetails.join_date || viewingDetails.joinDate || 'N/A'}
+                    {viewingDetails.join_date || 'N/A'}
                   </div>
                 </div>
 
@@ -735,40 +740,45 @@ const Therapist = () => {
                   <div className="mt-1">
                     <span className={`px-3 py-1 rounded-full text-sm font-medium ${viewingDetails.status === 'active'
                       ? 'bg-green-100 text-green-800'
-                      : 'bg-gray-100 text-gray-800'
+                      : viewingDetails.status === 'inactive'
+                        ? 'bg-gray-100 text-gray-800'
+                        : 'bg-yellow-100 text-yellow-800'
                       }`}>
                       {viewingDetails.status || 'inactive'}
                     </span>
                   </div>
                 </div>
-
-                {viewingDetails.notes && (
-                  <div>
-                    <label className="text-sm font-medium text-gray-700">Notes</label>
-                    <div className="mt-1 bg-gray-50 rounded-lg p-4">
-                      <p className="text-sm text-gray-600">{viewingDetails.notes}</p>
-                    </div>
-                  </div>
-                )}
               </div>
 
               {/* Right Column - Statistics & Appointment History */}
               <div className="space-y-4">
                 {/* Statistics */}
                 <div>
-                  <label className="text-sm font-medium text-gray-700 mb-2 block">Statistics</label>
+                  <label className="text-sm font-medium text-gray-700 mb-2 block">Treatment Statistics</label>
                   <div className="grid grid-cols-2 gap-4">
                     <div className="bg-gray-50 rounded-lg p-4 text-center">
                       <div className="text-2xl font-bold text-gray-800">
-                        {viewingDetails.total_treatments || viewingDetails.totalTreatments || 0}
+                        {calculateTherapistTreatments(viewingDetails.name)}
                       </div>
                       <div className="text-sm text-gray-600">Total Treatments</div>
                     </div>
                     <div className="bg-gray-50 rounded-lg p-4 text-center">
-                      <div className="text-2xl font-bold text-green-600">
-                        {getAppointmentsByTherapist(viewingDetails.name).length}
+                      <div className="text-2xl font-bold text-green-700">
+                        {formatRupiah(calculateTherapistRevenue(viewingDetails.name))}
                       </div>
-                      <div className="text-sm text-gray-600">Completed Appointments</div>
+                      <div className="text-sm text-gray-600">Total Revenue</div>
+                    </div>
+                    <div className="bg-gray-50 rounded-lg p-4 text-center">
+                      <div className="text-2xl font-bold text-blue-600">
+                        {new Set(getAppointmentsByTherapist(viewingDetails.name).map(app => app.treatment)).size}
+                      </div>
+                      <div className="text-sm text-gray-600">Different Treatments</div>
+                    </div>
+                    <div className="bg-gray-50 rounded-lg p-4 text-center">
+                      <div className="text-2xl font-bold text-purple-600">
+                        {new Set(getAppointmentsByTherapist(viewingDetails.name).map(app => app.customer_name || app.customer_id)).size}
+                      </div>
+                      <div className="text-sm text-gray-600">Unique Patients</div>
                     </div>
                   </div>
                 </div>
@@ -785,20 +795,25 @@ const Therapist = () => {
                     ) : getAppointmentsByTherapist(viewingDetails.name).length > 0 ? (
                       <div className="space-y-2">
                         {getAppointmentsByTherapist(viewingDetails.name)
-                          .slice(0, 5)
+                          .slice(0, 10)
                           .map((appointment, index) => (
-                            <div key={appointment._id || index} className="p-3 bg-gray-50 rounded-lg">
-                              <div className="flex justify-between items-start">
+                            <div key={appointment.id || index} className="p-3 bg-gray-50 rounded-lg border border-gray-200">
+                              <div className="flex justify-between items-start mb-2">
                                 <div>
-                                  <div className="font-medium text-gray-800">{appointment.customer || appointment.customerName}</div>
-                                  <div className="text-sm text-gray-600">{appointment.treatment || appointment.treatmentName}</div>
+                                  <div className="font-medium text-gray-800">{appointment.customer_name || 'N/A'}</div>
+                                  <div className="text-sm text-gray-600">{appointment.treatment || 'N/A'}</div>
                                 </div>
                                 <div className="text-right">
-                                  <div className="text-sm font-medium text-brown-600">
-                                    {appointment.amount || 'Rp 0'}
+                                  <div className="text-sm font-medium text-green-700">
+                                    {formatRupiah(appointment.amount)}
                                   </div>
-                                  <div className="text-xs text-gray-500">{appointment.date || 'N/A'}</div>
                                 </div>
+                              </div>
+                              <div className="flex justify-between items-center text-xs text-gray-500">
+                                <span>{appointment.date || 'N/A'}</span>
+                                <span className="bg-green-100 text-green-800 px-2 py-1 rounded-full">
+                                  {appointment.status || 'completed'}
+                                </span>
                               </div>
                             </div>
                           ))}
