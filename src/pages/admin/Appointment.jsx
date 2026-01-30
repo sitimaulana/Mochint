@@ -750,7 +750,7 @@ const Appointment = () => {
                         )}
                         {app.status === 'completed' && (
                           <span className="text-green-500 text-[10px] font-bold italic tracking-wider px-2 py-1">
-                            COMPLETED ✓
+                            COMPLETED
                           </span>
                         )}
                       </div>
@@ -903,7 +903,7 @@ const Appointment = () => {
                 <div className="text-xs text-gray-500">Choose treatment type</div>
               </div>
 
-              {/* Therapist */}
+              {/* Therapist - TANPA SIMBOL EMOJI ✅ */}
               <div className="space-y-2">
                 <label className="block text-xs font-bold text-gray-400 uppercase tracking-widest mb-1">
                   Select Therapist
@@ -918,7 +918,7 @@ const Appointment = () => {
                   <option value="">Select Therapist</option>
                   {therapists.map(th => (
                     <option key={th.id} value={th.name}>
-                      {th.name} {th.status === 'active' ? '✅' : th.status === 'on_leave' ? '🏖️' : '⛔'}
+                      {th.name}
                     </option>
                   ))}
                 </select>

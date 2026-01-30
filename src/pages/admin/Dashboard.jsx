@@ -58,55 +58,84 @@ const Dashboard = () => {
     const total = appointments.length;
     
     // Menggunakan data status dari database appointment
-    const pending = appointments.filter(a => a.status?.toLowerCase() === 'pending' || a.status?.toLowerCase() === 'menunggu').length;
-    const confirmed = appointments.filter(a => a.status?.toLowerCase() === 'confirmed' || a.status?.toLowerCase() === 'dikonfirmasi').length;
-    const completed = appointments.filter(a => a.status?.toLowerCase() === 'completed' || a.status?.toLowerCase() === 'selesai').length;
-    const cancelled = appointments.filter(a => a.status?.toLowerCase() === 'cancelled' || a.status?.toLowerCase() === 'dibatalkan').length;
+    const pending = appointments.filter(a => a.status?.toLowerCase() === 'pending').length;
+    const confirmed = appointments.filter(a => a.status?.toLowerCase() === 'confirmed').length;
+    const completed = appointments.filter(a => a.status?.toLowerCase() === 'completed').length;
     
-    return { total, pending, confirmed, completed, cancelled };
+    return { total, pending, confirmed, completed };
   };
 
   const appointmentStats = calculateAppointmentStats();
   
-  // Get today's appointments
+  // Get today's appointments - HANYA pending dan confirmed
   const getTodaysAppointments = () => {
     const today = new Date();
-    const todayStr = today.toLocaleDateString('en-GB', { 
-      day: 'numeric', 
-      month: 'short', 
-      year: 'numeric' 
-    }).toLowerCase();
+    // Format today's date to YYYY-MM-DD (to match database format)
+    const todayStr = today.toISOString().split('T')[0];
+    
+    // Also get date in alternative formats for comparison
+    const day = today.getDate().toString().padStart(2, '0');
+    const month = (today.getMonth() + 1).toString().padStart(2, '0');
+    const year = today.getFullYear();
+    
+    // Multiple possible date formats
+    const possibleTodayFormats = [
+      todayStr, // YYYY-MM-DD
+      `${year}-${month}-${day}`, // Same as above
+      `${day}/${month}/${year}`, // DD/MM/YYYY
+      `${month}/${day}/${year}`, // MM/DD/YYYY
+      today.toLocaleDateString('en-US'), // Local format
+      today.toLocaleDateString('id-ID'), // Indonesian format
+    ];
     
     return appointments.filter(app => {
       if (!app.date) return false;
       
+      // FILTER: Hanya tampilkan appointment dengan status pending atau confirmed
+      const status = app.status?.toLowerCase();
+      if (status === 'completed') {
+        return false; // Skip completed appointments
+      }
+      
       try {
-        // Normalize date format dari database
-        let appDate = app.date.toString().toLowerCase();
+        // Convert appointment date to string and normalize
+        let appDate = app.date.toString().trim();
         
-        // Jika format ISO date (2024-01-15)
-        if (appDate.includes('t')) {
+        // If it's an ISO date string (contains T)
+        if (appDate.includes('T')) {
           const dateObj = new Date(appDate);
-          appDate = dateObj.toLocaleDateString('en-GB', {
-            day: 'numeric',
-            month: 'short',
-            year: 'numeric'
-          }).toLowerCase();
+          appDate = dateObj.toISOString().split('T')[0]; // Convert to YYYY-MM-DD
         }
         
-        // Format: "15 Jan 2024, 10:00 AM" -> extract date part
-        if (appDate.includes(',')) {
-          appDate = appDate.split(',')[0].trim();
+        // Remove time part if exists
+        if (appDate.includes(' ')) {
+          appDate = appDate.split(' ')[0];
         }
         
-        // Remove year for comparison
-        const appDateNoYear = appDate.replace(/\s+\d{4}$/, '').trim();
-        const todayNoYear = todayStr.replace(/\s+\d{4}$/, '').trim();
-        
-        // Compare dates
-        return appDateNoYear === todayNoYear || appDate === todayStr;
+        // Check if it matches any of today's formats
+        return possibleTodayFormats.some(format => {
+          // Compare dates in various ways
+          if (appDate === format) return true;
+          
+          // Try to parse and compare as Date objects
+          try {
+            const appDateObj = new Date(appDate);
+            const formatDateObj = new Date(format);
+            
+            if (isNaN(appDateObj.getTime()) || isNaN(formatDateObj.getTime())) {
+              return false;
+            }
+            
+            // Compare year, month, and day
+            return appDateObj.getFullYear() === formatDateObj.getFullYear() &&
+                   appDateObj.getMonth() === formatDateObj.getMonth() &&
+                   appDateObj.getDate() === formatDateObj.getDate();
+          } catch {
+            return false;
+          }
+        });
       } catch (error) {
-        console.warn('Error parsing date:', app.date, error);
+        console.warn('Error parsing appointment date:', app.date, error);
         return false;
       }
     });
@@ -114,17 +143,67 @@ const Dashboard = () => {
 
   const todayAppointments = getTodaysAppointments();
   
+  // Format appointment time for display
+  const formatAppointmentTime = (timeStr) => {
+    if (!timeStr) return 'N/A';
+    
+    try {
+      // If time is in HH:MM format
+      if (timeStr.includes(':')) {
+        const [hours, minutes] = timeStr.split(':');
+        const hour = parseInt(hours);
+        const ampm = hour >= 12 ? 'PM' : 'AM';
+        const displayHour = hour % 12 || 12;
+        return `${displayHour}:${minutes.padStart(2, '0')} ${ampm}`;
+      }
+      return timeStr;
+    } catch {
+      return timeStr;
+    }
+  };
+
+  // Quick action untuk update status appointment dari dashboard
+  const handleQuickUpdateStatus = async (appointmentId, currentStatus) => {
+    try {
+      let nextStatus;
+      
+      if (currentStatus === 'pending') {
+        nextStatus = 'confirmed';
+      } else if (currentStatus === 'confirmed') {
+        nextStatus = 'completed';
+      } else {
+        return;
+      }
+      
+      // Update di backend
+      await axios.put(`${APPOINTMENTS_API_URL}/${appointmentId}`, {
+        status: nextStatus
+      });
+      
+      // Update local state
+      setAppointments(prev => prev.map(app => 
+        app.id === appointmentId ? { ...app, status: nextStatus } : app
+      ));
+      
+      // Refresh data untuk update dashboard
+      fetchAllData();
+      
+    } catch (err) {
+      console.error('Error updating appointment status:', err);
+      alert('Failed to update appointment status');
+    }
+  };
+
   // Calculate member statistics from database data
   const calculateMemberStats = () => {
     const total = members.length;
     const active = members.filter(m => 
-      m.status?.toLowerCase() === 'active' || 
-      m.status?.toLowerCase() === 'aktif'
+      m.status?.toLowerCase() === 'active'
     ).length;
     
     // Calculate total visits from appointments
     const totalVisits = appointments
-      .filter(app => app.status?.toLowerCase() === 'completed' || app.status?.toLowerCase() === 'selesai')
+      .filter(app => app.status?.toLowerCase() === 'completed')
       .filter(app => app.customer_id) // Only appointments with customer_id
       .length;
 
@@ -138,23 +217,11 @@ const Dashboard = () => {
         const joinDate = member.join_date || member.joinDate || member.created_at;
         if (!joinDate) return false;
         
-        // Try parsing the date
-        let dateObj;
-        if (typeof joinDate === 'string') {
-          // Format ISO atau lokal
-          dateObj = new Date(joinDate);
-          // Jika invalid date, coba format lain
-          if (isNaN(dateObj.getTime())) {
-            dateObj = new Date(joinDate.replace(/(\d+)\s+(\w+)\s+(\d+)/, '$2 $1 $3'));
-          }
-        } else {
-          dateObj = new Date(joinDate);
-        }
-        
+        const dateObj = new Date(joinDate);
         return dateObj.getMonth() === currentMonth && 
                dateObj.getFullYear() === currentYear;
       } catch (error) {
-        console.warn('Error parsing join date:', member.join_date, error);
+        console.warn('Error parsing join date:', error);
         return false;
       }
     }).length;
@@ -174,7 +241,6 @@ const Dashboard = () => {
           
           if (!dateA || !dateB) return 0;
           
-          // Convert to Date objects for comparison
           const dateAObj = new Date(dateA);
           const dateBObj = new Date(dateB);
           
@@ -182,7 +248,6 @@ const Dashboard = () => {
           
           return dateBObj - dateAObj; // Newest first
         } catch (error) {
-          console.warn('Error sorting members by date:', error);
           return 0;
         }
       })
@@ -197,13 +262,13 @@ const Dashboard = () => {
     const memberVisits = {};
     
     appointments
-      .filter(app => (app.status?.toLowerCase() === 'completed' || app.status?.toLowerCase() === 'selesai') && app.customer_id)
+      .filter(app => app.status?.toLowerCase() === 'completed' && app.customer_id)
       .forEach(app => {
         const memberId = app.customer_id;
         if (!memberVisits[memberId]) {
           memberVisits[memberId] = {
             memberId,
-            name: app.customer_name || app.customer || 'Unknown',
+            name: app.customer_name || 'Unknown',
             visits: 0,
             email: ''
           };
@@ -216,7 +281,6 @@ const Dashboard = () => {
       .sort((a, b) => b.visits - a.visits)
       .slice(0, count)
       .map(memberVisit => {
-        // Find member from database
         const memberFromDb = members.find(m => m.id == memberVisit.memberId);
         
         return {
@@ -235,14 +299,15 @@ const Dashboard = () => {
   
   // Filter completed treatments untuk Recent Treatments
   const recentTreatments = appointments
-    .filter(appointment => appointment.status?.toLowerCase() === 'completed' || appointment.status?.toLowerCase() === 'selesai')
+    .filter(appointment => appointment.status?.toLowerCase() === 'completed')
     .sort((a, b) => {
       try {
-        const dateA = a.date || a.appointment_date || a.created_at;
-        const dateB = b.date || b.appointment_date || b.created_at;
+        // Combine date and time for sorting
+        const dateTimeA = a.date + ' ' + (a.time || '00:00');
+        const dateTimeB = b.date + ' ' + (b.time || '00:00');
         
-        const dateAObj = new Date(dateA);
-        const dateBObj = new Date(dateB);
+        const dateAObj = new Date(dateTimeA);
+        const dateBObj = new Date(dateTimeB);
         
         if (isNaN(dateAObj.getTime()) || isNaN(dateBObj.getTime())) return 0;
         
@@ -256,9 +321,9 @@ const Dashboard = () => {
   // Calculate total revenue from all completed appointments
   const calculateTotalRevenue = () => {
     return appointments
-      .filter(appointment => appointment.status?.toLowerCase() === 'completed' || appointment.status?.toLowerCase() === 'selesai')
+      .filter(appointment => appointment.status?.toLowerCase() === 'completed')
       .reduce((total, appointment) => {
-        const amount = parseFloat(appointment.amount) || parseFloat(appointment.price) || 0;
+        const amount = parseFloat(appointment.amount) || 0;
         return total + amount;
       }, 0);
   };
@@ -278,7 +343,7 @@ const Dashboard = () => {
     const therapistStats = {};
     
     appointments
-      .filter(app => (app.status?.toLowerCase() === 'completed' || app.status?.toLowerCase() === 'selesai') && app.therapist)
+      .filter(app => app.status?.toLowerCase() === 'completed' && app.therapist)
       .forEach(app => {
         const therapistName = app.therapist.toString().trim();
         if (!therapistStats[therapistName]) {
@@ -309,8 +374,7 @@ const Dashboard = () => {
     // Tambahkan data dari therapist database
     return sortedTherapists.map(therapistStat => {
       const therapistFromDb = therapists.find(t => 
-        t.name?.toString().trim().toLowerCase() === therapistStat.name.toLowerCase() ||
-        t.id == therapistStat.name
+        t.name?.toString().trim().toLowerCase() === therapistStat.name.toLowerCase()
       );
       
       return {
@@ -360,7 +424,7 @@ const Dashboard = () => {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 p-6 bg-white min-h-screen">
       {/* Page Title */}
       <div className="flex justify-between items-center">
         <div>
@@ -369,7 +433,7 @@ const Dashboard = () => {
         </div>
         <button
           onClick={fetchAllData}
-          className="px-3 py-1.5 text-sm bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors duration-200 flex items-center"
+          className="px-4 py-2 bg-brown-600 text-white rounded-lg hover:bg-brown-700 transition-colors duration-200 flex items-center"
         >
           <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
@@ -378,7 +442,7 @@ const Dashboard = () => {
         </button>
       </div>
 
-      {/* Main Stats Grid - Appointment stats yang disederhanakan */}
+      {/* Main Stats Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <StatCard
           title="Total Members"
@@ -388,11 +452,11 @@ const Dashboard = () => {
           subtitle={`${memberStats.active} active`}
         />
         <StatCard
-          title="Total Appointments"
-          value={appointmentStats.total.toString()}
+          title="Today's Appointments"
+          value={todayAppointments.length.toString()}
           icon={CalendarIcon}
           color="blue"
-          subtitle={`${todayAppointments.length} today`}
+          subtitle="Pending & Confirmed only"
         />
         <StatCard
           title="Total Visits"
@@ -410,62 +474,132 @@ const Dashboard = () => {
         />
       </div>
 
-      {/* Today's Appointments */}
+      {/* Today's Appointments - HANYA pending dan confirmed */}
       <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-200">
         <div className="flex justify-between items-center mb-4">
           <h2 className="text-lg font-semibold text-gray-800">Today's Appointments</h2>
           <div className="flex items-center space-x-4">
-            <span className="text-sm text-gray-500">{todayAppointments.length} appointments</span>
+            <div className="flex items-center space-x-2">
+              <div className="flex items-center">
+                <div className="w-3 h-3 bg-yellow-500 rounded-full mr-1"></div>
+                <span className="text-xs text-gray-600">Pending</span>
+              </div>
+              <div className="flex items-center">
+                <div className="w-3 h-3 bg-blue-500 rounded-full mr-1"></div>
+                <span className="text-xs text-gray-600">Confirmed</span>
+              </div>
+            </div>
             <a href="/admin/appointment" className="text-sm text-brown-600 hover:text-brown-700 font-medium">
               View All →
             </a>
           </div>
         </div>
+        
+        <div className="mb-4">
+          <div className="text-sm text-gray-600">
+            Showing <span className="font-bold">{todayAppointments.length}</span> appointment{todayAppointments.length !== 1 ? 's' : ''} for today
+            <span className="text-xs text-gray-500 ml-2">(Completed appointments are not shown here)</span>
+          </div>
+        </div>
+        
         {todayAppointments.length > 0 ? (
           <div className="space-y-3">
             {todayAppointments.map((appointment) => (
-              <div key={appointment.id} className="flex items-center justify-between p-3 hover:bg-gray-50 rounded-lg border border-gray-200">
-                <div className="flex items-center flex-1">
+              <div key={appointment.id} className="flex items-center justify-between p-4 hover:bg-gray-50 rounded-lg border border-gray-200 transition-colors duration-200">
+                <div className="flex items-center flex-1 min-w-0">
                   <div className={`w-3 h-3 rounded-full mr-3 flex-shrink-0 ${
-                    appointment.status?.toLowerCase() === 'completed' || appointment.status?.toLowerCase() === 'selesai' ? 'bg-green-500' :
-                    appointment.status?.toLowerCase() === 'confirmed' || appointment.status?.toLowerCase() === 'dikonfirmasi' ? 'bg-blue-500' :
-                    appointment.status?.toLowerCase() === 'cancelled' || appointment.status?.toLowerCase() === 'dibatalkan' ? 'bg-red-500' :
-                    'bg-yellow-500'
+                    appointment.status?.toLowerCase() === 'confirmed' ? 'bg-blue-500' : 'bg-yellow-500'
                   }`}></div>
                   <div className="flex-1 min-w-0">
-                    <h3 className="font-medium text-gray-800 truncate">
-                      {appointment.customer_name || appointment.customer || 'N/A'}
-                    </h3>
+                    <div className="flex items-center mb-1">
+                      <h3 className="font-medium text-gray-800 truncate">
+                        {appointment.customer_name || 'N/A'}
+                      </h3>
+                      {appointment.customer_id && (
+                        <span className="text-xs bg-gray-100 text-gray-600 px-2 py-1 rounded ml-2">
+                          ID: {appointment.customer_id}
+                        </span>
+                      )}
+                    </div>
                     <div className="flex flex-col sm:flex-row sm:items-center text-sm text-gray-500">
-                      <span className="truncate">{appointment.treatment || appointment.service || 'No treatment'}</span>
+                      <span className="font-medium truncate">{appointment.treatment || 'No treatment'}</span>
                       {appointment.therapist && (
                         <>
-                          <span className="hidden sm:inline mx-1">•</span>
-                          <span className="text-brown-600">{appointment.therapist}</span>
+                          <span className="hidden sm:inline mx-2">•</span>
+                          <span className="text-brown-600 font-medium truncate">{appointment.therapist}</span>
                         </>
                       )}
                     </div>
                   </div>
                 </div>
-                <div className="text-right ml-4 flex-shrink-0">
-                  <div className="text-sm font-medium text-gray-800">
-                    {appointment.time || appointment.appointment_time || 'No time'}
+                <div className="flex items-center space-x-3 ml-4 flex-shrink-0">
+                  <div className="text-right">
+                    <div className="text-sm font-medium text-gray-800">
+                      {formatAppointmentTime(appointment.time)}
+                    </div>
+                    <span className={`text-xs px-3 py-1 rounded-full font-medium ${
+                      appointment.status?.toLowerCase() === 'confirmed' 
+                        ? 'bg-blue-100 text-blue-800' 
+                        : 'bg-yellow-100 text-yellow-800'
+                    }`}>
+                      {appointment.status || 'pending'}
+                    </span>
                   </div>
-                  <span className={`text-xs px-2 py-1 rounded-full ${
-                    appointment.status?.toLowerCase() === 'completed' || appointment.status?.toLowerCase() === 'selesai' ? 'bg-green-100 text-green-800' :
-                    appointment.status?.toLowerCase() === 'confirmed' || appointment.status?.toLowerCase() === 'dikonfirmasi' ? 'bg-blue-100 text-blue-800' :
-                    appointment.status?.toLowerCase() === 'cancelled' || appointment.status?.toLowerCase() === 'dibatalkan' ? 'bg-red-100 text-red-800' :
-                    'bg-yellow-100 text-yellow-800'
-                  }`}>
-                    {appointment.status || 'pending'}
-                  </span>
+                  
+                  {/* Quick Action Buttons */}
+                  <div className="flex space-x-1">
+                    {appointment.status?.toLowerCase() === 'pending' && (
+                      <button
+                        onClick={() => handleQuickUpdateStatus(appointment.id, 'pending')}
+                        className="px-3 py-1 bg-blue-500 text-white text-xs rounded hover:bg-blue-600 transition-colors duration-200 font-medium"
+                        title="Confirm Appointment"
+                      >
+                        Confirm
+                      </button>
+                    )}
+                    {appointment.status?.toLowerCase() === 'confirmed' && (
+                      <button
+                        onClick={() => handleQuickUpdateStatus(appointment.id, 'confirmed')}
+                        className="px-3 py-1 bg-green-500 text-white text-xs rounded hover:bg-green-600 transition-colors duration-200 font-medium"
+                        title="Mark as Completed"
+                      >
+                        Complete
+                      </button>
+                    )}
+                  </div>
                 </div>
               </div>
             ))}
           </div>
         ) : (
-          <div className="text-center py-8 text-gray-500">
-            No appointments scheduled for today
+          <div className="text-center py-10">
+            <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+              <svg className="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+              </svg>
+            </div>
+            <h3 className="text-lg font-medium text-gray-900 mb-2">No Active Appointments Today</h3>
+            <p className="text-gray-500 mb-4">You don't have any pending or confirmed appointments scheduled for today.</p>
+            <div className="flex justify-center space-x-3">
+              <a 
+                href="/admin/appointment" 
+                className="inline-flex items-center px-4 py-2 bg-brown-600 text-white rounded-lg hover:bg-brown-700 transition-colors duration-200"
+              >
+                <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                </svg>
+                Add New Appointment
+              </a>
+              <button
+                onClick={fetchAllData}
+                className="inline-flex items-center px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors duration-200"
+              >
+                <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                </svg>
+                Check Again
+              </button>
+            </div>
           </div>
         )}
       </div>
@@ -480,59 +614,39 @@ const Dashboard = () => {
               View All →
             </a>
           </div>
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead>
-                <tr className="text-left text-sm text-gray-500 border-b">
-                  <th className="pb-3 font-medium">Member</th>
-                  <th className="pb-3 font-medium">Join Date</th>
-                  <th className="pb-3 font-medium">Visits</th>
-                  <th className="pb-3 font-medium">Status</th>
-                </tr>
-              </thead>
-              <tbody>
-                {recentMembers.map((member) => (
-                  <tr key={member.id} className="border-b hover:bg-gray-50 transition-colors duration-200">
-                    <td className="py-3">
-                      <div className="flex items-center">
-                        <div className="w-8 h-8 bg-brown-100 rounded-full flex items-center justify-center mr-3">
-                          <span className="text-sm font-medium text-brown-600">
-                            {member.name?.charAt(0) || '?'}
-                          </span>
-                        </div>
-                        <div>
-                          <div className="font-medium text-gray-800">{member.name || 'N/A'}</div>
-                          <div className="text-xs text-gray-500">{member.email || ''}</div>
-                        </div>
-                      </div>
-                    </td>
-                    <td className="py-3 text-sm text-gray-500">
-                      {member.join_date || member.joinDate || member.created_at ? 
-                        new Date(member.join_date || member.joinDate || member.created_at).toLocaleDateString('id-ID', {
-                          day: 'numeric',
-                          month: 'short',
-                          year: 'numeric'
-                        }) : 'N/A'}
-                    </td>
-                    <td className="py-3 text-sm font-medium">
-                      {appointments.filter(app => 
-                        app.customer_id == member.id && 
-                        (app.status?.toLowerCase() === 'completed' || app.status?.toLowerCase() === 'selesai')
-                      ).length || 0}
-                    </td>
-                    <td className="py-3">
-                      <span className={`px-2 py-1 rounded-full text-xs ${
-                        member.status?.toLowerCase() === 'active' || member.status?.toLowerCase() === 'aktif' 
-                          ? 'bg-green-100 text-green-800' 
-                          : 'bg-gray-100 text-gray-800'
-                      }`}>
-                        {member.status || 'inactive'}
-                      </span>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+          <div className="space-y-4">
+            {recentMembers.map((member) => (
+              <div key={member.id} className="flex items-center p-3 hover:bg-gray-50 rounded-lg border border-gray-200 transition-colors duration-200">
+                <div className="w-10 h-10 bg-brown-100 rounded-full flex items-center justify-center mr-3">
+                  <span className="text-sm font-medium text-brown-600">
+                    {member.name?.charAt(0)?.toUpperCase() || '?'}
+                  </span>
+                </div>
+                <div className="flex-1">
+                  <h3 className="font-medium text-gray-800">{member.name || 'N/A'}</h3>
+                  <div className="flex items-center text-sm text-gray-500">
+                    <span>{member.email || 'No email'}</span>
+                  </div>
+                </div>
+                <div className="text-right">
+                  <div className="text-sm font-medium text-gray-500">
+                    {member.join_date ? new Date(member.join_date).toLocaleDateString('id-ID') : 'N/A'}
+                  </div>
+                  <span className={`text-xs px-2 py-1 rounded-full ${
+                    member.status?.toLowerCase() === 'active' 
+                      ? 'bg-green-100 text-green-800' 
+                      : 'bg-gray-100 text-gray-800'
+                  }`}>
+                    {member.status || 'inactive'}
+                  </span>
+                </div>
+              </div>
+            ))}
+            {recentMembers.length === 0 && (
+              <div className="text-center py-8 text-gray-500">
+                No recent members found
+              </div>
+            )}
           </div>
         </div>
 
@@ -553,9 +667,7 @@ const Dashboard = () => {
                 <div className="flex-1">
                   <h3 className="font-medium text-gray-800">{member.name || 'N/A'}</h3>
                   <div className="flex items-center text-sm text-gray-500">
-                    <span>{member.total_visits || 0} treatments</span>
-                    <span className="mx-1">•</span>
-                    <span className="text-brown-600">{member.email || ''}</span>
+                    <span>{member.email || 'No email'}</span>
                   </div>
                 </div>
                 <div className="text-right">
@@ -573,66 +685,42 @@ const Dashboard = () => {
         </div>
       </div>
 
-      {/* Recent Treatments */}
+      {/* Recent Treatments (Completed only) */}
       <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-200">
         <div className="flex justify-between items-center mb-4">
-          <h2 className="text-lg font-semibold text-gray-800">Recent Treatments</h2>
+          <h2 className="text-lg font-semibold text-gray-800">Recent Completed Treatments</h2>
           <a href="/admin/appointment" className="text-sm text-brown-600 hover:text-brown-700 font-medium">
             View All →
           </a>
         </div>
-        <div className="overflow-x-auto">
-          <table className="w-full">
-            <thead>
-              <tr className="text-left text-sm text-gray-500 border-b">
-                <th className="pb-3 font-medium">Customer</th>
-                <th className="pb-3 font-medium">Treatment</th>
-                <th className="pb-3 font-medium">Therapist</th>
-                <th className="pb-3 font-medium">Date</th>
-                <th className="pb-3 font-medium">Amount</th>
-                <th className="pb-3 font-medium">Status</th>
-              </tr>
-            </thead>
-            <tbody>
-              {recentTreatments.map((treatment) => (
-                <tr key={treatment.id} className="border-b hover:bg-gray-50 transition-colors duration-200">
-                  <td className="py-3 text-sm font-medium">
-                    {treatment.customer_name || treatment.customer || 'N/A'}
-                  </td>
-                  <td className="py-3 text-sm">{treatment.treatment || treatment.service || 'N/A'}</td>
-                  <td className="py-3 text-sm text-brown-600">{treatment.therapist || 'N/A'}</td>
-                  <td className="py-3 text-sm text-gray-500">
-                    {treatment.date ? 
-                      new Date(treatment.date).toLocaleDateString('id-ID', {
-                        day: 'numeric',
-                        month: 'short',
-                        year: 'numeric'
-                      }) : 'N/A'}
-                  </td>
-                  <td className="py-3 text-sm font-medium text-green-600">
-                    {treatment.amount || treatment.price ? 
-                      `Rp ${parseFloat(treatment.amount || treatment.price).toLocaleString('id-ID')}` : 'Rp 0'}
-                  </td>
-                  <td className="py-3">
-                    <span className={`px-2 py-1 rounded-full text-xs ${
-                      treatment.status?.toLowerCase() === 'completed' || treatment.status?.toLowerCase() === 'selesai' ? 'bg-green-100 text-green-800' :
-                      treatment.status?.toLowerCase() === 'confirmed' || treatment.status?.toLowerCase() === 'dikonfirmasi' ? 'bg-blue-100 text-blue-800' :
-                      'bg-yellow-100 text-yellow-800'
-                    }`}>
-                      {treatment.status || 'pending'}
-                    </span>
-                  </td>
-                </tr>
-              ))}
-              {recentTreatments.length === 0 && (
-                <tr>
-                  <td colSpan="6" className="py-8 text-center text-gray-500">
-                    No completed treatments yet
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
+        <div className="space-y-3">
+          {recentTreatments.map((treatment) => (
+            <div key={treatment.id} className="flex items-center p-4 hover:bg-gray-50 rounded-lg border border-gray-200 transition-colors duration-200">
+              <div className="flex-1">
+                <div className="flex justify-between items-center mb-2">
+                  <h3 className="font-medium text-gray-800">{treatment.customer_name || 'N/A'}</h3>
+                  <span className="text-sm font-bold text-green-600">
+                    Rp {(treatment.amount || 0).toLocaleString('id-ID')}
+                  </span>
+                </div>
+                <div className="flex flex-col sm:flex-row sm:items-center text-sm text-gray-500">
+                  <span>{treatment.treatment || 'N/A'}</span>
+                  <span className="hidden sm:inline mx-2">•</span>
+                  <span className="text-brown-600 font-medium">{treatment.therapist || 'N/A'}</span>
+                  <span className="hidden sm:inline mx-2">•</span>
+                  <span>
+                    {treatment.date ? new Date(treatment.date).toLocaleDateString('id-ID') : 'N/A'}
+                    {treatment.time && `, ${formatAppointmentTime(treatment.time)}`}
+                  </span>
+                </div>
+              </div>
+            </div>
+          ))}
+          {recentTreatments.length === 0 && (
+            <div className="text-center py-8 text-gray-500">
+              No completed treatments yet
+            </div>
+          )}
         </div>
       </div>
 
@@ -695,7 +783,7 @@ const StatCard = ({ title, value, icon: Icon, color, subtitle }) => {
   };
 
   return (
-    <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-200 transition-transform duration-200 hover:transform hover:scale-[1.02]">
+    <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-200 transition-transform duration-200 hover:scale-[1.02]">
       <div className="flex items-center justify-between">
         <div className="flex-1">
           <p className="text-sm text-gray-600">{title}</p>
