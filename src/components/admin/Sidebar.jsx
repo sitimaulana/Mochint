@@ -8,22 +8,28 @@ const Sidebar = () => {
     { name: 'Member', path: '/admin/member' },
     { name: 'Treatment', path: '/admin/treatment' },
     { name: 'Product', path: '/admin/product' },
-    { name: 'Therapist', path: '/admin/therapist' }, // TAMBAHKAN INI
+    { name: 'Therapist', path: '/admin/therapist' },
     { name: 'Information', path: '/admin/information' },
   ];
 
+  // ============ GANTI NAMA FILE LOGO DI SINI ============
+  const logoFile = "logomochint.svg"; // ← UBAH NAMA FILE DI SINI
+  // ======================================================
+
   return (
     <div className="w-64 bg-white shadow-lg">
-      {/* Logo */}
+      {/* Logo Section - Simple */}
       <div className="p-6 border-b">
-        <div className="flex items-center">
-          <div className="w-10 h-10 bg-brown-600 rounded-lg flex items-center justify-center mr-3">
-            <span className="text-white font-bold">M</span>
-          </div>
-          <div>
-            <h1 className="text-xl font-bold text-gray-800">MOCHINT</h1>
-            <p className="text-sm text-gray-600">BEAUTY CARE</p>
-          </div>
+        <div className="flex items-center space-x-3">
+          {/* Logo SVG Simple */}
+          <img
+            src={`/${logoFile}`}  // ← Logo diambil dari sini
+            alt="Mochint Logo"
+            className="h-10 w-auto"
+          />
+
+          {/* Brand Name */}
+
         </div>
       </div>
 
@@ -36,10 +42,9 @@ const Sidebar = () => {
                 to={item.path}
                 end={item.path === '/admin'}
                 className={({ isActive }) =>
-                  `flex items-center px-4 py-3 rounded-lg transition-colors ${
-                    isActive
-                      ? 'bg-brown-100 text-brown-700'
-                      : 'text-gray-700 hover:bg-gray-100'
+                  `flex items-center px-4 py-3 rounded-lg transition-colors ${isActive
+                    ? 'bg-brown-100 text-brown-700'
+                    : 'text-gray-700 hover:bg-gray-100'
                   }`
                 }
               >

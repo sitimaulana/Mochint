@@ -10,6 +10,8 @@ const Appointment = () => {
   const MEMBER_HISTORY_API_URL = 'http://localhost:5000/api/members/history';
   const APPOINTMENT_STATS_API_URL = 'http://localhost:5000/api/appointments/statistics';
 
+  const Token = localStorage.getItem('token')
+
   // State
   const [appointments, setAppointments] = useState([]);
   const [members, setMembers] = useState([]);
@@ -62,10 +64,10 @@ const Appointment = () => {
       });
 
       const [appointmentsRes, membersRes, therapistsRes, treatmentsRes] = await Promise.all([
-        axios.get(APPOINTMENTS_API_URL),
-        axios.get(MEMBERS_API_URL),
-        axios.get(THERAPISTS_API_URL),
-        axios.get(TREATMENTS_API_URL)
+        axios.get(APPOINTMENTS_API_URL,{headers: {Authorization: `Bearer ${Token}`}}),
+        axios.get(MEMBERS_API_URL,{headers: {Authorization: `Bearer ${Token}`}}),
+        axios.get(THERAPISTS_API_URL,{headers: {Authorization: `Bearer ${Token}`}}),
+        axios.get(TREATMENTS_API_URL,{headers: {Authorization: `Bearer ${Token}`}})
       ]);
 
       const appointmentsData = appointmentsRes.data.map(app => ({ 
@@ -750,7 +752,7 @@ const Appointment = () => {
                         )}
                         {app.status === 'completed' && (
                           <span className="text-green-500 text-[10px] font-bold italic tracking-wider px-2 py-1">
-                            COMPLETED ✓
+                            COMPLETED
                           </span>
                         )}
                       </div>
@@ -903,7 +905,7 @@ const Appointment = () => {
                 <div className="text-xs text-gray-500">Choose treatment type</div>
               </div>
 
-              {/* Therapist */}
+              {/* Therapist - TANPA SIMBOL EMOJI ✅ */}
               <div className="space-y-2">
                 <label className="block text-xs font-bold text-gray-400 uppercase tracking-widest mb-1">
                   Select Therapist
@@ -918,7 +920,7 @@ const Appointment = () => {
                   <option value="">Select Therapist</option>
                   {therapists.map(th => (
                     <option key={th.id} value={th.name}>
-                      {th.name} {th.status === 'active' ? '✅' : th.status === 'on_leave' ? '🏖️' : '⛔'}
+                      {th.name}
                     </option>
                   ))}
                 </select>

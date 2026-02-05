@@ -27,6 +27,8 @@ const Therapist = () => {
   const API_URL = 'http://localhost:5000/api/therapists';
   const APPOINTMENTS_API_URL = 'http://localhost:5000/api/appointments';
 
+  const Token = localStorage.getItem('token');
+
   // Fetch therapists dan appointments dari API
   useEffect(() => {
     fetchAllData();
@@ -36,8 +38,8 @@ const Therapist = () => {
     try {
       setLoading(true);
       const [therapistsRes, appointmentsRes] = await Promise.all([
-        axios.get(API_URL),
-        axios.get(APPOINTMENTS_API_URL)
+        axios.get(API_URL, {headers: {Authorization: `Bearer ${Token}`}}),
+        axios.get(APPOINTMENTS_API_URL, {headers: {Authorization: `Bearer ${Token}`}})
       ]);
       
       setTherapists(therapistsRes.data);
@@ -428,7 +430,11 @@ const Therapist = () => {
                       </td>
                       <td className="py-3">
                         <div className="flex items-center">
-                          <div className="text-2xl mr-3">{therapist.image || '👨‍⚕️'}</div>
+                          <div className="w-8 h-8 bg-brown-100 rounded-full flex items-center justify-center mr-3">
+                            <span className="text-sm font-medium text-brown-600">
+                              {(therapist.name || '?').charAt(0).toUpperCase()}
+                            </span>
+                          </div>
                           <div>
                             <div className="font-medium text-gray-800">{therapist.name || 'N/A'}</div>
                           </div>
@@ -706,8 +712,12 @@ const Therapist = () => {
               {/* Left Column - Basic Info */}
               <div className="space-y-4">
                 <div>
-                  <label className="text-sm font-medium text-gray-700">Emoji Avatar</label>
-                  <div className="text-4xl mt-2">{viewingDetails.image || '👨‍⚕️'}</div>
+                  <label className="text-sm font-medium text-gray-700">Avatar</label>
+                  <div className="w-16 h-16 bg-brown-100 rounded-full flex items-center justify-center mt-2">
+                    <span className="text-2xl font-medium text-brown-600">
+                      {(viewingDetails.name || '?').charAt(0).toUpperCase()}
+                    </span>
+                  </div>
                 </div>
 
                 <div>
