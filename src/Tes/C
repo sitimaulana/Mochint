@@ -1,0 +1,1173 @@
+const express = require('express');
+const mysql = require('mysql2/promise');
+const cors = require('cors');
+const bcrypt = require('bcryptjs');
+const jwt = require('jsonwebtoken'); // TAMBAHKAN JWT
+require('dotenv').config();
+
+const app = express();
+const PORT = process.env.PORT || 5000;
+
+// Middleware
+app.use(cors({
+  origin: 'http://localhost:3000',
+  credentials: true
+}));
+app.use(express.json({ limit: '50mb' }));
+app.use(express.urlencoded({ limit: '50mb', extended: true }));
+
+// MySQL Connection Pool
+const pool = mysql.createPool({
+  host: process.env.DB_HOST || 'localhost',
+  user: process.env.DB_USER || 'root',
+  password: process.env.DB_PASSWORD || '',
+  database: process.env.DB_NAME || 'beauty_clinic',
+  waitForConnections: true,
+  connectionLimit: 10,
+  queueLimit: 0
+});
+
+// Test database connection
+pool.getConnection()
+  .then(connection => {
+    console.log('✅ Connected to MySQL database');
+    connection.release();
+  })
+  .catch(err => {
+    console.error('❌ Database connection failed:', err.message);
+  });
+
+// ============================
+// CREATE ALL TABLES (DIPERBARUI)
+// ============================
+
+const createAllTables = async () => {
+  try {
+    const connection = await pool.getConnection();
+    
+    // TAMBAHKAN ADMIN_USERS TABLE (TABEL TERPISAH)
+    await connection.query(`
+      CREATE TABLE IF NOT EXISTS admin_users (
+        id INT PRIMARY KEY AUTO_INCREMENT,
+        username VARCHAR(100) NOT NULL UNIQUE,
+        email VARCHAR(100) NOT NULL UNIQUE,
+        password VARCHAR(255) NOT NULL,
+        full_name VARCHAR(100),
+        role ENUM('admin', 'staff') DEFAULT 'admin',
+        status ENUM('active', 'inactive') DEFAULT 'active',
+        last_login TIMESTAMP NULL,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+        INDEX idx_email (email),
+        INDEX idx_status (status),
+        INDEX idx_role (role)
+      )
+    `);
+    console.log('✅ Admin_users table ready (separate from members)');
+
+    // Update members table (HAPUS ROLE KOLOM karena sudah ada di admin_users)
+    await connection.query(`
+      CREATE TABLE IF NOT EXISTS members (
+        id INT PRIMARY KEY AUTO_INCREMENT,
+        name VARCHAR(100) NOT NULL,
+        email VARCHAR(100) UNIQUE,
+        password VARCHAR(255),
+        phone VARCHAR(20),
+        address TEXT,
+        join_date VARCHAR(20),
+        total_visits INT DEFAULT 0,
+        status ENUM('active', 'inactive') DEFAULT 'active',
+        last_visit VARCHAR(50) DEFAULT 'Never',
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+        INDEX idx_status (status),
+        INDEX idx_name (name),
+        INDEX idx_email (email)
+      )
+    `);
+    console.log('✅ Members table ready (no role column)');
+
+    // Create member_history table
+    await connection.query(`
+      CREATE TABLE IF NOT EXISTS member_history (
+        id INT PRIMARY KEY AUTO_INCREMENT,
+        member_id INT NOT NULL,
+        date VARCHAR(20),
+        treatment_name VARCHAR(100),
+        therapist VARCHAR(50),
+        amount DECIMAL(10, 2),
+        appointment_id VARCHAR(20),
+        notes TEXT,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (member_id) REFERENCES members(id) ON DELETE CASCADE,
+        INDEX idx_member_id (member_id),
+        INDEX idx_date (date)
+      )
+    `);
+    console.log('✅ Member history table ready');
+
+    // Create appointments table
+    await connection.query(`
+      CREATE TABLE IF NOT EXISTS appointments (
+        id INT PRIMARY KEY AUTO_INCREMENT,
+        appointment_id VARCHAR(20) UNIQUE,
+        customer_name VARCHAR(100) NOT NULL,
+        customer_id INT,
+        treatment VARCHAR(100) NOT NULL,
+        therapist VARCHAR(100) NOT NULL,
+        date VARCHAR(20) NOT NULL,
+        time VARCHAR(10) NOT NULL,
+        duration VARCHAR(20),
+        amount DECIMAL(10, 2),
+        status ENUM('pending', 'confirmed', 'completed') DEFAULT 'pending',
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+        INDEX idx_status (status),
+        INDEX idx_date (date),
+        INDEX idx_therapist (therapist),
+        INDEX idx_customer_id (customer_id),
+        FOREIGN KEY (customer_id) REFERENCES members(id) ON DELETE SET NULL
+      )
+    `);
+    console.log('✅ Appointments table ready');
+
+    // Create therapists table
+    await connection.query(`
+      CREATE TABLE IF NOT EXISTS therapists (
+        id INT PRIMARY KEY AUTO_INCREMENT,
+        therapist_id VARCHAR(20) UNIQUE,
+        name VARCHAR(100) NOT NULL,
+        email VARCHAR(100) NOT NULL,
+        phone VARCHAR(20),
+        status ENUM('active', 'inactive', 'on_leave') DEFAULT 'active',
+        total_treatments INT DEFAULT 0,
+        join_date VARCHAR(20),
+        notes TEXT,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+        INDEX idx_status (status),
+        INDEX idx_name (name),
+        INDEX idx_email (email)
+      )
+    `);
+    console.log('✅ Therapists table ready');
+
+    // Create treatments table
+    await connection.query(`
+      CREATE TABLE IF NOT EXISTS treatments (
+        id INT PRIMARY KEY AUTO_INCREMENT,
+        name VARCHAR(100) NOT NULL,
+        category VARCHAR(50) NOT NULL,
+        duration VARCHAR(20) NOT NULL,
+        price DECIMAL(10, 2) NOT NULL,
+        description TEXT,
+        image LONGTEXT,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+        INDEX idx_category (category),
+        INDEX idx_price (price)
+      )
+    `);
+    console.log('✅ Treatments table ready');
+
+    // Create treatment_facilities table
+    await connection.query(`
+      CREATE TABLE IF NOT EXISTS treatment_facilities (
+        id INT PRIMARY KEY AUTO_INCREMENT,
+        treatment_id INT NOT NULL,
+        facility_name VARCHAR(100) NOT NULL,
+        display_order INT DEFAULT 0,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (treatment_id) REFERENCES treatments(id) ON DELETE CASCADE,
+        INDEX idx_treatment_id (treatment_id)
+      )
+    `);
+    console.log('✅ Treatment facilities table ready');
+
+    // Create products table with weight field
+    await connection.query(`
+      CREATE TABLE IF NOT EXISTS products (
+        id INT PRIMARY KEY AUTO_INCREMENT,
+        name VARCHAR(100) NOT NULL,
+        category VARCHAR(50) NOT NULL,
+        price DECIMAL(10, 2) NOT NULL,
+        weight INT DEFAULT 0,
+        description TEXT,
+        image LONGTEXT,
+        marketplace_links JSON,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+        INDEX idx_category (category),
+        INDEX idx_price (price),
+        INDEX idx_weight (weight)
+      )
+    `);
+    console.log('✅ Products table ready (with weight field)');
+
+    // Create articles table
+    await connection.query(`
+      CREATE TABLE IF NOT EXISTS articles (
+        id INT PRIMARY KEY AUTO_INCREMENT,
+        title VARCHAR(255) NOT NULL,
+        content TEXT NOT NULL,
+        category VARCHAR(50) NOT NULL,
+        status ENUM('Draft', 'Published') DEFAULT 'Draft',
+        image LONGTEXT,
+        author VARCHAR(100) DEFAULT 'Admin',
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+        INDEX idx_category (category),
+        INDEX idx_status (status),
+        INDEX idx_created_at (created_at)
+      )
+    `);
+    console.log('✅ Articles table ready');
+
+    // TAMBAHKAN DEFAULT ADMIN USER
+    const hashedPassword = bcrypt.hashSync('admin123', 10);
+    await connection.query(`
+      INSERT IGNORE INTO admin_users (username, email, password, full_name, role, status) 
+      VALUES 
+      ('administrator', 'admin@mochint.com', ?, 'System Administrator', 'admin', 'active'),
+      ('staff1', 'staff@mochint.com', ?, 'Staff User', 'staff', 'active')
+    `, [hashedPassword, hashedPassword]);
+    console.log('✅ Default admin users created');
+
+    connection.release();
+    console.log('✅ All tables created successfully');
+  } catch (error) {
+    console.error('❌ Error creating tables:', error);
+  }
+};
+
+// Initialize database
+createAllTables();
+
+// ============================
+// AUTHENTICATION MIDDLEWARE
+// ============================
+
+const authenticateToken = (req, res, next) => {
+  const authHeader = req.headers['authorization'];
+  const token = authHeader && authHeader.split(' ')[1];
+
+  if (!token) {
+    return res.status(401).json({
+      success: false,
+      error: 'Token tidak ditemukan'
+    });
+  }
+
+  jwt.verify(token, process.env.JWT_SECRET || 'mochint_secret_key', (err, user) => {
+    if (err) {
+      return res.status(403).json({
+        success: false,
+        error: 'Token tidak valid'
+      });
+    }
+    req.user = user;
+    next();
+  });
+};
+
+const requireAdmin = (req, res, next) => {
+  if (!req.user || req.user.user_type !== 'admin') {
+    return res.status(403).json({
+      success: false,
+      error: 'Akses hanya untuk admin'
+    });
+  }
+  next();
+};
+
+// ============================
+// ROUTES
+// ============================
+
+// Root route
+app.get('/', (req, res) => {
+  res.json({
+    message: 'Welcome to Mochint Beauty Clinic API',
+    version: '2.0',
+    endpoints: {
+      auth: {
+        register: 'POST /api/auth/register',
+        login: 'POST /api/auth/login'
+      },
+      admin: {
+        dashboard: 'GET /api/admin/dashboard',
+        profile: 'GET /api/admin/profile'
+      },
+      members: 'GET /api/members',
+      appointments: 'GET /api/appointments',
+      therapists: 'GET /api/therapists',
+      treatments: 'GET /api/treatments',
+      products: 'GET /api/products',
+      articles: 'GET /api/articles',
+      health: 'GET /health',
+      test: 'GET /api/test'
+    }
+  });
+});
+
+// Health check
+app.get('/health', (req, res) => {
+  res.json({
+    status: 'OK',
+    timestamp: new Date().toISOString(),
+    services: {
+      members: 'Available',
+      appointments: 'Available',
+      therapists: 'Available',
+      treatments: 'Available',
+      products: 'Available',
+      articles: 'Available'
+    }
+  });
+});
+
+// Test endpoint
+app.get('/api/test', (req, res) => {
+  res.json({
+    success: true,
+    message: 'API is working!',
+    timestamp: new Date().toISOString(),
+    version: '2.0'
+  });
+});
+
+// ============================
+// AUTH ROUTES - DUAL SYSTEM
+// ============================
+
+// REGISTER (HANYA UNTUK MEMBERS)
+app.post('/api/auth/register', async (req, res) => {
+  try {
+    console.log('Register request received:', req.body);
+    
+    const { name, email, password, phone, address } = req.body;
+    
+    // Validation
+    if (!name || !email || !password) {
+      return res.status(400).json({
+        success: false,
+        error: 'Name, email, and password are required'
+      });
+    }
+
+    // Check if email exists in members
+    const [existingMembers] = await pool.query(
+      'SELECT id FROM members WHERE email = ?',
+      [email.toLowerCase()]
+    );
+
+    if (existingMembers.length > 0) {
+      return res.status(409).json({
+        success: false,
+        error: 'Email already registered as member'
+      });
+    }
+
+    // Check if email exists in admin_users
+    const [existingAdmins] = await pool.query(
+      'SELECT id FROM admin_users WHERE email = ?',
+      [email.toLowerCase()]
+    );
+
+    if (existingAdmins.length > 0) {
+      return res.status(409).json({
+        success: false,
+        error: 'Email already registered as admin'
+      });
+    }
+
+    // Hash password
+    const salt = bcrypt.genSaltSync(10);
+    const hashedPassword = bcrypt.hashSync(password, salt);
+    
+    // Join date
+    const joinDate = new Date().toLocaleDateString('id-ID');
+
+    // Insert user to members table
+    const [result] = await pool.query(
+      `INSERT INTO members (name, email, password, phone, address, join_date) 
+       VALUES (?, ?, ?, ?, ?, ?)`,
+      [
+        name.trim(),
+        email.toLowerCase().trim(),
+        hashedPassword,
+        phone || null,
+        address || null,
+        joinDate
+      ]
+    );
+
+    console.log('User registered successfully with ID:', result.insertId);
+
+    // Get the created user (without password)
+    const [rows] = await pool.query(
+      'SELECT id, name, email, phone, address, join_date, status, total_visits, last_visit FROM members WHERE id = ?',
+      [result.insertId]
+    );
+
+    const user = rows[0] || {};
+    
+    // Generate JWT token
+    const token = jwt.sign(
+      {
+        id: user.id,
+        email: user.email,
+        name: user.name,
+        user_type: 'member'
+      },
+      process.env.JWT_SECRET || 'mochint_secret_key',
+      { expiresIn: '24h' }
+    );
+    
+    res.status(201).json({
+      success: true,
+      message: 'Registration successful',
+      token: token,
+      user: {
+        id: user.id,
+        name: user.name,
+        email: user.email,
+        phone: user.phone,
+        address: user.address,
+        join_date: user.join_date,
+        status: user.status || 'active',
+        total_visits: user.total_visits || 0,
+        last_visit: user.last_visit || 'Never',
+        user_type: 'member',
+        is_admin: false
+      }
+    });
+
+  } catch (error) {
+    console.error('Register error:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Server error: ' + error.message
+    });
+  }
+});
+
+// LOGIN - DUAL SYSTEM
+app.post('/api/auth/login', async (req, res) => {
+  try {
+    console.log('🔐 Login attempt for:', req.body.email);
+    
+    const { email, password } = req.body;
+
+    // Validation
+    if (!email || !password) {
+      return res.status(400).json({
+        success: false,
+        error: 'Email dan password harus diisi'
+      });
+    }
+
+    const normalizedEmail = email.toLowerCase().trim();
+
+    // ============================================
+    // 1. CEK DI TABEL ADMIN_USERS TERLEBIH DAHULU
+    // ============================================
+    console.log('🔍 Checking admin_users table...');
+    const [adminRows] = await pool.query(
+      `SELECT id, username, email, password, full_name, role, status, last_login 
+       FROM admin_users 
+       WHERE email = ? AND status = 'active'`,
+      [normalizedEmail]
+    );
+
+    if (adminRows.length > 0) {
+      const admin = adminRows[0];
+      
+      // Verify admin password
+      const isPasswordValid = bcrypt.compareSync(password, admin.password);
+      
+      if (!isPasswordValid) {
+        return res.status(401).json({
+          success: false,
+          error: 'Password admin salah'
+        });
+      }
+
+      console.log('✅ Admin login successful:', admin.email);
+
+      // Update last login
+      await pool.query(
+        'UPDATE admin_users SET last_login = NOW() WHERE id = ?',
+        [admin.id]
+      );
+
+      // Generate JWT token
+      const token = jwt.sign(
+        {
+          id: admin.id,
+          email: admin.email,
+          username: admin.username,
+          role: admin.role,
+          user_type: 'admin',
+          is_admin: true
+        },
+        process.env.JWT_SECRET || 'mochint_secret_key',
+        { expiresIn: '24h' }
+      );
+
+      // Prepare admin response
+      const adminData = {
+        id: admin.id,
+        username: admin.username,
+        email: admin.email,
+        full_name: admin.full_name,
+        role: admin.role,
+        user_type: 'admin',
+        is_admin: true,
+        last_login: admin.last_login || new Date().toISOString()
+      };
+
+      return res.json({
+        success: true,
+        message: 'Login admin berhasil',
+        token: token,
+        user: adminData
+      });
+    }
+
+    // ============================================
+    // 2. CEK DI TABEL MEMBERS (REGULAR USERS)
+    // ============================================
+    console.log('🔍 Checking members table...');
+    const [memberRows] = await pool.query(
+      `SELECT id, name, email, password, phone, address, join_date, 
+              total_visits, status, last_visit, created_at
+       FROM members 
+       WHERE email = ? AND status = 'active'`,
+      [normalizedEmail]
+    );
+
+    if (memberRows.length > 0) {
+      const member = memberRows[0];
+      
+      // Verify member password
+      const isPasswordValid = bcrypt.compareSync(password, member.password);
+      
+      if (!isPasswordValid) {
+        return res.status(401).json({
+          success: false,
+          error: 'Password member salah'
+        });
+      }
+
+      console.log('✅ Member login successful:', member.email);
+
+      // Update last visit
+      await pool.query(
+        'UPDATE members SET last_visit = NOW(), total_visits = total_visits + 1 WHERE id = ?',
+        [member.id]
+      );
+
+      // Generate JWT token
+      const token = jwt.sign(
+        {
+          id: member.id,
+          email: member.email,
+          name: member.name,
+          user_type: 'member',
+          is_admin: false
+        },
+        process.env.JWT_SECRET || 'mochint_secret_key',
+        { expiresIn: '24h' }
+      );
+
+      // Prepare member response
+      const memberData = {
+        id: member.id,
+        name: member.name,
+        email: member.email,
+        phone: member.phone || '',
+        address: member.address || '',
+        join_date: member.join_date || '',
+        total_visits: (member.total_visits || 0) + 1,
+        status: member.status || 'active',
+        last_visit: new Date().toISOString(),
+        user_type: 'member',
+        is_admin: false
+      };
+
+      return res.json({
+        success: true,
+        message: 'Login member berhasil',
+        token: token,
+        user: memberData
+      });
+    }
+
+    // ============================================
+    // 3. USER TIDAK DITEMUKAN DI KEDUA TABEL
+    // ============================================
+    console.log('❌ Email not found in both tables:', normalizedEmail);
+    return res.status(404).json({
+      success: false,
+      error: 'Email tidak terdaftar'
+    });
+
+  } catch (error) {
+    console.error('❌ Login error:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Server error: ' + error.message
+    });
+  }
+});
+
+// ============================
+// ADMIN DASHBOARD ROUTES
+// ============================
+
+// GET admin dashboard statistics
+app.get('/api/admin/dashboard', authenticateToken, requireAdmin, async (req, res) => {
+  try {
+    console.log('📊 Admin dashboard request from:', req.user.email);
+
+    // Get all statistics
+    const [
+      [totalMembers],
+      [newMembersToday],
+      [todayAppointments],
+      [totalAppointments],
+      [pendingAppointments],
+      [totalRevenue],
+      [recentMembers],
+      [recentAppointments]
+    ] = await Promise.all([
+      pool.query('SELECT COUNT(*) as count FROM members WHERE status = "active"'),
+      pool.query('SELECT COUNT(*) as count FROM members WHERE status = "active" AND DATE(created_at) = CURDATE()'),
+      pool.query('SELECT COUNT(*) as count FROM appointments WHERE DATE(date) = CURDATE()'),
+      pool.query('SELECT COUNT(*) as count FROM appointments'),
+      pool.query('SELECT COUNT(*) as count FROM appointments WHERE status = "pending"'),
+      pool.query('SELECT SUM(amount) as total FROM appointments WHERE status = "completed" AND MONTH(date) = MONTH(CURDATE())'),
+      pool.query('SELECT id, name, email, join_date, last_visit FROM members WHERE status = "active" ORDER BY created_at DESC LIMIT 10'),
+      pool.query(`
+        SELECT a.id, a.appointment_id, a.customer_name, a.treatment, a.therapist, 
+               a.date, a.time, a.status, a.amount,
+               m.email as customer_email
+        FROM appointments a
+        LEFT JOIN members m ON a.customer_id = m.id
+        ORDER BY a.created_at DESC 
+        LIMIT 10
+      `)
+    ]);
+
+    const stats = {
+      total_members: totalMembers[0]?.count || 0,
+      new_members_today: newMembersToday[0]?.count || 0,
+      appointments_today: todayAppointments[0]?.count || 0,
+      total_appointments: totalAppointments[0]?.count || 0,
+      pending_appointments: pendingAppointments[0]?.count || 0,
+      monthly_revenue: totalRevenue[0]?.total || 0,
+      recent_members: recentMembers[0] || [],
+      recent_appointments: recentAppointments[0] || []
+    };
+
+    res.json({
+      success: true,
+      message: 'Dashboard stats retrieved',
+      data: stats
+    });
+
+  } catch (error) {
+    console.error('❌ Dashboard error:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to fetch dashboard data'
+    });
+  }
+});
+
+// GET admin profile
+app.get('/api/admin/profile', authenticateToken, requireAdmin, async (req, res) => {
+  try {
+    const [rows] = await pool.query(
+      'SELECT id, username, email, full_name, role, status, last_login FROM admin_users WHERE id = ?',
+      [req.user.id]
+    );
+
+    if (rows.length === 0) {
+      return res.status(404).json({
+        success: false,
+        error: 'Admin not found'
+      });
+    }
+
+    res.json({
+      success: true,
+      data: rows[0]
+    });
+  } catch (error) {
+    console.error('❌ Admin profile error:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to fetch admin profile'
+    });
+  }
+});
+
+// ============================
+// MEMBERS ROUTES (PROTECTED)
+// ============================
+
+// GET all members (PROTECTED)
+app.get('/api/members', authenticateToken, async (req, res) => {
+  try {
+    // Jika user adalah admin, bisa lihat semua members
+    // Jika user adalah member, hanya bisa lihat profile sendiri
+    let query;
+    let params = [];
+    
+    if (req.user.user_type === 'admin') {
+      query = `
+        SELECT id, name, email, phone, address, join_date, total_visits, 
+               status, last_visit, created_at, updated_at,
+               (SELECT COUNT(*) FROM member_history WHERE member_id = members.id) as appointment_count
+        FROM members 
+        ORDER BY created_at DESC
+      `;
+    } else {
+      // Member hanya bisa lihat data sendiri
+      query = `
+        SELECT id, name, email, phone, address, join_date, total_visits, 
+               status, last_visit, created_at, updated_at
+        FROM members 
+        WHERE id = ?
+      `;
+      params = [req.user.id];
+    }
+    
+    const [rows] = await pool.query(query, params);
+    res.json(rows);
+  } catch (error) {
+    console.error('Error fetching members:', error);
+    res.status(500).json({ error: 'Failed to fetch members' });
+  }
+});
+
+// GET single member by ID (PROTECTED)
+app.get('/api/members/:id', authenticateToken, async (req, res) => {
+  try {
+    const { id } = req.params;
+    
+    // Cek permission: admin bisa akses semua, member hanya akses data sendiri
+    if (req.user.user_type !== 'admin' && req.user.id !== parseInt(id)) {
+      return res.status(403).json({ error: 'Forbidden: You can only access your own data' });
+    }
+    
+    const [rows] = await pool.query('SELECT * FROM members WHERE id = ?', [id]);
+    if (rows.length === 0) return res.status(404).json({ error: 'Member not found' });
+    
+    // Hapus password dari response
+    const { password, ...memberWithoutPassword } = rows[0];
+    res.json(memberWithoutPassword);
+  } catch (error) {
+    console.error('Error fetching member:', error);
+    res.status(500).json({ error: 'Failed to fetch member' });
+  }
+});
+
+// POST create new member (HANYA ADMIN)
+app.post('/api/members', authenticateToken, requireAdmin, async (req, res) => {
+  try {
+    const { name, email, phone, address, join_date, total_visits, status, last_visit } = req.body;
+    if (!name) return res.status(400).json({ error: 'Name is required' });
+
+    const [result] = await pool.query(
+      `INSERT INTO members (name, email, phone, address, join_date, total_visits, status, last_visit) 
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+      [
+        name.trim(),
+        email?.trim() || null,
+        phone || null,
+        address?.trim() || null,
+        join_date || new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }),
+        parseInt(total_visits) || 0,
+        status || 'active',
+        last_visit || 'Never'
+      ]
+    );
+
+    const [rows] = await pool.query('SELECT * FROM members WHERE id = ?', [result.insertId]);
+    
+    // Hapus password dari response
+    const { password, ...memberWithoutPassword } = rows[0];
+    res.status(201).json(memberWithoutPassword);
+  } catch (error) {
+    console.error('Error creating member:', error);
+    res.status(500).json({ error: 'Failed to create member' });
+  }
+});
+
+// PUT update member (PROTECTED)
+app.put('/api/members/:id', authenticateToken, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { name, email, phone, address, join_date, total_visits, status, last_visit } = req.body;
+
+    // Cek permission
+    if (req.user.user_type !== 'admin' && req.user.id !== parseInt(id)) {
+      return res.status(403).json({ error: 'Forbidden: You can only update your own data' });
+    }
+
+    const [existing] = await pool.query('SELECT * FROM members WHERE id = ?', [id]);
+    if (existing.length === 0) return res.status(404).json({ error: 'Member not found' });
+
+    await pool.query(
+      `UPDATE members SET name = ?, email = ?, phone = ?, address = ?, 
+       join_date = ?, total_visits = ?, status = ?, last_visit = ? WHERE id = ?`,
+      [
+        name || existing[0].name,
+        email !== undefined ? email : existing[0].email,
+        phone !== undefined ? phone : existing[0].phone,
+        address !== undefined ? address : existing[0].address,
+        join_date !== undefined ? join_date : existing[0].join_date,
+        total_visits !== undefined ? parseInt(total_visits) : existing[0].total_visits,
+        status || existing[0].status,
+        last_visit !== undefined ? last_visit : existing[0].last_visit,
+        id
+      ]
+    );
+
+    const [rows] = await pool.query('SELECT * FROM members WHERE id = ?', [id]);
+    
+    // Hapus password dari response
+    const { password, ...memberWithoutPassword } = rows[0];
+    res.json(memberWithoutPassword);
+  } catch (error) {
+    console.error('Error updating member:', error);
+    res.status(500).json({ error: 'Failed to update member' });
+  }
+});
+
+// DELETE member (HANYA ADMIN)
+app.delete('/api/members/:id', authenticateToken, requireAdmin, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const [existing] = await pool.query('SELECT * FROM members WHERE id = ?', [id]);
+    if (existing.length === 0) return res.status(404).json({ error: 'Member not found' });
+
+    await pool.query('DELETE FROM members WHERE id = ?', [id]);
+    res.json({ message: 'Member deleted successfully' });
+  } catch (error) {
+    console.error('Error deleting member:', error);
+    res.status(500).json({ error: 'Failed to delete member' });
+  }
+});
+
+// ============================
+// APPOINTMENTS ROUTES (PROTECTED)
+// ============================
+
+// GET all appointments (ADMIN bisa lihat semua, MEMBER hanya punya sendiri)
+app.get('/api/appointments', authenticateToken, async (req, res) => {
+  try {
+    let query = '';
+    let params = [];
+    
+    if (req.user.user_type === 'admin') {
+      query = 'SELECT * FROM appointments ORDER BY date DESC, time DESC';
+    } else {
+      query = 'SELECT * FROM appointments WHERE customer_id = ? ORDER BY date DESC, time DESC';
+      params = [req.user.id];
+    }
+    
+    const [rows] = await pool.query(query, params);
+    const normalizedRows = rows.map(row => ({
+      ...row,
+      status: row.status ? row.status.toLowerCase() : 'pending'
+    }));
+    res.json(normalizedRows);
+  } catch (error) {
+    console.error('Error fetching appointments:', error);
+    res.status(500).json({ error: 'Failed to fetch appointments' });
+  }
+});
+
+// POST create new appointment
+app.post('/api/appointments', authenticateToken, async (req, res) => {
+  try {
+    console.log('POST /api/appointments - Request body:', req.body);
+    
+    const { customer_name, customer_id, treatment, therapist, date, time, amount, status } = req.body;
+    if (!customer_name || !treatment || !therapist || !date || !time) {
+      return res.status(400).json({ error: 'Customer name, treatment, therapist, date, and time are required' });
+    }
+
+    const [countResult] = await pool.query('SELECT COUNT(*) as count FROM appointments');
+    const appointmentId = `APT${String(countResult[0].count + 1).padStart(5, '0')}`;
+
+    // Normalize status to lowercase
+    const validStatuses = ['pending', 'confirmed', 'completed'];
+    let normalizedStatus = 'pending';
+    
+    if (status) {
+      const lowerStatus = status.toLowerCase();
+      if (validStatuses.includes(lowerStatus)) {
+        normalizedStatus = lowerStatus;
+      } else {
+        console.warn(`Invalid status received: ${status}. Defaulting to 'pending'`);
+      }
+    }
+    
+    console.log('Creating appointment with status:', normalizedStatus);
+
+    // Jika member membuat appointment, gunakan ID mereka
+    const finalCustomerId = req.user.user_type === 'member' ? req.user.id : customer_id;
+
+    const [result] = await pool.query(
+      `INSERT INTO appointments (appointment_id, customer_name, customer_id, treatment, therapist, date, time, amount, status) 
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      [
+        appointmentId,
+        customer_name.trim(),
+        finalCustomerId || null,
+        treatment.trim(),
+        therapist.trim(),
+        date,
+        time,
+        parseFloat(amount) || 0,
+        normalizedStatus
+      ]
+    );
+
+    const [rows] = await pool.query('SELECT * FROM appointments WHERE id = ?', [result.insertId]);
+    const appointment = rows[0];
+    appointment.status = appointment.status ? appointment.status.toLowerCase() : 'pending';
+    
+    console.log('Created appointment:', appointment);
+    res.status(201).json(appointment);
+  } catch (error) {
+    console.error('Error creating appointment:', error);
+    res.status(500).json({ error: 'Failed to create appointment' });
+  }
+});
+
+// SISAKAN ROUTE LAINNYA (therapists, treatments, products, articles) TETAP SAMA
+// ... (kode therapists, treatments, products, articles tetap sama seperti sebelumnya)
+// ============================
+// THERAPISTS ROUTES
+// ============================
+
+// GET all therapists (PUBLIC)
+app.get('/api/therapists', async (req, res) => {
+  try {
+    const [rows] = await pool.query('SELECT * FROM therapists ORDER BY created_at DESC');
+    res.json(rows);
+  } catch (error) {
+    console.error('Error fetching therapists:', error);
+    res.status(500).json({ error: 'Failed to fetch therapists' });
+  }
+});
+
+// POST create new therapist (HANYA ADMIN)
+app.post('/api/therapists', authenticateToken, requireAdmin, async (req, res) => {
+  try {
+    const { name, email, phone, status, join_date } = req.body;
+    if (!name || !email) return res.status(400).json({ error: 'Name and email are required' });
+
+    const [countResult] = await pool.query('SELECT COUNT(*) as count FROM therapists');
+    const therapistId = `TH${String(countResult[0].count + 1).padStart(3, '0')}`;
+    
+    const joinDate = join_date || new Date().toLocaleDateString('en-GB', { 
+      day: 'numeric', 
+      month: 'short', 
+      year: 'numeric' 
+    });
+
+    const [result] = await pool.query(
+      `INSERT INTO therapists (therapist_id, name, email, phone, status, join_date) 
+       VALUES (?, ?, ?, ?, ?, ?)`,
+      [
+        therapistId,
+        name.trim(),
+        email.trim(),
+        phone || null,
+        status || 'active',
+        joinDate
+      ]
+    );
+
+    const [rows] = await pool.query('SELECT * FROM therapists WHERE id = ?', [result.insertId]);
+    res.status(201).json(rows[0]);
+  } catch (error) {
+    console.error('Error creating therapist:', error);
+    res.status(500).json({ error: 'Failed to create therapist' });
+  }
+});
+
+// PUT update therapist (HANYA ADMIN)
+app.put('/api/therapists/:id', authenticateToken, requireAdmin, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { name, email, phone, status, join_date } = req.body;
+
+    const [existing] = await pool.query('SELECT * FROM therapists WHERE id = ?', [id]);
+    if (existing.length === 0) {
+      return res.status(404).json({ error: 'Therapist not found' });
+    }
+
+    await pool.query(
+      `UPDATE therapists SET 
+        name = ?, 
+        email = ?, 
+        phone = ?, 
+        status = ?,
+        join_date = ? 
+       WHERE id = ?`,
+      [
+        name || existing[0].name,
+        email || existing[0].email,
+        phone !== undefined ? phone : existing[0].phone,
+        status || existing[0].status,
+        join_date !== undefined ? join_date : existing[0].join_date,
+        id
+      ]
+    );
+
+    const [rows] = await pool.query('SELECT * FROM therapists WHERE id = ?', [id]);
+    res.json(rows[0]);
+  } catch (error) {
+    console.error('Error updating therapist:', error);
+    res.status(500).json({ error: 'Failed to update therapist' });
+  }
+});
+
+// DELETE therapist (HANYA ADMIN)
+app.delete('/api/therapists/:id', authenticateToken, requireAdmin, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const [existing] = await pool.query('SELECT * FROM therapists WHERE id = ?', [id]);
+    if (existing.length === 0) return res.status(404).json({ error: 'Therapist not found' });
+
+    await pool.query('DELETE FROM therapists WHERE id = ?', [id]);
+    res.json({ message: 'Therapist deleted successfully' });
+  } catch (error) {
+    console.error('Error deleting therapist:', error);
+    res.status(500).json({ error: 'Failed to delete therapist' });
+  }
+});
+
+// ============================
+// TREATMENTS ROUTES (PUBLIC)
+// ============================
+
+// GET all treatments (PUBLIC)
+app.get('/api/treatments', async (req, res) => {
+  try {
+    const [treatments] = await pool.query('SELECT * FROM treatments ORDER BY created_at DESC');
+    
+    for (let treatment of treatments) {
+      const [facilities] = await pool.query(
+        'SELECT facility_name FROM treatment_facilities WHERE treatment_id = ? ORDER BY display_order, created_at',
+        [treatment.id]
+      );
+      treatment.facilities = facilities.map(f => f.facility_name);
+    }
+
+    res.json(treatments);
+  } catch (error) {
+    console.error('Error fetching treatments:', error);
+    res.status(500).json({ error: 'Failed to fetch treatments' });
+  }
+});
+
+// ============================
+// PRODUCTS ROUTES (PUBLIC)
+// ============================
+
+// GET all products (PUBLIC)
+app.get('/api/products', async (req, res) => {
+  try {
+    const [rows] = await pool.query('SELECT * FROM products ORDER BY created_at DESC');
+    const formattedRows = rows.map(row => ({
+      ...row,
+      price: parseFloat(row.price) || 0,
+      weight: parseInt(row.weight) || 0,
+      marketplaceLinks: row.marketplace_links ? JSON.parse(row.marketplace_links) : {
+        shopee: '',
+        tokopedia: '',
+        lazada: '',
+        other: ''
+      }
+    }));
+    res.json(formattedRows);
+  } catch (error) {
+    console.error('Error fetching products:', error);
+    res.status(500).json({ error: 'Failed to fetch products' });
+  }
+});
+
+// ============================
+// ARTICLES ROUTES (PUBLIC)
+// ============================
+
+// GET all articles (PUBLIC)
+app.get('/api/articles', async (req, res) => {
+  try {
+    const [rows] = await pool.query('SELECT * FROM articles ORDER BY created_at DESC');
+    const formattedRows = rows.map(row => ({
+      ...row,
+      date: new Date(row.created_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })
+    }));
+    res.json(formattedRows);
+  } catch (error) {
+    console.error('Error fetching articles:', error);
+    res.status(500).json({ error: 'Failed to fetch articles' });
+  }
+});
+
+// ============================
+// 404 HANDLER
+// ============================
+app.use((req, res) => {
+  res.status(404).json({
+    success: false,
+    error: 'Endpoint not found',
+    path: req.path,
+    method: req.method
+  });
+});
+
+// ============================
+// ERROR HANDLER
+// ============================
+app.use((err, req, res, next) => {
+  console.error('Server error:', err);
+  res.status(500).json({
+    success: false,
+    error: 'Internal server error',
+    message: err.message
+  });
+});
+
+// ============================
+// START SERVER
+// ============================
+app.listen(PORT, () => {
+  console.log(`🚀 Server running on http://localhost:${PORT}`);
+  console.log(`🌐 Health check: http://localhost:${PORT}/health`);
+  console.log(`🔗 Test API: http://localhost:${PORT}/api/test`);
+  console.log(`📊 Available endpoints:`);
+  console.log(`   POST http://localhost:${PORT}/api/auth/register`);
+  console.log(`   POST http://localhost:${PORT}/api/auth/login`);
+  console.log(`   GET  http://localhost:${PORT}/api/admin/dashboard`);
+  console.log(`   GET  http://localhost:${PORT}/api/members`);
+  console.log(`   GET  http://localhost:${PORT}/api/appointments`);
+  console.log(`   GET  http://localhost:${PORT}/api/therapists`);
+  console.log(`   GET  http://localhost:${PORT}/api/treatments`);
+  console.log(`   GET  http://localhost:${PORT}/api/products`);
+  console.log(`   GET  http://localhost:${PORT}/api/articles`);
+  console.log(`\n🔑 Default Admin Credentials:`);
+  console.log(`   Email: admin@mochint.com`);
+  console.log(`   Password: admin123`);
+  console.log(`\n📝 Press Ctrl+C to stop the server`);
+});

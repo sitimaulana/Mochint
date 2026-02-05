@@ -7,7 +7,7 @@ const Product = () => {
   const [formData, setFormData] = useState({
     name: '',
     category: 'All Products',
-    price: '0',
+    price: '',
     weight: '', 
     description: '',
     image: '',
@@ -26,7 +26,6 @@ const Product = () => {
 
   const API_URL = 'http://localhost:5000/api/products';
   
-  // SINKRONISASI KATEGORI DENGAN HALAMAN MEMBER
   const categories = ['All Products', 'Acne', 'Brightening', 'Best Seller', 'Other'];
 
   useEffect(() => {
@@ -66,7 +65,7 @@ const Product = () => {
     setFormData({
       name: '',
       category: 'All Products',
-      price: '0',
+      price: '',
       weight: '',
       description: '',
       image: '',
@@ -83,9 +82,27 @@ const Product = () => {
   const handleEdit = (product) => {
     setEditingProduct(product._id || product.id);
     setIsAdding(false);
+    
+    // FIX: Ambil nilai price langsung dari produk tanpa manipulasi
+    // Pastikan kita mendapatkan nilai asli yang dikirim dari server
+    const priceFromServer = product.price;
+    
+    // Konversi ke string jika perlu, tapi pastikan tidak ada formatting
+    let priceString;
+    if (typeof priceFromServer === 'string') {
+      // Jika sudah string, hapus semua non-digit
+      priceString = priceFromServer.replace(/\D/g, '');
+    } else if (typeof priceFromServer === 'number') {
+      // Jika number, langsung ubah ke string
+      priceString = priceFromServer.toString();
+    } else {
+      // Fallback
+      priceString = '';
+    }
+    
     setFormData({
       ...product,
-      price: product.price.toString().replace(/\D/g, '') || '0',
+      price: priceString, // Simpan angka mentah tanpa formatting
       weight: product.weight || '',
       marketplaceLinks: product.marketplaceLinks || {
         shopee: '',
@@ -108,6 +125,7 @@ const Product = () => {
         return;
       }
 
+      // FIX: Parse price dari input yang sudah berupa angka tanpa formatting
       const priceValue = parseRupiah(formData.price);
       
       // LOGIKA PENERIMAAN DATA BERAT: Pastikan dikirim sebagai Integer
@@ -145,7 +163,7 @@ const Product = () => {
     setFormData({
       name: '',
       category: 'All Products',
-      price: '0',
+      price: '',
       weight: '',
       description: '',
       image: '',
@@ -174,6 +192,7 @@ const Product = () => {
   const handleChange = (e) => {
     const { name, value } = e.target;
     if (name === 'price') {
+      // FIX: Hanya terima angka, tidak perlu formatting di input
       const digitsOnly = value.replace(/\D/g, '');
       setFormData({ ...formData, [name]: digitsOnly });
     } else {
@@ -244,7 +263,6 @@ const Product = () => {
                       <h3 className="font-semibold text-gray-800 truncate">{product.name}</h3>
                       <div className="flex gap-2">
                         <span className="inline-block px-2 py-1 bg-gray-100 text-gray-600 text-xs rounded-full mt-1 uppercase font-bold tracking-wider">{product.category}</span>
-                        {/* Menampilkan Weight di Card */}
                         {product.weight && <span className="inline-block px-2 py-1 bg-brown-50 text-brown-600 text-xs rounded-full mt-1 font-medium">{product.weight} gr</span>}
                       </div>
                     </div>
@@ -277,7 +295,20 @@ const Product = () => {
               {/* Image Input Section */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">Product Image</label>
-                <div className="mb-4"><div className="w-40 h-40 rounded-lg overflow-hidden bg-gray-100 border-2 border-dashed border-gray-300">{previewImage ? <div className="relative w-full h-full"><img src={previewImage} className="w-full h-full object-cover" /><button type="button" onClick={removeImage} className="absolute top-1 right-1 bg-red-500 text-white rounded-full p-1"><svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg></button></div> : <div className="w-full h-full flex flex-col items-center justify-center text-gray-400 font-sans text-sm">Upload or paste URL</div>}</div></div>
+                <div className="mb-4">
+                  <div className="w-40 h-40 rounded-lg overflow-hidden bg-gray-100 border-2 border-dashed border-gray-300">
+                    {previewImage ? (
+                      <div className="relative w-full h-full">
+                        <img src={previewImage} className="w-full h-full object-cover" alt="Preview" />
+                        <button type="button" onClick={removeImage} className="absolute top-1 right-1 bg-red-500 text-white rounded-full p-1">
+                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
+                        </button>
+                      </div>
+                    ) : (
+                      <div className="w-full h-full flex flex-col items-center justify-center text-gray-400 font-sans text-sm">Upload or paste URL</div>
+                    )}
+                  </div>
+                </div>
                 <input type="file" accept="image/*" onChange={handleImageUpload} className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-medium file:bg-brown-50 file:text-brown-700" />
                 <input type="text" value={previewImage || ''} onChange={handleImageUrlChange} placeholder="Image URL" className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm mt-2" />
               </div>
@@ -301,15 +332,30 @@ const Product = () => {
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Price <span className="text-red-500">*</span></label>
                   <div className="relative">
-                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none"><span className="text-gray-500">Rp</span></div>
-                    <input type="text" name="price" value={formData.price || ''} onChange={handleChange} className="w-full border border-gray-300 rounded-md pl-10 pr-3 py-2" required />
+                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                      <span className="text-gray-500">Rp</span>
+                    </div>
+                    <input 
+                      type="text" 
+                      name="price" 
+                      value={formData.price || ''} 
+                      onChange={handleChange} 
+                      className="w-full border border-gray-300 rounded-md pl-10 pr-3 py-2" 
+                      required 
+                      placeholder="0"
+                    />
                   </div>
+                  <p className="text-xs text-gray-500 mt-1">
+                    Current value: {formData.price ? formatRupiah(formData.price) : 'Rp 0'}
+                  </p>
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Weight (Gram)</label>
                   <div className="relative">
                     <input type="number" name="weight" value={formData.weight || ''} onChange={handleChange} className="w-full border border-gray-300 rounded-md px-3 py-2" placeholder="0" />
-                    <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none"><span className="text-gray-500 text-sm">gr</span></div>
+                    <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
+                      <span className="text-gray-500 text-sm">gr</span>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -344,7 +390,11 @@ const Product = () => {
           <div className="bg-white rounded-lg p-6 w-full max-w-2xl overflow-y-auto">
             <div className="flex justify-between items-center mb-6">
               <h3 className="text-lg font-semibold text-gray-800">{viewingProduct.name}</h3>
-              <button onClick={() => setViewingProduct(null)} className="text-gray-400 hover:text-gray-600"><svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg></button>
+              <button onClick={() => setViewingProduct(null)} className="text-gray-400 hover:text-gray-600">
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <img src={viewingProduct.image} className="w-full h-64 object-cover rounded-lg" alt={viewingProduct.name} />
@@ -355,7 +405,9 @@ const Product = () => {
                 <p className="text-gray-600 text-sm">{viewingProduct.description}</p>
               </div>
             </div>
-            <div className="flex justify-end mt-6"><button onClick={() => setViewingProduct(null)} className="px-4 py-2 bg-brown-600 text-white rounded-lg">Close</button></div>
+            <div className="flex justify-end mt-6">
+              <button onClick={() => setViewingProduct(null)} className="px-4 py-2 bg-brown-600 text-white rounded-lg">Close</button>
+            </div>
           </div>
         </div>
       )}

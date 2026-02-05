@@ -6,6 +6,8 @@ const Member = () => {
   const MEMBERS_API_URL = 'http://localhost:5000/api/members';
   const APPOINTMENTS_API_URL = 'http://localhost:5000/api/appointments';
   const HISTORY_API_URL = 'http://localhost:5000/api/members/history';
+
+  const Token = localStorage.getItem('token');
   
   const [members, setMembers] = useState([]);
   const [appointments, setAppointments] = useState([]);
@@ -46,8 +48,8 @@ const Member = () => {
     try {
       setLoading(true);
       const [membersRes, appointmentsRes] = await Promise.all([
-        axios.get(MEMBERS_API_URL),
-        axios.get(APPOINTMENTS_API_URL)
+        axios.get(MEMBERS_API_URL, {headers: {Authorization: `Bearer ${Token}`}}),
+        axios.get(APPOINTMENTS_API_URL, {headers: {Authorization: `Bearer ${Token}`}})
       ]);
       
       // Proses members dengan data dari appointments

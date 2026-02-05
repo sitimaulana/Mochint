@@ -1,0 +1,1070 @@
+// src/api/client.js
+const API_URL = 'http://localhost:5000/api';
+
+// --- DEBUG MODE ---
+const DEBUG_MODE = process.env.NODE_ENV === 'development';
+const log = (...args) => DEBUG_MODE && console.log('🔧 API:', ...args);
+const logError = (...args) => DEBUG_MODE && console.error('❌ API Error:', ...args);
+
+// --- 1. HELPER FUNCTIONS ---
+const getHeaders = () => {
+  const headers = {
+    'Content-Type': 'application/json',
+  };
+  
+  const token = localStorage.getItem('token');
+  if (token) {
+    headers['Authorization'] = `Bearer ${token}`;
+  }
+  
+  log('Headers generated:', { hasToken: !!token, headers });
+  return headers;
+};
+
+// Safe JSON parsing
+const safeJsonParse = (str, defaultValue = null) => {
+  try {
+    return str ? JSON.parse(str) : defaultValue;
+  } catch (error) {
+    logError('JSON parse error:', error);
+    return defaultValue;
+  }
+};
+
+// --- 2. AUTH SYSTEM - DUAL SYSTEM ---
+export const authAPI = {
+  // REGISTER (HANYA UNTUK MEMBERS)
+  register: async (userData) => {
+    try {
+      log('Register attempt:', { email: userData.email });
+      const response = await fetch(`${API_URL}/auth/register`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(userData)
+      });
+
+      const data = await response.json();
+      log('Register response:', data);
+
+      if (!response.ok) {
+        // Handle specific error messages
+        if (data.error && data.error.includes('already registered as admin')) {
+          throw new Error('Email sudah terdaftar sebagai admin');
+        }
+        throw new Error(data.error || "Gagal mendaftar");
+      }
+
+      // Simpan token dan user data
+      localStorage.setItem('token', data.token);
+      if (data.user) {
+        localStorage.setItem('user', JSON.stringify(data.user));
+        localStorage.setItem('user_type', data.user.user_type || 'member');
+        localStorage.setItem('login_time', new Date().toISOString());
+      }
+
+      log('Registration successful:', { 
+        user_type: data.user?.user_type,
+        email: data.user?.email 
+      });
+
+      return { 
+        success: true, 
+        user: data.user,
+        token: data.token,
+        message: data.message || 'Pendaftaran berhasil'
+      };
+      
+    } catch (error) {
+      logError('Register error:', error);
+      throw new Error(error.message || "Koneksi ke server gagal!");
+    }
+  },
+
+  // LOGIN - DUAL SYSTEM
+  login: async (email, password) => {
+    try {
+      log('🔐 Login attempt:', { email });
+      const response = await fetch(`${API_URL}/auth/login`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password })
+      });
+
+      const data = await response.json();
+      log('📥 Login response:', data);
+
+      if (!response.ok) {
+        // Handle specific error messages from dual system
+        if (data.error && data.error.includes('Password admin salah')) {
+          throw new Error('Password admin salah');
+        } else if (data.error && data.error.includes('Password member salah')) {
+          throw new Error('Password member salah');
+        } else if (data.error && data.error.includes('Email tidak terdaftar')) {
+          throw new Error('Email tidak terdaftar');
+        }
+        throw new Error(data.error || "Email atau Password salah!");
+      }
+
+      // Simpan data ke localStorage
+      localStorage.setItem('token', data.token);
+      localStorage.setItem('user', JSON.stringify(data.user));
+      localStorage.setItem('user_type', data.user.user_type || 'member');
+      localStorage.setItem('login_time', new Date().toISOString());
+
+      log('✅ Login successful:', { 
+        user_type: data.user.user_type,
+        email: data.user.email,
+        is_admin: data.user.is_admin
+      });
+
+      return { 
+        success: true, 
+        user: data.user,
+        token: data.token,
+        message: data.message || 'Login berhasil'
+      };
+      
+    } catch (error) {
+      logError('❌ Login error:', error);
+      
+      // Better error messages for dual system
+      if (error.message.includes('Password admin salah')) {
+        throw new Error('Password admin salah');
+      } else if (error.message.includes('Password member salah')) {
+        throw new Error('Password member salah');
+      } else if (error.message.includes('Email tidak terdaftar')) {
+        throw new Error('Email tidak terdaftar');
+      } else if (error.message.includes('Email already registered as admin')) {
+        throw new Error('Email sudah terdaftar sebagai admin');
+      }
+      
+      throw new Error(error.message || "Gagal terhubung ke server!");
+    }
+  },
+
+  // LOGOUT
+  logout: () => {
+    log('👋 Logout called');
+    localStorage.removeItem('token');
+    localStorage.removeItem('user');
+    localStorage.removeItem('user_type');
+    localStorage.removeItem('login_time');
+    log('✅ LocalStorage cleared');
+  },
+
+  // GET CURRENT USER PROFILE (UPDATED FOR DUAL SYSTEM)
+  getProfile: async () => {
+    try {
+      const userType = localStorage.getItem('user_type');
+      
+      if (userType === 'admin') {
+        // Get admin profile
+        const response = await fetch(`${API_URL}/admin/profile`, {
+          headers: getHeaders()
+        });
+
+        if (!response.ok) {
+          throw new Error('Gagal mengambil data profile admin');
+        }
+
+        const data = await response.json();
+        return data;
+      } else {
+        // Get member profile
+        const user = getCurrentUser();
+        if (!user || !user.id) {
+          throw new Error('User not logged in');
+        }
+
+        const response = await fetch(`${API_URL}/members/${user.id}`, {
+          headers: getHeaders()
+        });
+
+        if (!response.ok) {
+          throw new Error('Gagal mengambil data profile');
+        }
+
+        return await response.json();
+      }
+    } catch (error) {
+      logError('Get profile error:', error);
+      throw error;
+    }
+  },
+
+  // UPDATE PROFILE (UPDATED FOR DUAL SYSTEM)
+  updateProfile: async (userData) => {
+    try {
+      const userType = localStorage.getItem('user_type');
+      const currentUser = getCurrentUser();
+      
+      if (!currentUser || !currentUser.id) {
+        throw new Error('User not logged in');
+      }
+
+      let response;
+      if (userType === 'admin') {
+        // Update admin profile (if endpoint exists)
+        response = await fetch(`${API_URL}/admin/profile`, {
+          method: 'PUT',
+          headers: getHeaders(),
+          body: JSON.stringify(userData)
+        });
+      } else {
+        // Update member profile
+        response = await fetch(`${API_URL}/members/${currentUser.id}`, {
+          method: 'PUT',
+          headers: getHeaders(),
+          body: JSON.stringify(userData)
+        });
+      }
+
+      const data = await response.json();
+      
+      if (!response.ok) {
+        throw new Error(data.error || "Gagal update profile");
+      }
+
+      // Update localStorage jika ada data user baru
+      if (data.user || data.data) {
+        const updatedUser = data.user || data.data;
+        localStorage.setItem('user', JSON.stringify({
+          ...currentUser,
+          ...updatedUser
+        }));
+      }
+
+      return data;
+    } catch (error) {
+      logError('Update profile error:', error);
+      throw error;
+    }
+  }
+};
+
+// --- 3. ADMIN API ---
+export const adminAPI = {
+  // GET admin dashboard statistics
+  getDashboardStats: async () => {
+    try {
+      log('📊 Fetching admin dashboard stats');
+      const response = await fetch(`${API_URL}/admin/dashboard`, {
+        headers: getHeaders()
+      });
+
+      if (!response.ok) {
+        throw new Error('Gagal mengambil data dashboard');
+      }
+
+      const data = await response.json();
+      log('✅ Dashboard stats fetched');
+      return data;
+    } catch (error) {
+      logError('Get dashboard stats error:', error);
+      throw error;
+    }
+  },
+
+  // GET admin profile
+  getProfile: async () => {
+    try {
+      const response = await fetch(`${API_URL}/admin/profile`, {
+        headers: getHeaders()
+      });
+
+      if (!response.ok) {
+        throw new Error('Gagal mengambil data profile admin');
+      }
+
+      return await response.json();
+    } catch (error) {
+      logError('Get admin profile error:', error);
+      throw error;
+    }
+  }
+};
+
+// --- 4. REVIEW SYSTEM ---
+export const reviewsAPI = {
+  // POST REVIEW
+  create: async (reviewData) => {
+    try {
+      log('Posting review:', reviewData);
+      const response = await fetch(`${API_URL}/reviews`, {
+        method: 'POST',
+        headers: getHeaders(),
+        body: JSON.stringify(reviewData)
+      });
+
+      const data = await response.json();
+      
+      if (!response.ok) {
+        throw new Error(data.error || "Gagal posting review");
+      }
+
+      return data;
+    } catch (error) {
+      logError('Post review error:', error);
+      // Fallback to localStorage for development
+      log('Falling back to localStorage for reviews');
+      const existingReviews = safeJsonParse(localStorage.getItem('public_reviews'), []);
+      const savedReview = {
+        id: Date.now(),
+        ...reviewData,
+        location: reviewData.location || 'Verified Member', 
+        date: new Date().toLocaleDateString('id-ID'),
+        timestamp: new Date().toISOString()
+      };
+      
+      const updatedReviews = [savedReview, ...existingReviews];
+      localStorage.setItem('public_reviews', JSON.stringify(updatedReviews));
+      
+      return savedReview;
+    }
+  },
+
+  // GET ALL REVIEWS
+  getAll: async () => {
+    try {
+      const response = await fetch(`${API_URL}/reviews`);
+      
+      if (response.ok) {
+        return await response.json();
+      }
+      
+      // Fallback to localStorage
+      throw new Error('API not available');
+    } catch (error) {
+      log('Using localStorage for reviews');
+      return safeJsonParse(localStorage.getItem('public_reviews'), []);
+    }
+  },
+
+  // GET PUBLIC REVIEWS (for homepage)
+  getPublic: async () => {
+    try {
+      const response = await fetch(`${API_URL}/reviews/public`);
+      
+      if (response.ok) {
+        return await response.json();
+      }
+      
+      // Fallback
+      throw new Error('API not available');
+    } catch (error) {
+      log('Using localStorage for public reviews');
+      const allReviews = safeJsonParse(localStorage.getItem('public_reviews'), []);
+      return allReviews.slice(0, 5); // Return only 5 for homepage
+    }
+  }
+};
+
+// --- 5. HOME DATA ---
+export const fetchHomeData = async () => {
+  try {
+    log('Fetching home data');
+    
+    // Fetch data dari API dengan timeout
+    const fetchWithTimeout = (url, timeout = 5000) => {
+      return Promise.race([
+        fetch(url).then(res => res.ok ? res.json() : []),
+        new Promise((_, reject) => 
+          setTimeout(() => reject(new Error('Timeout')), timeout)
+        )
+      ]);
+    };
+
+    const [products, treatments] = await Promise.allSettled([
+      fetchWithTimeout(`${API_URL}/products`).catch(() => []),
+      fetchWithTimeout(`${API_URL}/treatments`).catch(() => [])
+    ]);
+
+    // Fetch testimonials
+    const testimonials = await reviewsAPI.getPublic();
+
+    const result = {
+      products: products.status === 'fulfilled' ? products.value.slice(0, 4) : [],
+      treatments: treatments.status === 'fulfilled' ? treatments.value.slice(0, 6) : [],
+      testimonials: testimonials
+    };
+
+    log('Home data fetched:', { 
+      productsCount: result.products.length,
+      treatmentsCount: result.treatments.length,
+      testimonialsCount: result.testimonials.length
+    });
+
+    return result;
+  } catch (error) {
+    logError('Error fetching home data:', error);
+    return {
+      products: [],
+      treatments: [],
+      testimonials: safeJsonParse(localStorage.getItem('public_reviews'), []).slice(0, 3)
+    };
+  }
+};
+
+// --- 6. MEMBERS API - PROTECTED ---
+export const membersAPI = {
+  getAll: async () => {
+    try {
+      log('Fetching members');
+      const response = await fetch(`${API_URL}/members`, {
+        headers: getHeaders()
+      });
+
+      if (!response.ok) {
+        throw new Error('Gagal mengambil data members');
+      }
+
+      const data = await response.json();
+      log('Members fetched:', { count: data.length });
+      return data;
+    } catch (error) {
+      logError('Get members error:', error);
+      throw error;
+    }
+  },
+
+  getById: async (id) => {
+    try {
+      log(`Fetching member ${id}`);
+      const response = await fetch(`${API_URL}/members/${id}`, {
+        headers: getHeaders()
+      });
+
+      if (!response.ok) {
+        throw new Error('Member tidak ditemukan');
+      }
+
+      return await response.json();
+    } catch (error) {
+      logError('Get member by ID error:', error);
+      throw error;
+    }
+  },
+
+  update: async (id, memberData) => {
+    try {
+      log(`Updating member ${id}:`, memberData);
+      const response = await fetch(`${API_URL}/members/${id}`, {
+        method: 'PUT',
+        headers: getHeaders(),
+        body: JSON.stringify(memberData)
+      });
+
+      const data = await response.json();
+      
+      if (!response.ok) {
+        throw new Error(data.error || "Gagal update member");
+      }
+
+      return data;
+    } catch (error) {
+      logError('Update member error:', error);
+      throw error;
+    }
+  },
+
+  delete: async (id) => {
+    try {
+      log(`Deleting member ${id}`);
+      const response = await fetch(`${API_URL}/members/${id}`, {
+        method: 'DELETE',
+        headers: getHeaders()
+      });
+
+      const data = await response.json();
+      
+      if (!response.ok) {
+        throw new Error(data.error || "Gagal menghapus member");
+      }
+
+      return data;
+    } catch (error) {
+      logError('Delete member error:', error);
+      throw error;
+    }
+  }
+};
+
+// --- 7. APPOINTMENTS API - PROTECTED ---
+export const appointmentsAPI = {
+  getAll: async () => {
+    try {
+      log('Fetching appointments');
+      const response = await fetch(`${API_URL}/appointments`, {
+        headers: getHeaders()
+      });
+
+      if (!response.ok) {
+        throw new Error('Gagal mengambil data appointments');
+      }
+
+      const data = await response.json();
+      log('Appointments fetched:', { count: data.length });
+      return data;
+    } catch (error) {
+      logError('Get appointments error:', error);
+      throw error;
+    }
+  },
+
+  getById: async (id) => {
+    try {
+      log(`Fetching appointment ${id}`);
+      const response = await fetch(`${API_URL}/appointments/${id}`, {
+        headers: getHeaders()
+      });
+
+      if (!response.ok) {
+        throw new Error('Appointment tidak ditemukan');
+      }
+
+      return await response.json();
+    } catch (error) {
+      logError('Get appointment by ID error:', error);
+      throw error;
+    }
+  },
+
+  create: async (appointmentData) => {
+    try {
+      log('Creating appointment:', appointmentData);
+      const response = await fetch(`${API_URL}/appointments`, {
+        method: 'POST',
+        headers: getHeaders(),
+        body: JSON.stringify(appointmentData)
+      });
+
+      const data = await response.json();
+      
+      if (!response.ok) {
+        throw new Error(data.error || "Gagal membuat appointment");
+      }
+
+      log('Appointment created:', { id: data.id });
+      return data;
+    } catch (error) {
+      logError('Create appointment error:', error);
+      throw error;
+    }
+  },
+
+  update: async (id, appointmentData) => {
+    try {
+      log(`Updating appointment ${id}:`, appointmentData);
+      const response = await fetch(`${API_URL}/appointments/${id}`, {
+        method: 'PUT',
+        headers: getHeaders(),
+        body: JSON.stringify(appointmentData)
+      });
+
+      const data = await response.json();
+      
+      if (!response.ok) {
+        throw new Error(data.error || "Gagal update appointment");
+      }
+
+      return data;
+    } catch (error) {
+      logError('Update appointment error:', error);
+      throw error;
+    }
+  },
+
+  delete: async (id) => {
+    try {
+      log(`Deleting appointment ${id}`);
+      const response = await fetch(`${API_URL}/appointments/${id}`, {
+        method: 'DELETE',
+        headers: getHeaders()
+      });
+
+      const data = await response.json();
+      
+      if (!response.ok) {
+        throw new Error(data.error || "Gagal menghapus appointment");
+      }
+
+      return data;
+    } catch (error) {
+      logError('Delete appointment error:', error);
+      throw error;
+    }
+  }
+};
+
+// --- 8. THERAPISTS API - PUBLIC/ADMIN ---
+export const therapistsAPI = {
+  getAll: async () => {
+    try {
+      log('Fetching therapists');
+      const response = await fetch(`${API_URL}/therapists`, {
+        headers: getHeaders()
+      });
+
+      if (!response.ok) {
+        throw new Error('Gagal mengambil data therapists');
+      }
+
+      const data = await response.json();
+      log('Therapists fetched:', { count: data.length });
+      return data;
+    } catch (error) {
+      logError('Get therapists error:', error);
+      throw error;
+    }
+  },
+
+  create: async (therapistData) => {
+    try {
+      log('Creating therapist:', therapistData);
+      const response = await fetch(`${API_URL}/therapists`, {
+        method: 'POST',
+        headers: getHeaders(),
+        body: JSON.stringify(therapistData)
+      });
+
+      const data = await response.json();
+      
+      if (!response.ok) {
+        throw new Error(data.error || "Gagal membuat therapist");
+      }
+
+      return data;
+    } catch (error) {
+      logError('Create therapist error:', error);
+      throw error;
+    }
+  },
+
+  update: async (id, therapistData) => {
+    try {
+      log(`Updating therapist ${id}:`, therapistData);
+      const response = await fetch(`${API_URL}/therapists/${id}`, {
+        method: 'PUT',
+        headers: getHeaders(),
+        body: JSON.stringify(therapistData)
+      });
+
+      const data = await response.json();
+      
+      if (!response.ok) {
+        throw new Error(data.error || "Gagal update therapist");
+      }
+
+      return data;
+    } catch (error) {
+      logError('Update therapist error:', error);
+      throw error;
+    }
+  },
+
+  delete: async (id) => {
+    try {
+      log(`Deleting therapist ${id}`);
+      const response = await fetch(`${API_URL}/therapists/${id}`, {
+        method: 'DELETE',
+        headers: getHeaders()
+      });
+
+      const data = await response.json();
+      
+      if (!response.ok) {
+        throw new Error(data.error || "Gagal menghapus therapist");
+      }
+
+      return data;
+    } catch (error) {
+      logError('Delete therapist error:', error);
+      throw error;
+    }
+  }
+};
+
+// --- 9. TREATMENTS API - PUBLIC/ADMIN ---
+export const treatmentsAPI = {
+  getAll: async () => {
+    try {
+      log('Fetching treatments');
+      const response = await fetch(`${API_URL}/treatments`, {
+        headers: getHeaders()
+      });
+
+      if (!response.ok) {
+        throw new Error('Gagal mengambil data treatments');
+      }
+
+      const data = await response.json();
+      log('Treatments fetched:', { count: data.length });
+      return data;
+    } catch (error) {
+      logError('Get treatments error:', error);
+      throw error;
+    }
+  },
+
+  create: async (treatmentData) => {
+    try {
+      log('Creating treatment:', treatmentData);
+      const response = await fetch(`${API_URL}/treatments`, {
+        method: 'POST',
+        headers: getHeaders(),
+        body: JSON.stringify(treatmentData)
+      });
+
+      const data = await response.json();
+      
+      if (!response.ok) {
+        throw new Error(data.error || "Gagal membuat treatment");
+      }
+
+      return data;
+    } catch (error) {
+      logError('Create treatment error:', error);
+      throw error;
+    }
+  },
+
+  update: async (id, treatmentData) => {
+    try {
+      log(`Updating treatment ${id}:`, treatmentData);
+      const response = await fetch(`${API_URL}/treatments/${id}`, {
+        method: 'PUT',
+        headers: getHeaders(),
+        body: JSON.stringify(treatmentData)
+      });
+
+      const data = await response.json();
+      
+      if (!response.ok) {
+        throw new Error(data.error || "Gagal update treatment");
+      }
+
+      return data;
+    } catch (error) {
+      logError('Update treatment error:', error);
+      throw error;
+    }
+  },
+
+  delete: async (id) => {
+    try {
+      log(`Deleting treatment ${id}`);
+      const response = await fetch(`${API_URL}/treatments/${id}`, {
+        method: 'DELETE',
+        headers: getHeaders()
+      });
+
+      const data = await response.json();
+      
+      if (!response.ok) {
+        throw new Error(data.error || "Gagal menghapus treatment");
+      }
+
+      return data;
+    } catch (error) {
+      logError('Delete treatment error:', error);
+      throw error;
+    }
+  }
+};
+
+// --- 10. PRODUCTS API - PUBLIC/ADMIN ---
+export const productsAPI = {
+  getAll: async () => {
+    try {
+      log('Fetching products');
+      const response = await fetch(`${API_URL}/products`, {
+        headers: getHeaders()
+      });
+
+      if (!response.ok) {
+        throw new Error('Gagal mengambil data products');
+      }
+
+      const data = await response.json();
+      log('Products fetched:', { count: data.length });
+      return data;
+    } catch (error) {
+      logError('Get products error:', error);
+      throw error;
+    }
+  },
+
+  create: async (productData) => {
+    try {
+      log('Creating product:', productData);
+      const response = await fetch(`${API_URL}/products`, {
+        method: 'POST',
+        headers: getHeaders(),
+        body: JSON.stringify(productData)
+      });
+
+      const data = await response.json();
+      
+      if (!response.ok) {
+        throw new Error(data.error || "Gagal membuat product");
+      }
+
+      return data;
+    } catch (error) {
+      logError('Create product error:', error);
+      throw error;
+    }
+  },
+
+  update: async (id, productData) => {
+    try {
+      log(`Updating product ${id}:`, productData);
+      const response = await fetch(`${API_URL}/products/${id}`, {
+        method: 'PUT',
+        headers: getHeaders(),
+        body: JSON.stringify(productData)
+      });
+
+      const data = await response.json();
+      
+      if (!response.ok) {
+        throw new Error(data.error || "Gagal update product");
+      }
+
+      return data;
+    } catch (error) {
+      logError('Update product error:', error);
+      throw error;
+    }
+  },
+
+  delete: async (id) => {
+    try {
+      log(`Deleting product ${id}`);
+      const response = await fetch(`${API_URL}/products/${id}`, {
+        method: 'DELETE',
+        headers: getHeaders()
+      });
+
+      const data = await response.json();
+      
+      if (!response.ok) {
+        throw new Error(data.error || "Gagal menghapus product");
+      }
+
+      return data;
+    } catch (error) {
+      logError('Delete product error:', error);
+      throw error;
+    }
+  }
+};
+
+// --- 11. HELPER FUNCTIONS - UPDATED FOR DUAL SYSTEM ---
+export const isAuthenticated = () => {
+  const token = localStorage.getItem('token');
+  const user = localStorage.getItem('user');
+  const result = !!(token && user);
+  log('isAuthenticated check:', { 
+    token: !!token, 
+    user: !!user, 
+    user_type: localStorage.getItem('user_type'),
+    result 
+  });
+  return result;
+};
+
+export const getCurrentUser = () => {
+  const userStr = localStorage.getItem('user');
+  const user = safeJsonParse(userStr);
+  log('getCurrentUser:', { 
+    email: user?.email, 
+    user_type: user?.user_type,
+    is_admin: user?.is_admin 
+  });
+  return user;
+};
+
+export const getUserType = () => {
+  return localStorage.getItem('user_type') || 'member';
+};
+
+export const isAdmin = () => {
+  const user = getCurrentUser();
+  const userType = getUserType();
+  const result = userType === 'admin' && user?.is_admin === true;
+  log('🛡️ isAdmin check:', { 
+    user_type: userType, 
+    is_admin: user?.is_admin, 
+    result 
+  });
+  return result;
+};
+
+export const isMember = () => {
+  const userType = getUserType();
+  const result = userType === 'member';
+  log('👥 isMember check:', { 
+    user_type: userType, 
+    result 
+  });
+  return result;
+};
+
+export const clearAuthData = () => {
+  log('Clearing auth data');
+  localStorage.removeItem('token');
+  localStorage.removeItem('user');
+  localStorage.removeItem('user_type');
+  localStorage.removeItem('login_time');
+};
+
+export const refreshAuth = async () => {
+  try {
+    const response = await fetch(`${API_URL}/auth/refresh`, {
+      headers: getHeaders()
+    });
+
+    if (response.ok) {
+      const data = await response.json();
+      if (data.token) {
+        localStorage.setItem('token', data.token);
+        log('Token refreshed');
+        return true;
+      }
+    }
+    return false;
+  } catch (error) {
+    logError('Refresh auth error:', error);
+    return false;
+  }
+};
+
+// --- 12. GLOBAL API ERROR HANDLER ---
+const handleApiError = (error, context = 'API') => {
+  logError(`${context} error:`, error);
+  
+  // Cek jika error karena token expired atau unauthorized
+  if (error.message?.includes('Token') || 
+      error.message?.includes('token') || 
+      error.message?.includes('authentikasi') ||
+      error.message?.includes('unauthorized') ||
+      error.message?.includes('Forbidden')) {
+    log('🔒 Auth error detected, clearing auth data');
+    clearAuthData();
+    
+    // Redirect to login page only if we're not already there
+    if (!window.location.pathname.includes('/login')) {
+      window.location.href = '/login';
+    }
+  }
+  
+  throw error;
+};
+
+// --- 13. API WRAPPER FOR BETTER ERROR HANDLING ---
+export const api = {
+  get: async (endpoint) => {
+    try {
+      const response = await fetch(`${API_URL}/${endpoint}`, {
+        headers: getHeaders()
+      });
+      
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error || `GET ${endpoint} failed`);
+      }
+      
+      return await response.json();
+    } catch (error) {
+      return handleApiError(error, `GET ${endpoint}`);
+    }
+  },
+  
+  post: async (endpoint, data) => {
+    try {
+      const response = await fetch(`${API_URL}/${endpoint}`, {
+        method: 'POST',
+        headers: getHeaders(),
+        body: JSON.stringify(data)
+      });
+      
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error || `POST ${endpoint} failed`);
+      }
+      
+      return await response.json();
+    } catch (error) {
+      return handleApiError(error, `POST ${endpoint}`);
+    }
+  },
+  
+  put: async (endpoint, data) => {
+    try {
+      const response = await fetch(`${API_URL}/${endpoint}`, {
+        method: 'PUT',
+        headers: getHeaders(),
+        body: JSON.stringify(data)
+      });
+      
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error || `PUT ${endpoint} failed`);
+      }
+      
+      return await response.json();
+    } catch (error) {
+      return handleApiError(error, `PUT ${endpoint}`);
+    }
+  },
+  
+  delete: async (endpoint) => {
+    try {
+      const response = await fetch(`${API_URL}/${endpoint}`, {
+        method: 'DELETE',
+        headers: getHeaders()
+      });
+      
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error || `DELETE ${endpoint} failed`);
+      }
+      
+      return await response.json();
+    } catch (error) {
+      return handleApiError(error, `DELETE ${endpoint}`);
+    }
+  }
+};
+
+// --- 14. UTILITY FUNCTIONS ---
+export const checkTokenExpiration = () => {
+  const loginTime = localStorage.getItem('login_time');
+  if (!loginTime) return true;
+  
+  const loginDate = new Date(loginTime);
+  const now = new Date();
+  const hoursDiff = (now - loginDate) / (1000 * 60 * 60);
+  
+  // Token expires after 24 hours
+  if (hoursDiff > 24) {
+    log('🕒 Token expired, clearing auth');
+    clearAuthData();
+    return true;
+  }
+  
+  return false;
+};
+
+// Auto-check token expiration on page load
+if (typeof window !== 'undefined') {
+  window.addEventListener('load', () => {
+    if (isAuthenticated()) {
+      const isExpired = checkTokenExpiration();
+      if (isExpired && !window.location.pathname.includes('/login')) {
+        window.location.href = '/login';
+      }
+    }
+  });
+}

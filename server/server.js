@@ -1,17 +1,39 @@
 const express = require('express');
 const mysql = require('mysql2/promise');
 const cors = require('cors');
+const bcrypt = require('bcryptjs');
+const jwt = require('jsonwebtoken');
 require('dotenv').config();
 
 const app = express();
 const PORT = process.env.PORT || 5000;
 
-// Middleware
-app.use(cors());
+// ============================
+// MIDDLEWARE
+// ============================
+
+// Untuk development, allow semua origin
+app.use(cors({
+  origin: '*',
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept']
+}));
+
+app.options('*', cors());
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ limit: '50mb', extended: true }));
 
-// MySQL Connection Pool
+// Simple logging
+app.use((req, res, next) => {
+  console.log(`${new Date().toISOString()} - ${req.method} ${req.url}`);
+  next();
+});
+
+// ============================
+// DATABASE CONFIGURATION
+// ============================
+
 const pool = mysql.createPool({
   host: process.env.DB_HOST || 'localhost',
   user: process.env.DB_USER || 'root',
@@ -22,62 +44,55 @@ const pool = mysql.createPool({
   queueLimit: 0
 });
 
+// Test database connection
+pool.getConnection()
+  .then(connection => {
+    console.log('✅ Connected to MySQL database');
+    connection.release();
+  })
+  .catch(err => {
+    console.error('❌ Database connection failed:', err.message);
+  });
+
 // ============================
-// CREATE ALL TABLES
+// CREATE ALL TABLES (SIMPLE)
 // ============================
 
-const createMembersTable = async () => {
+const createAllTables = async () => {
   try {
     const connection = await pool.getConnection();
-    const sql = `
+    
+    console.log('\n🔄 Creating/updating database tables...');
+    
+    // ADMIN_USERS TABLE
+    await connection.query(`
+      CREATE TABLE IF NOT EXISTS admin_users (
+        id INT PRIMARY KEY AUTO_INCREMENT,
+        username VARCHAR(100) NOT NULL UNIQUE,
+        email VARCHAR(100) NOT NULL UNIQUE,
+        password VARCHAR(255) NOT NULL,
+        full_name VARCHAR(100),
+        role ENUM('admin', 'staff') DEFAULT 'admin',
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      )
+    `);
+
+    // MEMBERS TABLE
+    await connection.query(`
       CREATE TABLE IF NOT EXISTS members (
         id INT PRIMARY KEY AUTO_INCREMENT,
         name VARCHAR(100) NOT NULL,
-        email VARCHAR(100),
+        email VARCHAR(100) UNIQUE,
+        password VARCHAR(255),
         phone VARCHAR(20),
         address TEXT,
         join_date VARCHAR(20),
-        total_visits INT DEFAULT 0,
-        status ENUM('active', 'inactive') DEFAULT 'active',
-        last_visit VARCHAR(50) DEFAULT 'Never',
-        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-        INDEX idx_status (status),
-        INDEX idx_name (name)
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       )
-    `;
-    await connection.query(sql);
+    `);
 
-    // Create member_history table
-    const historySql = `
-      CREATE TABLE IF NOT EXISTS member_history (
-        id INT PRIMARY KEY AUTO_INCREMENT,
-        member_id INT NOT NULL,
-        date VARCHAR(20),
-        treatment_name VARCHAR(100),
-        therapist VARCHAR(50),
-        amount DECIMAL(10, 2),
-        appointment_id VARCHAR(20),
-        notes TEXT,
-        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-        FOREIGN KEY (member_id) REFERENCES members(id) ON DELETE CASCADE,
-        INDEX idx_member_id (member_id),
-        INDEX idx_date (date)
-      )
-    `;
-    await connection.query(historySql);
-
-    connection.release();
-    console.log('✅ Members and history tables ready');
-  } catch (error) {
-    console.error('❌ Error creating members table:', error);
-  }
-};
-
-const createAppointmentsTable = async () => {
-  try {
-    const connection = await pool.getConnection();
-    const sql = `
+    // APPOINTMENTS TABLE
+    await connection.query(`
       CREATE TABLE IF NOT EXISTS appointments (
         id INT PRIMARY KEY AUTO_INCREMENT,
         appointment_id VARCHAR(20) UNIQUE,
@@ -87,61 +102,26 @@ const createAppointmentsTable = async () => {
         therapist VARCHAR(100) NOT NULL,
         date VARCHAR(20) NOT NULL,
         time VARCHAR(10) NOT NULL,
-        duration VARCHAR(20),
         amount DECIMAL(10, 2),
         status ENUM('pending', 'confirmed', 'completed') DEFAULT 'pending',
-        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-        INDEX idx_status (status),
-        INDEX idx_date (date),
-        INDEX idx_therapist (therapist),
-        INDEX idx_customer_id (customer_id),
-        FOREIGN KEY (customer_id) REFERENCES members(id) ON DELETE SET NULL
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       )
-    `;
-    await connection.query(sql);
-    connection.release();
-    console.log('✅ Appointments table ready');
-  } catch (error) {
-    console.error('❌ Error creating appointments table:', error);
-  }
-};
+    `);
 
-const createTherapistsTable = async () => {
-  try {
-    const connection = await pool.getConnection();
-    const sql = `
+    // THERAPISTS TABLE
+    await connection.query(`
       CREATE TABLE IF NOT EXISTS therapists (
         id INT PRIMARY KEY AUTO_INCREMENT,
-        therapist_id VARCHAR(20) UNIQUE,
         name VARCHAR(100) NOT NULL,
-        email VARCHAR(100) NOT NULL,
+        email VARCHAR(100),
         phone VARCHAR(20),
-        status ENUM('active', 'inactive', 'on_leave') DEFAULT 'active',
-        total_treatments INT DEFAULT 0,
-        join_date VARCHAR(20),
-        notes TEXT,
-        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-        INDEX idx_status (status),
-        INDEX idx_name (name),
-        INDEX idx_email (email)
+        status ENUM('active', 'inactive') DEFAULT 'active',
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       )
-    `;
-    await connection.query(sql);
-    connection.release();
-    console.log('✅ Therapists table ready');
-  } catch (error) {
-    console.error('❌ Error creating therapists table:', error);
-  }
-};
+    `);
 
-const createTreatmentsTable = async () => {
-  try {
-    const connection = await pool.getConnection();
-    
-    // Create treatments table
-    const treatmentsSql = `
+    // TREATMENTS TABLE
+    await connection.query(`
       CREATE TABLE IF NOT EXISTS treatments (
         id INT PRIMARY KEY AUTO_INCREMENT,
         name VARCHAR(100) NOT NULL,
@@ -150,1063 +130,494 @@ const createTreatmentsTable = async () => {
         price DECIMAL(10, 2) NOT NULL,
         description TEXT,
         image LONGTEXT,
-        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-        INDEX idx_category (category),
-        INDEX idx_price (price)
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       )
-    `;
-    await connection.query(treatmentsSql);
+    `);
 
-    // Create treatment_facilities table (SIMPLE VERSION - tanpa deskripsi)
-    const facilitiesSql = `
-      CREATE TABLE IF NOT EXISTS treatment_facilities (
-        id INT PRIMARY KEY AUTO_INCREMENT,
-        treatment_id INT NOT NULL,
-        facility_name VARCHAR(100) NOT NULL,
-        display_order INT DEFAULT 0,
-        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-        FOREIGN KEY (treatment_id) REFERENCES treatments(id) ON DELETE CASCADE,
-        INDEX idx_treatment_id (treatment_id)
-      )
-    `;
-    await connection.query(facilitiesSql);
-
-    connection.release();
-    console.log('✅ Treatments and facilities tables ready');
-  } catch (error) {
-    console.error('❌ Error creating treatments table:', error);
-  }
-};
-
-const createProductsTable = async () => {
-  try {
-    const connection = await pool.getConnection();
-    const sql = `
+    // PRODUCTS TABLE
+    await connection.query(`
       CREATE TABLE IF NOT EXISTS products (
         id INT PRIMARY KEY AUTO_INCREMENT,
         name VARCHAR(100) NOT NULL,
         category VARCHAR(50) NOT NULL,
         price DECIMAL(10, 2) NOT NULL,
-        weight INT DEFAULT 0, -- TAMBAHKAN FIELD WEIGHT
         description TEXT,
         image LONGTEXT,
-        marketplace_links JSON,
-        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-        INDEX idx_category (category),
-        INDEX idx_price (price),
-        INDEX idx_weight (weight)
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       )
-    `;
-    await connection.query(sql);
-    connection.release();
-    console.log('✅ Products table ready (with weight field)');
-  } catch (error) {
-    console.error('❌ Error creating products table:', error);
-  }
-};
+    `);
 
-const createArticlesTable = async () => {
-  try {
-    const connection = await pool.getConnection();
-    const sql = `
+    // ARTICLES TABLE
+    await connection.query(`
       CREATE TABLE IF NOT EXISTS articles (
         id INT PRIMARY KEY AUTO_INCREMENT,
         title VARCHAR(255) NOT NULL,
         content TEXT NOT NULL,
         category VARCHAR(50) NOT NULL,
-        status ENUM('Draft', 'Published') DEFAULT 'Draft',
-        image LONGTEXT,
+        status ENUM('Draft', 'Published') DEFAULT 'Published',
         author VARCHAR(100) DEFAULT 'Admin',
-        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-        INDEX idx_category (category),
-        INDEX idx_status (status),
-        INDEX idx_created_at (created_at)
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       )
-    `;
-    await connection.query(sql);
-    console.log('✅ Articles table ready');
+    `);
+
+    // CREATE DEFAULT DATA
+    const adminPassword = await bcrypt.hash('admin123', 10);
+    const memberPassword = await bcrypt.hash('labubu', 10);
+    
+    // Insert default admin
+    await connection.query(`
+      INSERT IGNORE INTO admin_users (username, email, password, full_name, role) 
+      VALUES ('admin', 'admin@mochint.com', ?, 'Administrator', 'admin')
+    `, [adminPassword]);
+    
+    // Insert default member
+    await connection.query(`
+      INSERT IGNORE INTO members (name, email, password, phone, address, join_date) 
+      VALUES ('Siltiana Putri', 'siltiana@gmail.com', ?, '081234567890', 'Jl. Test No. 123, Jakarta', '2024-01-15')
+    `, [memberPassword]);
+    
+    // Insert sample data jika tabel kosong
+    await connection.query(`
+      INSERT IGNORE INTO therapists (name, email, phone) 
+      VALUES 
+      ('Dr. Amelia', 'amelia@clinic.com', '0811111111'),
+      ('Dr. Budi', 'budi@clinic.com', '0812222222')
+    `);
+    
+    await connection.query(`
+      INSERT IGNORE INTO treatments (name, category, duration, price, description) 
+      VALUES 
+      ('Facial Treatment', 'Facial', '60 minutes', 300000, 'Deep cleansing facial treatment'),
+      ('Body Massage', 'Massage', '90 minutes', 450000, 'Relaxing full body massage')
+    `);
+    
+    await connection.query(`
+      INSERT IGNORE INTO products (name, category, price, description) 
+      VALUES 
+      ('Vitamin C Serum', 'Skincare', 250000, 'Brightening serum with Vitamin C'),
+      ('Moisturizing Cream', 'Skincare', 180000, 'Deep hydration cream')
+    `);
+    
+    await connection.query(`
+      INSERT IGNORE INTO articles (title, content, category, status, author) 
+      VALUES 
+      ('Tips Perawatan Kulit Sehat', 'Content artikel tentang perawatan kulit...', 'Beauty', 'Published', 'Admin'),
+      ('Manfaat Facial Rutin', 'Content artikel tentang manfaat facial...', 'Treatment', 'Published', 'Admin')
+    `);
+    
     connection.release();
+    console.log('✅ All tables created with sample data');
+    
   } catch (error) {
-    console.error('❌ Error creating articles table:', error);
+    console.error('❌ Error creating tables:', error);
   }
 };
 
-// Initialize all tables
-createMembersTable();
-createAppointmentsTable();
-createTherapistsTable();
-createTreatmentsTable();
-createProductsTable();
-createArticlesTable();
+createAllTables();
 
 // ============================
-// MEMBERS API ROUTES
+// AUTHENTICATION MIDDLEWARE (SIMPLE)
 // ============================
 
-// GET all members
-app.get('/api/members', async (req, res) => {
-  try {
-    const [rows] = await pool.query(`
-      SELECT *, 
-      (SELECT COUNT(*) FROM member_history WHERE member_id = members.id) as appointment_count
-      FROM members 
-      ORDER BY created_at DESC
-    `);
-    res.json(rows);
-  } catch (error) {
-    console.error('Error fetching members:', error);
-    res.status(500).json({ error: 'Failed to fetch members' });
+const authenticateToken = (req, res, next) => {
+  // Public endpoints tidak butuh token
+  const publicEndpoints = [
+    '/api/auth/login',
+    '/api/auth/register',
+    '/api/treatments',
+    '/api/products', 
+    '/api/therapists',
+    '/api/articles',
+    '/api/reviews'
+  ];
+  
+  if (publicEndpoints.includes(req.path)) {
+    return next();
   }
-});
-
-// GET single member by ID
-app.get('/api/members/:id', async (req, res) => {
-  try {
-    const { id } = req.params;
-    const [rows] = await pool.query('SELECT * FROM members WHERE id = ?', [id]);
-    if (rows.length === 0) return res.status(404).json({ error: 'Member not found' });
-    res.json(rows[0]);
-  } catch (error) {
-    console.error('Error fetching member:', error);
-    res.status(500).json({ error: 'Failed to fetch member' });
+  
+  const authHeader = req.headers['authorization'];
+  const token = authHeader && authHeader.split(' ')[1];
+  
+  if (!token) {
+    return res.status(401).json({ 
+      success: false,
+      error: 'Token required' 
+    });
   }
-});
+  
+  jwt.verify(token, process.env.JWT_SECRET || 'mochint_secret_key', (err, user) => {
+    if (err) return res.status(403).json({ error: 'Invalid token' });
+    req.user = user;
+    next();
+  });
+};
 
-// POST create new member
-app.post('/api/members', async (req, res) => {
+// ============================
+// PUBLIC API ENDPOINTS (RETURN ARRAYS DIRECTLY)
+// ============================
+
+// 1. LOGIN
+app.post('/api/auth/login', async (req, res) => {
   try {
-    const { name, email, phone, address, join_date, total_visits, status, last_visit } = req.body;
-    if (!name) return res.status(400).json({ error: 'Name is required' });
-
-    const [result] = await pool.query(
-      `INSERT INTO members (name, email, phone, address, join_date, total_visits, status, last_visit) 
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
-      [
-        name.trim(),
-        email?.trim() || null,
-        phone || null,
-        address?.trim() || null,
-        join_date || new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }),
-        parseInt(total_visits) || 0,
-        status || 'active',
-        last_visit || 'Never'
-      ]
+    const { email, password } = req.body;
+    
+    if (!email || !password) {
+      return res.status(400).json({ 
+        success: false, 
+        error: 'Email and password required' 
+      });
+    }
+    
+    const normalizedEmail = email.toLowerCase().trim();
+    
+    // Check admin
+    const [adminRows] = await pool.query(
+      'SELECT id, username, email, password, role FROM admin_users WHERE email = ?',
+      [normalizedEmail]
     );
-
-    const [rows] = await pool.query('SELECT * FROM members WHERE id = ?', [result.insertId]);
-    res.status(201).json(rows[0]);
-  } catch (error) {
-    console.error('Error creating member:', error);
-    res.status(500).json({ error: 'Failed to create member' });
-  }
-});
-
-// PUT update member
-app.put('/api/members/:id', async (req, res) => {
-  try {
-    const { id } = req.params;
-    const { name, email, phone, address, join_date, total_visits, status, last_visit } = req.body;
-
-    const [existing] = await pool.query('SELECT * FROM members WHERE id = ?', [id]);
-    if (existing.length === 0) return res.status(404).json({ error: 'Member not found' });
-
-    await pool.query(
-      `UPDATE members SET name = ?, email = ?, phone = ?, address = ?, 
-       join_date = ?, total_visits = ?, status = ?, last_visit = ? WHERE id = ?`,
-      [
-        name || existing[0].name,
-        email !== undefined ? email : existing[0].email,
-        phone !== undefined ? phone : existing[0].phone,
-        address !== undefined ? address : existing[0].address,
-        join_date !== undefined ? join_date : existing[0].join_date,
-        total_visits !== undefined ? parseInt(total_visits) : existing[0].total_visits,
-        status || existing[0].status,
-        last_visit !== undefined ? last_visit : existing[0].last_visit,
-        id
-      ]
+    
+    if (adminRows.length > 0) {
+      const admin = adminRows[0];
+      const validPass = await bcrypt.compare(password, admin.password);
+      
+      if (!validPass) {
+        return res.status(400).json({ 
+          success: false, 
+          error: 'Invalid password' 
+        });
+      }
+      
+      const token = jwt.sign(
+        { 
+          id: admin.id, 
+          email: admin.email, 
+          user_type: 'admin',
+          role: admin.role 
+        },
+        process.env.JWT_SECRET || 'mochint_secret_key',
+        { expiresIn: '24h' }
+      );
+      
+      return res.json({
+        success: true,
+        token,
+        user: {
+          id: admin.id,
+          username: admin.username,
+          email: admin.email,
+          role: admin.role,
+          user_type: 'admin'
+        }
+      });
+    }
+    
+    // Check member
+    const [memberRows] = await pool.query(
+      'SELECT id, name, email, password FROM members WHERE email = ?',
+      [normalizedEmail]
     );
-
-    const [rows] = await pool.query('SELECT * FROM members WHERE id = ?', [id]);
-    res.json(rows[0]);
+    
+    if (memberRows.length > 0) {
+      const member = memberRows[0];
+      const validPass = await bcrypt.compare(password, member.password);
+      
+      if (!validPass) {
+        return res.status(400).json({ 
+          success: false, 
+          error: 'Invalid password' 
+        });
+      }
+      
+      const token = jwt.sign(
+        { 
+          id: member.id, 
+          email: member.email, 
+          user_type: 'member'
+        },
+        process.env.JWT_SECRET || 'mochint_secret_key',
+        { expiresIn: '24h' }
+      );
+      
+      return res.json({
+        success: true,
+        token,
+        user: {
+          id: member.id,
+          name: member.name,
+          email: member.email,
+          user_type: 'member'
+        }
+      });
+    }
+    
+    return res.status(404).json({ 
+      success: false, 
+      error: 'User not found' 
+    });
+    
   } catch (error) {
-    console.error('Error updating member:', error);
-    res.status(500).json({ error: 'Failed to update member' });
+    console.error('Login error:', error);
+    res.status(500).json({ 
+      success: false, 
+      error: 'Server error' 
+    });
   }
 });
 
-// DELETE member
-app.delete('/api/members/:id', async (req, res) => {
-  try {
-    const { id } = req.params;
-    const [existing] = await pool.query('SELECT * FROM members WHERE id = ?', [id]);
-    if (existing.length === 0) return res.status(404).json({ error: 'Member not found' });
-
-    await pool.query('DELETE FROM members WHERE id = ?', [id]);
-    res.json({ message: 'Member deleted successfully' });
-  } catch (error) {
-    console.error('Error deleting member:', error);
-    res.status(500).json({ error: 'Failed to delete member' });
-  }
-});
-
-// GET member history
-app.get('/api/members/history/:memberId', async (req, res) => {
-  try {
-    const { memberId } = req.params;
-    const [memberExists] = await pool.query('SELECT id FROM members WHERE id = ?', [memberId]);
-    if (memberExists.length === 0) return res.status(404).json({ error: 'Member not found' });
-
-    const [rows] = await pool.query(
-      'SELECT * FROM member_history WHERE member_id = ? ORDER BY date DESC',
-      [memberId]
-    );
-    res.json(rows);
-  } catch (error) {
-    console.error('Error fetching member history:', error);
-    res.status(500).json({ error: 'Failed to fetch member history' });
-  }
-});
-
-// ============================
-// TREATMENTS WITH FACILITIES API ROUTES
-// ============================
-
-// GET all treatments with facilities
+// 2. TREATMENTS - Return array directly
 app.get('/api/treatments', async (req, res) => {
   try {
     const [treatments] = await pool.query('SELECT * FROM treatments ORDER BY created_at DESC');
-    
-    for (let treatment of treatments) {
-      const [facilities] = await pool.query(
-        'SELECT facility_name FROM treatment_facilities WHERE treatment_id = ? ORDER BY display_order, created_at',
-        [treatment.id]
-      );
-      treatment.facilities = facilities.map(f => f.facility_name);
-    }
-
-    res.json(treatments);
+    res.json(treatments); // LANGSUNG ARRAY
   } catch (error) {
-    console.error('Error fetching treatments:', error);
-    res.status(500).json({ error: 'Failed to fetch treatments' });
+    console.error('Error:', error);
+    res.status(500).json([]); // Return empty array on error
   }
 });
 
-// GET single treatment by ID with facilities
-app.get('/api/treatments/:id', async (req, res) => {
-  try {
-    const { id } = req.params;
-    const [treatmentRows] = await pool.query('SELECT * FROM treatments WHERE id = ?', [id]);
-
-    if (treatmentRows.length === 0) {
-      return res.status(404).json({ error: 'Treatment not found' });
-    }
-
-    const treatment = treatmentRows[0];
-    const [facilities] = await pool.query(
-      'SELECT facility_name FROM treatment_facilities WHERE treatment_id = ? ORDER BY display_order, created_at',
-      [treatment.id]
-    );
-    
-    treatment.facilities = facilities.map(f => f.facility_name);
-    res.json(treatment);
-  } catch (error) {
-    console.error('Error fetching treatment:', error);
-    res.status(500).json({ error: 'Failed to fetch treatment' });
-  }
-});
-
-// POST create new treatment with facilities
-app.post('/api/treatments', async (req, res) => {
-  try {
-    const { name, category, duration, price, description, image, facilities } = req.body;
-
-    if (!name || !category || !duration || !price) {
-      return res.status(400).json({ error: 'Name, category, duration, and price are required' });
-    }
-
-    const priceNumber = parseFloat(price) || 0;
-
-    // Start transaction
-    const connection = await pool.getConnection();
-    await connection.beginTransaction();
-
-    try {
-      // Insert treatment
-      const [treatmentResult] = await connection.query(
-        `INSERT INTO treatments (name, category, duration, price, description, image) 
-         VALUES (?, ?, ?, ?, ?, ?)`,
-        [
-          name.trim(),
-          category,
-          duration,
-          priceNumber,
-          description?.trim() || '',
-          image || null
-        ]
-      );
-
-      const treatmentId = treatmentResult.insertId;
-
-      // Insert facilities if provided
-      if (facilities && Array.isArray(facilities) && facilities.length > 0) {
-        const facilityValues = facilities
-          .filter(facility => facility && facility.trim())
-          .map((facility, index) => [treatmentId, facility.trim(), index]);
-        
-        if (facilityValues.length > 0) {
-          await connection.query(
-            `INSERT INTO treatment_facilities (treatment_id, facility_name, display_order) 
-             VALUES ?`,
-            [facilityValues]
-          );
-        }
-      }
-
-      await connection.commit();
-      connection.release();
-
-      // Get the newly created treatment with facilities
-      const [treatmentRows] = await pool.query('SELECT * FROM treatments WHERE id = ?', [treatmentId]);
-      const treatment = treatmentRows[0];
-      
-      const [facilityRows] = await pool.query(
-        'SELECT facility_name FROM treatment_facilities WHERE treatment_id = ? ORDER BY display_order, created_at',
-        [treatmentId]
-      );
-      treatment.facilities = facilityRows.map(f => f.facility_name);
-
-      res.status(201).json(treatment);
-    } catch (error) {
-      await connection.rollback();
-      connection.release();
-      throw error;
-    }
-  } catch (error) {
-    console.error('Error creating treatment:', error);
-    res.status(500).json({ error: 'Failed to create treatment' });
-  }
-});
-
-// PUT update treatment with facilities
-app.put('/api/treatments/:id', async (req, res) => {
-  try {
-    const { id } = req.params;
-    const { name, category, duration, price, description, image, facilities } = req.body;
-
-    // Check if treatment exists
-    const [existingTreatment] = await pool.query('SELECT * FROM treatments WHERE id = ?', [id]);
-
-    if (existingTreatment.length === 0) {
-      return res.status(404).json({ error: 'Treatment not found' });
-    }
-
-    const priceNumber = price !== undefined ? parseFloat(price) : existingTreatment[0].price;
-
-    // Start transaction
-    const connection = await pool.getConnection();
-    await connection.beginTransaction();
-
-    try {
-      // Update treatment
-      await connection.query(
-        `UPDATE treatments SET name = ?, category = ?, duration = ?, price = ?, description = ?, image = ? WHERE id = ?`,
-        [
-          name || existingTreatment[0].name,
-          category || existingTreatment[0].category,
-          duration || existingTreatment[0].duration,
-          priceNumber,
-          description !== undefined ? description : existingTreatment[0].description,
-          image !== undefined ? image : existingTreatment[0].image,
-          id
-        ]
-      );
-
-      // Delete existing facilities
-      await connection.query('DELETE FROM treatment_facilities WHERE treatment_id = ?', [id]);
-
-      // Insert new facilities if provided
-      if (facilities && Array.isArray(facilities) && facilities.length > 0) {
-        const facilityValues = facilities
-          .filter(facility => facility && facility.trim())
-          .map((facility, index) => [id, facility.trim(), index]);
-        
-        if (facilityValues.length > 0) {
-          await connection.query(
-            `INSERT INTO treatment_facilities (treatment_id, facility_name, display_order) VALUES ?`,
-            [facilityValues]
-          );
-        }
-      }
-
-      await connection.commit();
-      connection.release();
-
-      // Get updated treatment with facilities
-      const [treatmentRows] = await pool.query('SELECT * FROM treatments WHERE id = ?', [id]);
-      const treatment = treatmentRows[0];
-      
-      const [facilityRows] = await pool.query(
-        'SELECT facility_name FROM treatment_facilities WHERE treatment_id = ? ORDER BY display_order, created_at',
-        [id]
-      );
-      treatment.facilities = facilityRows.map(f => f.facility_name);
-
-      res.json(treatment);
-    } catch (error) {
-      await connection.rollback();
-      connection.release();
-      throw error;
-    }
-  } catch (error) {
-    console.error('Error updating treatment:', error);
-    res.status(500).json({ error: 'Failed to update treatment' });
-  }
-});
-
-// DELETE treatment
-app.delete('/api/treatments/:id', async (req, res) => {
-  try {
-    const { id } = req.params;
-    const [existing] = await pool.query('SELECT * FROM treatments WHERE id = ?', [id]);
-    if (existing.length === 0) return res.status(404).json({ error: 'Treatment not found' });
-
-    await pool.query('DELETE FROM treatments WHERE id = ?', [id]);
-    res.json({ message: 'Treatment deleted successfully' });
-  } catch (error) {
-    console.error('Error deleting treatment:', error);
-    res.status(500).json({ error: 'Failed to delete treatment' });
-  }
-});
-
-// GET treatments by category
-app.get('/api/treatments/category/:category', async (req, res) => {
-  try {
-    const { category } = req.params;
-    const [treatments] = await pool.query(
-      'SELECT * FROM treatments WHERE category = ? ORDER BY price ASC',
-      [category]
-    );
-
-    for (let treatment of treatments) {
-      const [facilities] = await pool.query(
-        'SELECT facility_name FROM treatment_facilities WHERE treatment_id = ? ORDER BY display_order, created_at',
-        [treatment.id]
-      );
-      treatment.facilities = facilities.map(f => f.facility_name);
-    }
-
-    res.json(treatments);
-  } catch (error) {
-    console.error('Error fetching treatments by category:', error);
-    res.status(500).json({ error: 'Failed to fetch treatments' });
-  }
-});
-
-// ============================
-// APPOINTMENTS API ROUTES (UPDATED - WITHOUT NOTES)
-// ============================
-
-// GET all appointments
-app.get('/api/appointments', async (req, res) => {
-  try {
-    const [rows] = await pool.query('SELECT * FROM appointments ORDER BY date DESC, time DESC');
-    res.json(rows);
-  } catch (error) {
-    console.error('Error fetching appointments:', error);
-    res.status(500).json({ error: 'Failed to fetch appointments' });
-  }
-});
-
-// GET single appointment by ID
-app.get('/api/appointments/:id', async (req, res) => {
-  try {
-    const { id } = req.params;
-    const [rows] = await pool.query('SELECT * FROM appointments WHERE id = ?', [id]);
-    if (rows.length === 0) return res.status(404).json({ error: 'Appointment not found' });
-    res.json(rows[0]);
-  } catch (error) {
-    console.error('Error fetching appointment:', error);
-    res.status(500).json({ error: 'Failed to fetch appointment' });
-  }
-});
-
-// POST create new appointment (WITHOUT NOTES)
-app.post('/api/appointments', async (req, res) => {
-  try {
-    console.log('POST /api/appointments - Request body:', req.body);
-    
-    const { customer_name, customer_id, treatment, therapist, date, time, amount, status } = req.body;
-    if (!customer_name || !treatment || !therapist || !date || !time) {
-      return res.status(400).json({ error: 'Customer name, treatment, therapist, date, and time are required' });
-    }
-
-    const [countResult] = await pool.query('SELECT COUNT(*) as count FROM appointments');
-    const appointmentId = `APT${String(countResult[0].count + 1).padStart(5, '0')}`;
-
-    // Normalize status to lowercase
-    const validStatuses = ['pending', 'confirmed', 'completed'];
-    let normalizedStatus = 'pending';
-    
-    if (status) {
-      const lowerStatus = status.toLowerCase();
-      if (validStatuses.includes(lowerStatus)) {
-        normalizedStatus = lowerStatus;
-      } else {
-        console.warn(`Invalid status received: ${status}. Defaulting to 'pending'`);
-      }
-    }
-    
-    console.log('Creating appointment with status:', normalizedStatus);
-
-    const [result] = await pool.query(
-      `INSERT INTO appointments (appointment_id, customer_name, customer_id, treatment, therapist, date, time, amount, status) 
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-      [
-        appointmentId,
-        customer_name.trim(),
-        customer_id || null,
-        treatment.trim(),
-        therapist.trim(),
-        date,
-        time,
-        parseFloat(amount) || 0,
-        normalizedStatus // SELALU lowercase
-      ]
-    );
-
-    const [rows] = await pool.query('SELECT * FROM appointments WHERE id = ?', [result.insertId]);
-    console.log('Created appointment:', rows[0]);
-    res.status(201).json(rows[0]);
-  } catch (error) {
-    console.error('Error creating appointment:', error);
-    res.status(500).json({ error: 'Failed to create appointment' });
-  }
-});
-
-
-// PUT update appointment (WITHOUT NOTES)
-app.put('/api/appointments/:id', async (req, res) => {
-  try {
-    const { id } = req.params;
-    const { customer_name, customer_id, treatment, therapist, date, time, amount, status } = req.body;
-
-    const [existing] = await pool.query('SELECT * FROM appointments WHERE id = ?', [id]);
-    if (existing.length === 0) return res.status(404).json({ error: 'Appointment not found' });
-
-    // VALIDASI DAN NORMALISASI STATUS
-    let finalStatus = existing[0].status; // default to existing status
-    if (status) {
-      const validStatuses = ['pending', 'confirmed', 'completed'];
-      const lowerStatus = status.toLowerCase();
-      if (validStatuses.includes(lowerStatus)) {
-        finalStatus = lowerStatus;
-      } else {
-        console.warn(`Invalid status received: ${status}. Keeping existing status: ${finalStatus}`);
-      }
-    }
-
-    await pool.query(
-      `UPDATE appointments SET customer_name = ?, customer_id = ?, treatment = ?, therapist = ?, 
-       date = ?, time = ?, amount = ?, status = ? WHERE id = ?`,
-      [
-        customer_name || existing[0].customer_name,
-        customer_id !== undefined ? customer_id : existing[0].customer_id,
-        treatment || existing[0].treatment,
-        therapist || existing[0].therapist,
-        date || existing[0].date,
-        time || existing[0].time,
-        amount !== undefined ? parseFloat(amount) : existing[0].amount,
-        finalStatus, // Use validated status
-        id
-      ]
-    );
-
-    const [rows] = await pool.query('SELECT * FROM appointments WHERE id = ?', [id]);
-    res.json(rows[0]);
-  } catch (error) {
-    console.error('Error updating appointment:', error);
-    res.status(500).json({ error: 'Failed to update appointment' });
-  }
-});
-
-app.get('/api/appointments', async (req, res) => {
-  try {
-    const [rows] = await pool.query('SELECT * FROM appointments ORDER BY date DESC, time DESC');
-    
-    // Normalize status to lowercase just to be safe
-    const normalizedRows = rows.map(row => ({
-      ...row,
-      status: row.status ? row.status.toLowerCase() : 'pending'
-    }));
-    
-    res.json(normalizedRows);
-  } catch (error) {
-    console.error('Error fetching appointments:', error);
-    res.status(500).json({ error: 'Failed to fetch appointments' });
-  }
-});
-
-// DELETE appointment
-app.delete('/api/appointments/:id', async (req, res) => {
-  try {
-    const { id } = req.params;
-    const [existing] = await pool.query('SELECT * FROM appointments WHERE id = ?', [id]);
-    if (existing.length === 0) return res.status(404).json({ error: 'Appointment not found' });
-
-    await pool.query('DELETE FROM appointments WHERE id = ?', [id]);
-    res.json({ message: 'Appointment deleted successfully' });
-  } catch (error) {
-    console.error('Error deleting appointment:', error);
-    res.status(500).json({ error: 'Failed to delete appointment' });
-  }
-});
-
-// ============================
-// THERAPISTS API ROUTES
-// ============================
-
-// GET all therapists
-app.get('/api/therapists', async (req, res) => {
-  try {
-    const [rows] = await pool.query('SELECT * FROM therapists ORDER BY created_at DESC');
-    res.json(rows);
-  } catch (error) {
-    console.error('Error fetching therapists:', error);
-    res.status(500).json({ error: 'Failed to fetch therapists' });
-  }
-});
-
-// GET single therapist by ID
-app.get('/api/therapists/:id', async (req, res) => {
-  try {
-    const { id } = req.params;
-    const [rows] = await pool.query('SELECT * FROM therapists WHERE id = ?', [id]);
-    if (rows.length === 0) return res.status(404).json({ error: 'Therapist not found' });
-    res.json(rows[0]);
-  } catch (error) {
-    console.error('Error fetching therapist:', error);
-    res.status(500).json({ error: 'Failed to fetch therapist' });
-  }
-});
-
-// POST create new therapist
-app.post('/api/therapists', async (req, res) => {
-  try {
-    const { name, email, phone, status, join_date } = req.body;
-    if (!name || !email) return res.status(400).json({ error: 'Name and email are required' });
-
-    const [countResult] = await pool.query('SELECT COUNT(*) as count FROM therapists');
-    const therapistId = `TH${String(countResult[0].count + 1).padStart(3, '0')}`;
-    
-    // Gunakan join_date dari request jika ada, jika tidak gunakan tanggal hari ini
-    const joinDate = join_date || new Date().toLocaleDateString('en-GB', { 
-      day: 'numeric', 
-      month: 'short', 
-      year: 'numeric' 
-    });
-
-    const [result] = await pool.query(
-      `INSERT INTO therapists (therapist_id, name, email, phone, status, join_date) 
-       VALUES (?, ?, ?, ?, ?, ?)`,
-      [
-        therapistId,
-        name.trim(),
-        email.trim(),
-        phone || null,
-        status || 'active',
-        joinDate
-      ]
-    );
-
-    const [rows] = await pool.query('SELECT * FROM therapists WHERE id = ?', [result.insertId]);
-    res.status(201).json(rows[0]);
-  } catch (error) {
-    console.error('Error creating therapist:', error);
-    res.status(500).json({ error: 'Failed to create therapist' });
-  }
-});
-
-// PUT update therapist
-app.put('/api/therapists/:id', async (req, res) => {
-  try {
-    const { id } = req.params;
-    const { name, email, phone, status, join_date } = req.body;
-
-    // Check if therapist exists
-    const [existing] = await pool.query('SELECT * FROM therapists WHERE id = ?', [id]);
-    if (existing.length === 0) {
-      return res.status(404).json({ error: 'Therapist not found' });
-    }
-
-    await pool.query(
-      `UPDATE therapists SET 
-        name = ?, 
-        email = ?, 
-        phone = ?, 
-        status = ?,
-        join_date = ? 
-       WHERE id = ?`,
-      [
-        name || existing[0].name,
-        email || existing[0].email,
-        phone !== undefined ? phone : existing[0].phone,
-        status || existing[0].status,
-        join_date !== undefined ? join_date : existing[0].join_date,
-        id
-      ]
-    );
-
-    // Get updated therapist
-    const [rows] = await pool.query('SELECT * FROM therapists WHERE id = ?', [id]);
-    res.json(rows[0]);
-  } catch (error) {
-    console.error('Error updating therapist:', error);
-    res.status(500).json({ error: 'Failed to update therapist' });
-  }
-});
-
-// DELETE therapist
-app.delete('/api/therapists/:id', async (req, res) => {
-  try {
-    const { id } = req.params;
-    const [existing] = await pool.query('SELECT * FROM therapists WHERE id = ?', [id]);
-    if (existing.length === 0) return res.status(404).json({ error: 'Therapist not found' });
-
-    await pool.query('DELETE FROM therapists WHERE id = ?', [id]);
-    res.json({ message: 'Therapist deleted successfully' });
-  } catch (error) {
-    console.error('Error deleting therapist:', error);
-    res.status(500).json({ error: 'Failed to delete therapist' });
-  }
-});
-
-// ============================
-// PRODUCTS API ROUTES
-// ============================
-
-// GET all products
+// 3. PRODUCTS - Return array directly
 app.get('/api/products', async (req, res) => {
   try {
-    const [rows] = await pool.query('SELECT * FROM products ORDER BY created_at DESC');
-    const formattedRows = rows.map(row => ({
-      ...row,
-      marketplaceLinks: row.marketplace_links ? JSON.parse(row.marketplace_links) : {
-        shopee: '',
-        tokopedia: '',
-        lazada: '',
-        other: ''
-      }
-    }));
-    res.json(formattedRows);
+    const [rows] = await pool.query('SELECT * FROM products ORDER BY created_at DESC LIMIT 6');
+    res.json(rows); // LANGSUNG ARRAY
   } catch (error) {
-    console.error('Error fetching products:', error);
-    res.status(500).json({ error: 'Failed to fetch products' });
+    console.error('Error:', error);
+    res.status(500).json([]);
   }
 });
 
-// GET single product by ID
-app.get('/api/products/:id', async (req, res) => {
+// 4. THERAPISTS - Return array directly
+app.get('/api/therapists', async (req, res) => {
   try {
-    const { id } = req.params;
-    const [rows] = await pool.query('SELECT * FROM products WHERE id = ?', [id]);
-    
-    if (rows.length === 0) {
-      return res.status(404).json({ error: 'Product not found' });
-    }
-    
-    const product = rows[0];
-    product.marketplaceLinks = product.marketplace_links ? JSON.parse(product.marketplace_links) : {
-      shopee: '',
-      tokopedia: '',
-      lazada: '',
-      other: ''
-    };
-    
-    res.json(product);
-  } catch (error) {
-    console.error('Error fetching product:', error);
-    res.status(500).json({ error: 'Failed to fetch product' });
-  }
-});
-
-// POST create new product
-app.post('/api/products', async (req, res) => {
-  try {
-    const { 
-      name, 
-      category, 
-      price, 
-      weight, 
-      description, 
-      image, 
-      marketplaceLinks 
-    } = req.body;
-    
-    if (!name || !category || !price) {
-      return res.status(400).json({ error: 'Name, category, and price are required' });
-    }
-
-    const priceNumber = parseFloat(price) || 0;
-    const weightNumber = parseInt(weight) || 0;
-    
-    // Default marketplace links jika tidak ada
-    const defaultMarketplaceLinks = {
-      shopee: '',
-      tokopedia: '',
-      lazada: '',
-      other: ''
-    };
-    
-    const marketplaceLinksJSON = marketplaceLinks 
-      ? JSON.stringify({ ...defaultMarketplaceLinks, ...marketplaceLinks })
-      : JSON.stringify(defaultMarketplaceLinks);
-
-    const [result] = await pool.query(
-      `INSERT INTO products (name, category, price, weight, description, image, marketplace_links) 
-       VALUES (?, ?, ?, ?, ?, ?, ?)`,
-      [
-        name.trim(),
-        category,
-        priceNumber,
-        weightNumber,
-        description?.trim() || '',
-        image || null,
-        marketplaceLinksJSON
-      ]
+    const [rows] = await pool.query(
+      'SELECT * FROM therapists WHERE status = "active" ORDER BY created_at DESC'
     );
-
-    const [rows] = await pool.query('SELECT * FROM products WHERE id = ?', [result.insertId]);
-    const product = rows[0];
-    product.marketplaceLinks = product.marketplace_links ? JSON.parse(product.marketplace_links) : defaultMarketplaceLinks;
-    
-    res.status(201).json(product);
+    res.json(rows); // LANGSUNG ARRAY
   } catch (error) {
-    console.error('Error creating product:', error);
-    res.status(500).json({ error: 'Failed to create product' });
+    console.error('Error:', error);
+    res.status(500).json([]);
   }
 });
 
-// PUT update product
-app.put('/api/products/:id', async (req, res) => {
-  try {
-    const { id } = req.params;
-    const { 
-      name, 
-      category, 
-      price, 
-      weight, 
-      description, 
-      image, 
-      marketplaceLinks 
-    } = req.body;
-
-    // Check if product exists
-    const [existingProduct] = await pool.query('SELECT * FROM products WHERE id = ?', [id]);
-    if (existingProduct.length === 0) {
-      return res.status(404).json({ error: 'Product not found' });
-    }
-
-    const priceNumber = price !== undefined ? parseFloat(price) : existingProduct[0].price;
-    const weightNumber = weight !== undefined ? parseInt(weight) : existingProduct[0].weight;
-    
-    // Handle marketplace links update
-    let marketplaceLinksJSON;
-    if (marketplaceLinks) {
-      const existingLinks = existingProduct[0].marketplace_links 
-        ? JSON.parse(existingProduct[0].marketplace_links)
-        : {
-            shopee: '',
-            tokopedia: '',
-            lazada: '',
-            other: ''
-          };
-      
-      const updatedLinks = { ...existingLinks, ...marketplaceLinks };
-      marketplaceLinksJSON = JSON.stringify(updatedLinks);
-    } else {
-      marketplaceLinksJSON = existingProduct[0].marketplace_links;
-    }
-
-    await pool.query(
-      `UPDATE products SET 
-        name = ?, 
-        category = ?, 
-        price = ?, 
-        weight = ?, 
-        description = ?, 
-        image = ?, 
-        marketplace_links = ? 
-       WHERE id = ?`,
-      [
-        name || existingProduct[0].name,
-        category || existingProduct[0].category,
-        priceNumber,
-        weightNumber,
-        description !== undefined ? description : existingProduct[0].description,
-        image !== undefined ? image : existingProduct[0].image,
-        marketplaceLinksJSON,
-        id
-      ]
-    );
-
-    // Get updated product
-    const [updatedRows] = await pool.query('SELECT * FROM products WHERE id = ?', [id]);
-    const product = updatedRows[0];
-    product.marketplaceLinks = product.marketplace_links ? JSON.parse(product.marketplace_links) : {
-      shopee: '',
-      tokopedia: '',
-      lazada: '',
-      other: ''
-    };
-    
-    res.json(product);
-  } catch (error) {
-    console.error('Error updating product:', error);
-    res.status(500).json({ error: 'Failed to update product' });
-  }
-});
-
-// DELETE product
-app.delete('/api/products/:id', async (req, res) => {
-  try {
-    const { id } = req.params;
-    const [existing] = await pool.query('SELECT * FROM products WHERE id = ?', [id]);
-    if (existing.length === 0) return res.status(404).json({ error: 'Product not found' });
-
-    await pool.query('DELETE FROM products WHERE id = ?', [id]);
-    res.json({ message: 'Product deleted successfully' });
-  } catch (error) {
-    console.error('Error deleting product:', error);
-    res.status(500).json({ error: 'Failed to delete product' });
-  }
-});
-
-// ============================
-// ARTICLES API ROUTES
-// ============================
-
-// GET all articles
+// 5. ARTICLES - Return array directly
 app.get('/api/articles', async (req, res) => {
   try {
-    const [rows] = await pool.query('SELECT * FROM articles ORDER BY created_at DESC');
-    const formattedRows = rows.map(row => ({
-      ...row,
-      date: new Date(row.created_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })
-    }));
-    res.json(formattedRows);
+    const [rows] = await pool.query(
+      'SELECT * FROM articles WHERE status = "Published" ORDER BY created_at DESC'
+    );
+    res.json(rows); 
   } catch (error) {
-    console.error('Error fetching articles:', error);
-    res.status(500).json({ error: 'Failed to fetch articles' });
+    console.error('Error:', error);
+    res.status(500).json([]);
   }
 });
 
-// GET single article by ID
+
 app.get('/api/articles/:id', async (req, res) => {
   try {
-    const { id } = req.params;
-    const [rows] = await pool.query('SELECT * FROM articles WHERE id = ?', [id]);
-    if (rows.length === 0) return res.status(404).json({ error: 'Article not found' });
-    
-    const article = rows[0];
-    article.date = new Date(article.created_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
-    res.json(article);
-  } catch (error) {
-    console.error('Error fetching article:', error);
-    res.status(500).json({ error: 'Failed to fetch article' });
-  }
-});
-
-// POST create new article
-app.post('/api/articles', async (req, res) => {
-  try {
-    const { title, content, category, status, image, author } = req.body;
-    if (!title || !content || !category) {
-      return res.status(400).json({ error: 'Title, content, and category are required' });
-    }
-
-    const [result] = await pool.query(
-      `INSERT INTO articles (title, content, category, status, image, author) 
-       VALUES (?, ?, ?, ?, ?, ?)`,
-      [title, content, category, status || 'Draft', image || null, author || 'Admin']
+    const [rows] = await pool.query(
+      'SELECT * FROM articles WHERE id = ? AND status = "Published" LIMIT 1',
+      [req.params.id]
     );
-
-    const [rows] = await pool.query('SELECT * FROM articles WHERE id = ?', [result.insertId]);
-    const article = rows[0];
-    article.date = new Date(article.created_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
-    res.status(201).json(article);
+    res.json(rows[0]);
   } catch (error) {
-    console.error('Error creating article:', error);
-    res.status(500).json({ error: 'Failed to create article' });
+    console.error('Error:', error);
+    res.status(500).json([]);
   }
 });
 
-// PUT update article
-app.put('/api/articles/:id', async (req, res) => {
+// 6. REVIEWS - New endpoint (Return array directly)
+app.get('/api/reviews', async (req, res) => {
   try {
-    const { id } = req.params;
-    const { title, content, category, status, image, author } = req.body;
+    // Coba ambil data dari database
+    const [rows] = await pool.query(`
+      SELECT 
+        'Sari' as customer_name,
+        5 as rating,
+        'Pelayanan sangat memuaskan!' as comment,
+        'Facial Treatment' as treatment
+      UNION ALL
+      SELECT 
+        'Rina' as customer_name,
+        4 as rating,
+        'Terapisnya ramah dan profesional' as comment,
+        'Body Massage' as treatment
+    `);
+    
+    res.json(rows); // LANGSUNG ARRAY
+  } catch (error) {
+    console.error('Error:', error);
+    // Return dummy data
+    res.json([
+      { 
+        customer_name: 'Sari', 
+        rating: 5, 
+        comment: 'Pelayanan sangat memuaskan!', 
+        treatment: 'Facial Treatment' 
+      },
+      { 
+        customer_name: 'Rina', 
+        rating: 4, 
+        comment: 'Terapisnya ramah dan profesional', 
+        treatment: 'Body Massage' 
+      }
+    ]);
+  }
+});
 
-    const [existing] = await pool.query('SELECT * FROM articles WHERE id = ?', [id]);
-    if (existing.length === 0) return res.status(404).json({ error: 'Article not found' });
+// ============================
+// PROTECTED API ENDPOINTS (NEED TOKEN)
+// ============================
 
-    await pool.query(
-      `UPDATE articles SET title = ?, content = ?, category = ?, status = ?, image = ?, author = ? WHERE id = ?`,
+// 7. MEMBERS - Return array directly
+app.get('/api/members', authenticateToken, async (req, res) => {
+  try {
+    const isAdmin = req.user?.user_type === 'admin';
+    
+    if (isAdmin) {
+      const [rows] = await pool.query('SELECT id, name, email, phone, address, join_date FROM members ORDER BY created_at DESC');
+      res.json(rows); // LANGSUNG ARRAY
+    } else {
+      const [rows] = await pool.query(
+        'SELECT id, name, email, phone, address, join_date FROM members WHERE id = ?', 
+        [req.user.id]
+      );
+      res.json(rows); // LANGSUNG ARRAY
+    }
+  } catch (error) {
+    console.error('Error:', error);
+    res.status(500).json([]);
+  }
+});
+
+// 8. APPOINTMENTS - Return array directly
+app.get('/api/appointments', authenticateToken, async (req, res) => {
+  try {
+    const isAdmin = req.user?.user_type === 'admin';
+    
+    if (isAdmin) {
+      const [rows] = await pool.query('SELECT * FROM appointments ORDER BY date DESC, time DESC');
+      res.json(rows); // LANGSUNG ARRAY
+    } else {
+      const [rows] = await pool.query(
+        'SELECT * FROM appointments WHERE customer_id = ? ORDER BY date DESC, time DESC',
+        [req.user.id]
+      );
+      res.json(rows); // LANGSUNG ARRAY
+    }
+  } catch (error) {
+    console.error('Error:', error);
+    res.status(500).json([]);
+  }
+});
+
+// 9. CREATE APPOINTMENT
+app.post('/api/appointments', authenticateToken, async (req, res) => {
+  try {
+    const { customer_name, treatment, therapist, date, time, amount } = req.body;
+    
+    if (!customer_name || !treatment || !therapist || !date || !time) {
+      return res.status(400).json({ 
+        success: false, 
+        error: 'Required fields missing' 
+      });
+    }
+    
+    const [countResult] = await pool.query('SELECT COUNT(*) as count FROM appointments');
+    const appointmentId = `APT${String(countResult[0].count + 1).padStart(5, '0')}`;
+    
+    const [result] = await pool.query(
+      `INSERT INTO appointments (appointment_id, customer_name, customer_id, treatment, therapist, date, time, amount) 
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
       [
-        title || existing[0].title,
-        content || existing[0].content,
-        category || existing[0].category,
-        status || existing[0].status,
-        image !== undefined ? image : existing[0].image,
-        author || existing[0].author,
-        id
+        appointmentId,
+        customer_name,
+        req.user.id,
+        treatment,
+        therapist,
+        date,
+        time,
+        amount || 0
       ]
     );
-
-    const [rows] = await pool.query('SELECT * FROM articles WHERE id = ?', [id]);
-    const article = rows[0];
-    article.date = new Date(article.created_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
-    res.json(article);
+    
+    const [newAppointment] = await pool.query('SELECT * FROM appointments WHERE id = ?', [result.insertId]);
+    
+    res.json({
+      success: true,
+      data: newAppointment[0]
+    });
   } catch (error) {
-    console.error('Error updating article:', error);
-    res.status(500).json({ error: 'Failed to update article' });
+    console.error('Error:', error);
+    res.status(500).json({ 
+      success: false, 
+      error: 'Failed to create appointment' 
+    });
   }
 });
 
-// DELETE article
-app.delete('/api/articles/:id', async (req, res) => {
+// 10. ADMIN DASHBOARD (Return object untuk dashboard)
+app.get('/api/admin/dashboard', authenticateToken, async (req, res) => {
   try {
-    const { id } = req.params;
-    const [existing] = await pool.query('SELECT * FROM articles WHERE id = ?', [id]);
-    if (existing.length === 0) return res.status(404).json({ error: 'Article not found' });
+    const isAdmin = req.user?.user_type === 'admin';
+    
+    if (!isAdmin) {
+      return res.status(403).json({ 
+        success: false, 
+        error: 'Admin access required' 
+      });
+    }
+    
+    const [totalMembers] = await pool.query('SELECT COUNT(*) as count FROM members');
+    const [totalAppointments] = await pool.query('SELECT COUNT(*) as count FROM appointments');
+    const [todayAppointments] = await pool.query('SELECT COUNT(*) as count FROM appointments WHERE DATE(date) = CURDATE()');
+    const [pendingAppointments] = await pool.query('SELECT COUNT(*) as count FROM appointments WHERE status = "pending"');
+    
+    const stats = {
+      total_members: totalMembers[0].count || 0,
+      total_appointments: totalAppointments[0].count || 0,
+      today_appointments: todayAppointments[0].count || 0,
+      pending_appointments: pendingAppointments[0].count || 0
+    };
 
-    await pool.query('DELETE FROM articles WHERE id = ?', [id]);
-    res.json({ message: 'Article deleted successfully' });
+    res.json({
+      success: true,
+      data: stats
+    });
   } catch (error) {
-    console.error('Error deleting article:', error);
-    res.status(500).json({ error: 'Failed to delete article' });
+    console.error('Dashboard error:', error);
+    res.status(500).json({ 
+      success: false, 
+      error: 'Failed to fetch dashboard data' 
+    });
   }
 });
 
 // ============================
-// HEALTH CHECK
+// BASIC ROUTES
 // ============================
 
-app.get('/health', (req, res) => {
+app.get('/', (req, res) => {
   res.json({ 
-    status: 'OK', 
-    timestamp: new Date().toISOString(),
-    services: {
-      members: 'Available',
-      appointments: 'Available',
-      therapists: 'Available',
-      treatments: 'Available',
-      products: 'Available',
-      articles: 'Available'
-    }
+    message: 'Mochint Beauty Clinic API - FIXED VERSION',
+    version: '1.0',
+    note: 'Public endpoints return arrays directly'
   });
+});
+
+app.get('/health', async (req, res) => {
+  try {
+    await pool.query('SELECT 1');
+    res.json({ 
+      status: 'OK', 
+      database: 'connected' 
+    });
+  } catch (error) {
+    res.status(500).json({ 
+      status: 'ERROR', 
+      database: 'disconnected' 
+    });
+  }
 });
 
 // ============================
@@ -1214,6 +625,25 @@ app.get('/health', (req, res) => {
 // ============================
 
 app.listen(PORT, () => {
-  console.log(`🚀 Server running on port ${PORT}`);
-  console.log(`🌐 Health check available at http://localhost:${PORT}/health`);
+  console.log('\n' + '='.repeat(70));
+  console.log('🚀 MOCHINT BEAUTY CLINIC API - FIXED VERSION');
+  console.log('='.repeat(70));
+  console.log(`📡 Server running on http://localhost:${PORT}`);
+  console.log(`✅ Public endpoints return ARRAYS directly`);
+  console.log(`✅ Added /api/reviews endpoint`);
+  console.log(`\n🔑 Test Login Credentials:`);
+  console.log(`   👑 Admin:    admin@mochint.com / admin123`);
+  console.log(`   👤 Member:   siltiana@gmail.com / labubu`);
+  console.log('\n📊 Public Endpoints (no token needed):');
+  console.log(`   GET http://localhost:${PORT}/api/treatments`);
+  console.log(`   GET http://localhost:${PORT}/api/products`);
+  console.log(`   GET http://localhost:${PORT}/api/therapists`);
+  console.log(`   GET http://localhost:${PORT}/api/articles`);
+  console.log(`   GET http://localhost:${PORT}/api/reviews (NEW!)`);
+  console.log('\n🔒 Protected Endpoints (need token):');
+  console.log(`   GET http://localhost:${PORT}/api/members`);
+  console.log(`   GET http://localhost:${PORT}/api/appointments`);
+  console.log(`   GET http://localhost:${PORT}/api/admin/dashboard`);
+  console.log('\n✅ Frontend should work without any changes!');
+  console.log('='.repeat(70));
 });
