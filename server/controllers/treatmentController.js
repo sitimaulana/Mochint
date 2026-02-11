@@ -65,10 +65,13 @@ exports.createTreatment = async (req, res) => {
     
     const result = await Treatment.create(treatmentData);
     
+    // Return created treatment data
+    const createdTreatment = await Treatment.getById(result.id);
+    
     res.status(201).json({ 
       success: true, 
       message: 'Treatment created successfully',
-      data: { id: result.id }
+      data: createdTreatment
     });
   } catch (error) {
     console.error('Error creating treatment:', error);
@@ -95,9 +98,13 @@ exports.updateTreatment = async (req, res) => {
       });
     }
     
+    // Return updated treatment data
+    const updatedTreatment = await Treatment.getById(id);
+    
     res.json({ 
       success: true, 
-      message: 'Treatment updated successfully' 
+      message: 'Treatment updated successfully',
+      data: updatedTreatment 
     });
   } catch (error) {
     console.error('Error updating treatment:', error);

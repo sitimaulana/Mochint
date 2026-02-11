@@ -48,27 +48,37 @@ exports.createAppointment = async (req, res) => {
   try {
     const appointmentData = req.body;
     
-    // Generate ID jika tidak ada
-    if (!appointmentData.id) {
-      const lastAppointment = await Appointment.getLastId();
-      const lastNumber = lastAppointment ? parseInt(lastAppointment.id.substring(2)) : 0;
-      appointmentData.id = `AP${String(lastNumber + 1).padStart(3, '0')}`;
+    // Generate appointment_id jika tidak ada (format: APT00001)
+    if (!appointmentData.appointment_id) {
+      const lastAppointment = await Appointment.getLastAppointmentId();
+      let nextNumber = 1;
+      
+      if (lastAppointment && lastAppointment.appointment_id) {
+        // Extract number from APT00001 format
+        const lastNumber = parseInt(lastAppointment.appointment_id.substring(3));
+        nextNumber = lastNumber + 1;
+      }
+      
+      appointmentData.appointment_id = `APT${String(nextNumber).padStart(5, '0')}`;
     }
     
     // Validasi data required
-    if (!appointmentData.customer_name || !appointmentData.appointment_date) {
+    if (!appointmentData.customer_name || !appointmentData.date) {
       return res.status(400).json({ 
         success: false, 
-        error: 'Customer name and appointment date are required' 
+        error: 'Customer name and date are required' 
       });
     }
     
     const result = await Appointment.create(appointmentData);
     
+    // Ambil data lengkap dengan JOIN untuk response
+    const createdAppointment = await Appointment.getByIdWithDetails(result.insertId || result.id);
+    
     res.status(201).json({ 
       success: true, 
       message: 'Appointment created successfully',
-      data: { id: result.id }
+      data: createdAppointment
     });
   } catch (error) {
     console.error('Error creating appointment:', error);
@@ -95,9 +105,13 @@ exports.updateAppointment = async (req, res) => {
       });
     }
     
+    // Ambil data lengkap dengan JOIN untuk response
+    const updatedAppointment = await Appointment.getByIdWithDetails(id);
+    
     res.json({ 
       success: true, 
-      message: 'Appointment updated successfully' 
+      message: 'Appointment updated successfully',
+      data: updatedAppointment
     });
   } catch (error) {
     console.error('Error updating appointment:', error);
@@ -144,11 +158,11 @@ exports.updateAppointmentStatus = async (req, res) => {
     const { status } = req.body;
     
     // Validasi status
-    const validStatuses = ['pending', 'confirmed', 'completed'];
+    const validStatuses = ['confirmed', 'completed'];
     if (!validStatuses.includes(status)) {
       return res.status(400).json({ 
         success: false, 
-        error: 'Invalid status. Must be: pending, confirmed, or completed' 
+        error: 'Invalid status. Must be: confirmed or completed' 
       });
     }
     

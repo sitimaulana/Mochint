@@ -4,15 +4,14 @@ const Therapist = require('../models/Therapist');
 exports.getAllTherapists = async (req, res) => {
   try {
     const therapists = await Therapist.getAll();
-    res.json({
-      success: true,
-      count: therapists.length,
-      data: therapists
-    });
+
+    console.log('Returning therapists:', therapists); // DEBUG
+
+    // Return array langsung, bukan wrapped dalam object
+    res.json(therapists);
   } catch (error) {
     console.error('Error getting therapists:', error);
     res.status(500).json({
-      success: false,
       error: 'Failed to get therapists',
       message: error.message
     });

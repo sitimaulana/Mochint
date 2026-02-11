@@ -9,7 +9,7 @@ const Therapist = () => {
     email: '',
     phone: '',
     status: 'active',
-    joinDate: ''
+    join_date: '' // UBAH dari joinDate menjadi join_date
   });
   const [isAdding, setIsAdding] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
@@ -21,7 +21,7 @@ const Therapist = () => {
   const [saveLoading, setSaveLoading] = useState(false);
   const [deleteLoading, setDeleteLoading] = useState(false);
   const [appointments, setAppointments] = useState([]);
-  const [appointmentsLoading, setAppointmentsLoading] = useState(false);
+  const [appointmentsLoading, setAppointmentsLoading] = useState(true);
 
   // API base URL
   const API_URL = 'http://localhost:5000/api/therapists';
@@ -37,71 +37,84 @@ const Therapist = () => {
   const fetchAllData = async () => {
     try {
       setLoading(true);
-      const [therapistsRes, appointmentsRes] = await Promise.all([
-        axios.get(API_URL, {headers: {Authorization: `Bearer ${Token}`}}),
-        axios.get(APPOINTMENTS_API_URL, {headers: {Authorization: `Bearer ${Token}`}})
-      ]);
-      
-      setTherapists(therapistsRes.data);
-      setAppointments(appointmentsRes.data);
       setError(null);
-    } catch (err) {
+
+      const [therapistsResponse, appointmentsResponse] = await Promise.all([
+        axios.get(API_URL, {
+          headers: { Authorization: `Bearer ${Token}` }
+        }),
+        axios.get(APPOINTMENTS_API_URL, {
+          headers: { Authorization: `Bearer ${Token}` }
+        })
+      ]);
+
+      console.log('Therapists from API:', therapistsResponse.data); // DEBUG
+      console.log('Appointments from API:', appointmentsResponse.data); // DEBUG
+
+      // Extract array from response
+      const therapistsData = therapistsResponse.data?.data || therapistsResponse.data || [];
+      const appointmentsData = appointmentsResponse.data?.data || appointmentsResponse.data || [];
+
+      setTherapists(Array.isArray(therapistsData) ? therapistsData : []);
+      setAppointments(Array.isArray(appointmentsData) ? appointmentsData : []);
+      setAppointmentsLoading(false);
+    } catch (error) {
+      console.error('Error fetching data:', error);
       setError('Gagal memuat data. Silakan coba lagi.');
-      console.error('Error memuat data:', err);
+      setTherapists([]);
+      setAppointments([]);
     } finally {
       setLoading(false);
     }
   };
 
   // Fungsi untuk menghitung total perawatan dari appointments
-  const calculateTherapistTreatments = (therapistName) => {
-    if (!therapistName || !appointments || appointments.length === 0) return 0;
+  const calculateTherapistTreatments = (therapistId) => {
+    if (!therapistId || !Array.isArray(appointments)) return 0;
     
-    const therapistAppointments = appointments.filter(app => 
-      app.therapist && 
-      app.therapist.trim().toLowerCase() === therapistName.trim().toLowerCase() &&
+    return appointments.filter(app => 
+      app.therapist_id === therapistId &&
       app.status === 'completed'
-    );
-    
-    return therapistAppointments.length;
+    ).length;
   };
 
   // Fungsi untuk mendapatkan riwayat appointment terapis
-  const getAppointmentsByTherapist = (therapistName) => {
-    if (!therapistName || !appointments || appointments.length === 0) return [];
+  const getAppointmentsByTherapist = (therapistId) => {
+    if (!therapistId || !Array.isArray(appointments)) return [];
     
     return appointments.filter(app =>
-      app.therapist && 
-      app.therapist.trim().toLowerCase() === therapistName.trim().toLowerCase() &&
+      app.therapist_id === therapistId &&
       app.status === 'completed'
     ).sort((a, b) => new Date(b.date) - new Date(a.date));
   };
 
   // Fungsi untuk menghitung total pendapatan dari appointments terapis
-  const calculateTherapistRevenue = (therapistName) => {
-    const therapistAppointments = getAppointmentsByTherapist(therapistName);
+  const calculateTherapistRevenue = (therapistId) => {
+    const therapistAppointments = getAppointmentsByTherapist(therapistId);
     return therapistAppointments.reduce((total, app) => total + (parseFloat(app.amount) || 0), 0);
   };
 
-  // Hitung statistik keseluruhan
+  // Hitung statistik keseluruhan - UBAH dari therapist.name menjadi therapist.id
   const stats = {
     total: therapists.length,
     active: therapists.filter(t => t.status === 'active').length,
     totalTreatments: therapists.reduce((sum, therapist) => 
-      sum + calculateTherapistTreatments(therapist.name), 0),
+      sum + calculateTherapistTreatments(therapist.id), 0),
     newThisMonth: therapists.filter(t => {
       const joinDate = t.join_date || t.joinDate;
       if (!joinDate) return false;
       try {
         const joinMonth = new Date(joinDate).getMonth();
         const currentMonth = new Date().getMonth();
-        return joinMonth === currentMonth;
+        const joinYear = new Date(joinDate).getFullYear();
+        const currentYear = new Date().getFullYear();
+        return joinMonth === currentMonth && joinYear === currentYear;
       } catch {
         return false;
       }
     }).length,
     totalRevenue: therapists.reduce((sum, therapist) => 
-      sum + calculateTherapistRevenue(therapist.name), 0)
+      sum + calculateTherapistRevenue(therapist.id), 0)
   };
 
   // Filter terapis
@@ -110,7 +123,7 @@ const Therapist = () => {
       (therapist.name || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
       (therapist.email || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
       (therapist.phone || '').includes(searchTerm) ||
-      (therapist.therapist_id || therapist.id || '').toString().toLowerCase().includes(searchTerm.toLowerCase());
+      (therapist.id || '').toString().toLowerCase().includes(searchTerm.toLowerCase());
 
     const matchesStatus = selectedStatus === 'all' || therapist.status === selectedStatus;
 
@@ -119,17 +132,19 @@ const Therapist = () => {
 
   const handleAdd = () => {
     setIsAdding(true);
+    setEditingTherapist(null);
     setFormData({
       name: '',
       email: '',
       phone: '',
       status: 'active',
-      joinDate: new Date().toLocaleDateString('id-ID', { 
+      join_date: new Date().toLocaleDateString('id-ID', { 
         day: 'numeric', 
         month: 'short', 
         year: 'numeric' 
       })
     });
+    setError(null);
   };
 
   const handleEdit = (therapist) => {
@@ -140,67 +155,55 @@ const Therapist = () => {
       email: therapist.email || '',
       phone: therapist.phone || '',
       status: therapist.status || 'active',
-      joinDate: therapist.join_date || ''
+      join_date: therapist.join_date || '' // UBAH dari joinDate menjadi join_date
     });
+    setError(null);
   };
 
   const handleSave = async () => {
-    // Validasi
-    if (!formData.name?.trim()) {
-      alert('Nama wajib diisi');
-      return;
-    }
-
-    if (!formData.email?.trim()) {
-      alert('Email wajib diisi');
-      return;
-    }
-
-    if (formData.email && !formData.email.includes('@')) {
-      alert('Harap masukkan alamat email yang valid');
-      return;
-    }
-
-    setSaveLoading(true);
-
     try {
-      if (isAdding) {
-        const newTherapistData = {
-          name: formData.name.trim(),
-          email: formData.email.trim(),
-          phone: formData.phone || '',
-          status: formData.status || 'active',
-          join_date: formData.joinDate || new Date().toLocaleDateString('id-ID', { 
-            day: 'numeric', 
-            month: 'short', 
-            year: 'numeric' 
-          })
-        };
+      setSaveLoading(true);
+      setError(null);
 
-        const response = await axios.post(API_URL, newTherapistData);
-        setTherapists([response.data, ...therapists]);
-        setIsAdding(false);
-      } else {
-        const updatedTherapistData = {
-          name: formData.name.trim(),
-          email: formData.email.trim(),
-          phone: formData.phone || '',
-          status: formData.status || 'active',
-          joinDate: formData.joinDate || ''
-        };
-
-        const response = await axios.put(`${API_URL}/${editingTherapist}`, updatedTherapistData);
-        setTherapists(therapists.map(therapist =>
-          therapist.id === editingTherapist ? response.data : therapist
-        ));
+      // Validasi
+      if (!formData.name || !formData.email) {
+        setError('Nama dan Email wajib diisi');
+        setSaveLoading(false);
+        return;
       }
 
-      handleCancel();
-      setError(null);
-    } catch (err) {
-      const errorMessage = err.response?.data?.error || 'Gagal menyimpan terapis';
-      setError(errorMessage);
-      console.error('Error menyimpan terapis:', err);
+      const dataToSend = {
+        name: formData.name,
+        email: formData.email,
+        phone: formData.phone || null,
+        status: formData.status,
+        join_date: formData.join_date || null // UBAH dari joinDate menjadi join_date
+      };
+
+      if (isAdding) {
+        const response = await axios.post(API_URL, dataToSend, {
+          headers: { Authorization: `Bearer ${Token}` }
+        });
+        setTherapists([...therapists, response.data]);
+      } else {
+        const response = await axios.put(`${API_URL}/${editingTherapist}`, dataToSend, {
+          headers: { Authorization: `Bearer ${Token}` }
+        });
+        setTherapists(therapists.map(t => t.id === editingTherapist ? response.data : t));
+      }
+
+      setEditingTherapist(null);
+      setIsAdding(false);
+      setFormData({
+        name: '',
+        email: '',
+        phone: '',
+        status: 'active',
+        join_date: '' // UBAH dari joinDate menjadi join_date
+      });
+    } catch (error) {
+      console.error('Error saving therapist:', error);
+      setError(error.response?.data?.message || 'Gagal menyimpan data terapis');
     } finally {
       setSaveLoading(false);
     }
@@ -214,8 +217,9 @@ const Therapist = () => {
       email: '',
       phone: '',
       status: 'active',
-      joinDate: ''
+      join_date: '' // UBAH dari joinDate menjadi join_date
     });
+    setError(null);
   };
 
   const handleDelete = (id) => {
@@ -225,15 +229,19 @@ const Therapist = () => {
   const confirmDelete = async () => {
     setDeleteLoading(true);
     try {
-      await axios.delete(`${API_URL}/${showDeleteConfirm}`);
+      await axios.delete(`${API_URL}/${showDeleteConfirm}`, {
+        headers: {Authorization: `Bearer ${Token}`}
+      });
       setTherapists(therapists.filter(therapist => 
         therapist.id !== showDeleteConfirm
       ));
       setShowDeleteConfirm(null);
       setError(null);
+      alert('Terapis berhasil dihapus!');
     } catch (err) {
       const errorMessage = err.response?.data?.error || 'Gagal menghapus terapis';
       setError(errorMessage);
+      alert(errorMessage);
       console.error('Error menghapus terapis:', err);
     } finally {
       setDeleteLoading(false);
@@ -259,12 +267,13 @@ const Therapist = () => {
     return new Intl.NumberFormat('id-ID', { 
       style: 'currency', 
       currency: 'IDR', 
-      minimumFractionDigits: 0 
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 0 
     }).format(val);
   };
 
   // Loading state
-  if (loading && therapists.length === 0) {
+  if (loading) {
     return (
       <div className="flex justify-center items-center h-64">
         <div className="text-center">
@@ -418,8 +427,8 @@ const Therapist = () => {
               </thead>
               <tbody>
                 {filteredTherapists.map((therapist) => {
-                  const totalTreatments = calculateTherapistTreatments(therapist.name);
-                  const totalRevenue = calculateTherapistRevenue(therapist.name);
+                  const totalTreatments = calculateTherapistTreatments(therapist.id); // UBAH
+                  const totalRevenue = calculateTherapistRevenue(therapist.id); // UBAH
 
                   return (
                     <tr key={therapist.id} className="border-b hover:bg-gray-50 transition-colors duration-200">
@@ -607,8 +616,8 @@ const Therapist = () => {
                   </label>
                   <input
                     type="text"
-                    name="joinDate"
-                    value={formData.joinDate}
+                    name="join_date"
+                    value={formData.join_date}
                     onChange={handleChange}
                     className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-brown-500 focus:border-transparent"
                     placeholder="01 Jan 2024"
@@ -772,25 +781,25 @@ const Therapist = () => {
                   <div className="grid grid-cols-2 gap-4">
                     <div className="bg-gray-50 rounded-lg p-4 text-center">
                       <div className="text-2xl font-bold text-gray-800">
-                        {calculateTherapistTreatments(viewingDetails.name)}
+                        {calculateTherapistTreatments(viewingDetails.id)}
                       </div>
                       <div className="text-sm text-gray-600">Total Perawatan</div>
                     </div>
                     <div className="bg-gray-50 rounded-lg p-4 text-center">
                       <div className="text-2xl font-bold text-green-700">
-                        {formatRupiah(calculateTherapistRevenue(viewingDetails.name))}
+                        {formatRupiah(calculateTherapistRevenue(viewingDetails.id))}
                       </div>
                       <div className="text-sm text-gray-600">Total Pendapatan</div>
                     </div>
                     <div className="bg-gray-50 rounded-lg p-4 text-center">
                       <div className="text-2xl font-bold text-blue-600">
-                        {new Set(getAppointmentsByTherapist(viewingDetails.name).map(app => app.treatment)).size}
+                        {new Set(getAppointmentsByTherapist(viewingDetails.id).map(app => app.treatment)).size}
                       </div>
                       <div className="text-sm text-gray-600">Jenis Perawatan Berbeda</div>
                     </div>
                     <div className="bg-gray-50 rounded-lg p-4 text-center">
                       <div className="text-2xl font-bold text-purple-600">
-                        {new Set(getAppointmentsByTherapist(viewingDetails.name).map(app => app.customer_name || app.customer_id)).size}
+                        {new Set(getAppointmentsByTherapist(viewingDetails.id).map(app => app.customer_name || app.member_id)).size}
                       </div>
                       <div className="text-sm text-gray-600">Pasien Unik</div>
                     </div>
@@ -806,16 +815,16 @@ const Therapist = () => {
                         <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-brown-600 mx-auto"></div>
                         <p className="mt-2 text-sm text-gray-600">Memuat janji temu...</p>
                       </div>
-                    ) : getAppointmentsByTherapist(viewingDetails.name).length > 0 ? (
+                    ) : getAppointmentsByTherapist(viewingDetails.id).length > 0 ? (
                       <div className="space-y-2">
-                        {getAppointmentsByTherapist(viewingDetails.name)
+                        {getAppointmentsByTherapist(viewingDetails.id)
                           .slice(0, 10)
                           .map((appointment, index) => (
                             <div key={appointment.id || index} className="p-3 bg-gray-50 rounded-lg border border-gray-200">
                               <div className="flex justify-between items-start mb-2">
                                 <div>
                                   <div className="font-medium text-gray-800">{appointment.customer_name || 'N/A'}</div>
-                                  <div className="text-sm text-gray-600">{appointment.treatment || 'N/A'}</div>
+                                  <div className="text-sm text-gray-600">ID: {appointment.appointment_id}</div>
                                 </div>
                                 <div className="text-right">
                                   <div className="text-sm font-medium text-green-700">
@@ -824,7 +833,7 @@ const Therapist = () => {
                                 </div>
                               </div>
                               <div className="flex justify-between items-center text-xs text-gray-500">
-                                <span>{appointment.date || 'N/A'}</span>
+                                <span>{appointment.date || 'N/A'} {appointment.time || ''}</span>
                                 <span className="bg-green-100 text-green-800 px-2 py-1 rounded-full">
                                   {appointment.status === 'completed' ? 'Selesai' : appointment.status || 'Selesai'}
                                 </span>

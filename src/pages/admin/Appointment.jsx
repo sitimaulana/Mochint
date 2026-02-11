@@ -18,7 +18,6 @@ const Appointment = () => {
   const [therapists, setTherapists] = useState([]);
   const [treatments, setTreatments] = useState([]);
   const [stats, setStats] = useState({
-    pending_count: 0,
     confirmed_count: 0,
     completed_count: 0,
     total_count: 0,
@@ -33,8 +32,8 @@ const Appointment = () => {
   const [selectedStatus, setSelectedStatus] = useState('all');
   
   const [formData, setFormData] = useState({
-    customer_name: '', customer_id: '', treatment: '', therapist: '',
-    date: '', time: '', amount: 0, status: 'pending'
+    customer_name: '', member_id: '', treatment: '', treatment_id: '', therapist: '', therapist_id: '',
+    date: '', time: '', amount: 0, status: 'confirmed'
   });
   
   const [amountInput, setAmountInput] = useState('');
@@ -69,17 +68,18 @@ const Appointment = () => {
         axios.get(THERAPISTS_API_URL,{headers: {Authorization: `Bearer ${Token}`}}),
         axios.get(TREATMENTS_API_URL,{headers: {Authorization: `Bearer ${Token}`}})
       ]);
-
-      const appointmentsData = appointmentsRes.data.map(app => ({ 
+     
+      const appointmentsData = appointmentsRes.data.data.map(app => ({ 
         ...app, 
-        status: app.status || 'pending',
+        status: app.status || 'confirmed',
         amount: parseFloat(app.amount) || 0
       }));
       
       setAppointments(appointmentsData);
-      setMembers(membersRes.data);
-      setTherapists(therapistsRes.data);
-      setTreatments(treatmentsRes.data);
+      // Pastikan struktur data konsisten dengan {data: [...]}
+      setMembers(membersRes.data.data ? membersRes.data : { data: membersRes.data });
+      setTherapists(therapistsRes.data.data ? therapistsRes.data : { data: therapistsRes.data });
+      setTreatments(treatmentsRes.data.data ? treatmentsRes.data : { data: treatmentsRes.data });
       
       // Hitung statistik secara manual dari appointments
       calculateStatistics(appointmentsData);
@@ -101,7 +101,6 @@ const Appointment = () => {
 
   // Fungsi untuk menghitung statistik secara manual
   const calculateStatistics = (appointmentsData) => {
-    const pending_count = appointmentsData.filter(app => app.status === 'pending').length;
     const confirmed_count = appointmentsData.filter(app => app.status === 'confirmed').length;
     const completed_count = appointmentsData.filter(app => app.status === 'completed').length;
     const total_count = appointmentsData.length;
@@ -113,7 +112,6 @@ const Appointment = () => {
       .reduce((sum, app) => sum + (app.amount || 0), 0);
     
     setStats({
-      pending_count,
       confirmed_count,
       completed_count,
       total_count,
@@ -125,21 +123,21 @@ const Appointment = () => {
   // --- FUNGSI UNTUK RIWAYAT MEMBER ---
   const addToMemberHistory = async (appointment) => {
     try {
-      // Cek apakah appointment sudah selesai dan memiliki customer_id
-      if (appointment.status !== 'completed' || !appointment.customer_id) {
+      // Cek apakah appointment sudah selesai dan memiliki member_id
+      if (appointment.status !== 'completed' || !appointment.member_id) {
         return;
       }
 
       // Cari data member untuk mendapatkan informasi lengkap
-      const member = members.find(m => m.id == appointment.customer_id);
+      const member = members.find(m => m.id == appointment.member_id);
       if (!member) {
-        console.error('Member tidak ditemukan untuk ID:', appointment.customer_id);
+        console.error('Member tidak ditemukan untuk ID:', appointment.member_id);
         return;
       }
 
       // Data untuk member_history
       const historyData = {
-        member_id: appointment.customer_id,
+        member_id: appointment.member_id,
         appointment_id: appointment.id,
         customer_name: appointment.customer_name,
         treatment_name: appointment.treatment,
@@ -209,7 +207,6 @@ const Appointment = () => {
 
       // Update statistik terapis di server
       await axios.put(`${THERAPISTS_API_URL}/${therapist.id}`, {
-        total_pending: calculateTherapistPending(therapist, oldStatus, newStatus),
         total_confirmed: calculateTherapistConfirmed(therapist, oldStatus, newStatus),
         total_completed: calculateTherapistCompleted(therapist, oldStatus, newStatus),
         total_treatments: newStatus === 'completed' ? (therapist.total_treatments || 0) + 1 : therapist.total_treatments
@@ -225,20 +222,6 @@ const Appointment = () => {
   };
 
   // Fungsi helper untuk menghitung statistik terapis
-  const calculateTherapistPending = (therapist, oldStatus, newStatus) => {
-    let pending = therapist.total_pending || 0;
-    
-    if (oldStatus === 'pending' && newStatus !== 'pending') {
-      pending = Math.max(0, pending - 1);
-    } else if (oldStatus !== 'pending' && newStatus === 'pending') {
-      pending = pending + 1;
-    } else if (!oldStatus && newStatus === 'pending') {
-      pending = pending + 1; // Saat membuat baru
-    }
-    
-    return pending;
-  };
-
   const calculateTherapistConfirmed = (therapist, oldStatus, newStatus) => {
     let confirmed = therapist.total_confirmed || 0;
     
@@ -272,9 +255,7 @@ const Appointment = () => {
     let nextStatus;
     
     // Tentukan status berikutnya berdasarkan status saat ini
-    if (currentStatus === 'pending') {
-      nextStatus = 'confirmed';
-    } else if (currentStatus === 'confirmed') {
+    if (currentStatus === 'confirmed') {
       nextStatus = 'completed';
     } else if (currentStatus === 'completed') {
       // Jika ingin bisa kembali ke confirmed (opsional)
@@ -290,9 +271,9 @@ const Appointment = () => {
       console.log(`Memperbarui appointment ${id} dari ${currentStatus} ke ${nextStatus}`);
       
       // Update status appointment di database
-      const response = await axios.put(`${APPOINTMENTS_API_URL}/${id}`, {
+      const response = await axios.put(`${APPOINTMENTS_API_URL}/${id}/complete`, {
         status: nextStatus
-      });
+      }, { headers: { Authorization: `Bearer ${Token}` } });
       
       const updatedAppointment = response.data;
       
@@ -312,8 +293,8 @@ const Appointment = () => {
       
       // Jika status berubah menjadi 'completed', update riwayat member
       if (nextStatus === 'completed' && currentStatus !== 'completed') {
-        if (appointment.customer_id) {
-          await updateMemberData(appointment.customer_id, appointment);
+        if (appointment.member_id) {
+          await updateMemberData(appointment.member_id, appointment);
         }
       }
       
@@ -330,14 +311,19 @@ const Appointment = () => {
   // --- LOGIKA PENCARIAN MEMBER ---
   const filteredMembersResults = useMemo(() => {
     if (!memberSearch) return [];
-    return members.filter(m => 
+    
+    // Pastikan members memiliki property data
+    const membersList = members.data || members || [];
+    if (!Array.isArray(membersList)) return [];
+       
+    return membersList.filter(m => 
       m.name.toLowerCase().includes(memberSearch.toLowerCase()) || 
       m.id.toString().includes(memberSearch)
     ).slice(0, 5);
   }, [members, memberSearch]);
 
   const selectMember = (member) => {
-    setFormData({ ...formData, customer_id: member.id, customer_name: member.name });
+    setFormData({ ...formData, member_id: member.id, member_id: member.id, customer_name: member.name });
     setMemberSearch(member.name);
     setShowSearchDropdown(false);
   };
@@ -355,9 +341,9 @@ const Appointment = () => {
     const time = `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}`;
     
     setFormData({
-      customer_name: '', customer_id: '', treatment: '', therapist: '',
+      customer_name: '', member_id: '', member_id: '', treatment: '', treatment_id: '', therapist: '', therapist_id: '',
       date: today,
-      time: time, amount: 0, status: 'pending'
+      time: time, amount: 0, status: 'confirmed'
     });
     setAmountInput('0');
     setMemberSearch('');
@@ -366,12 +352,22 @@ const Appointment = () => {
   const handleEdit = (app) => {
     setEditingAppointment(app.id);
     
+    // Map data dari database ke form
     setFormData({ 
-      ...app,
-      status: app.status
+      customer_name: app.customer_name || '',
+      member_id: app.member_id || app.member_id || '',
+      member_id: app.member_id || app.member_id || '',
+      treatment: app.treatment_name || app.treatment || '',
+      treatment_id: app.treatment_id || '',
+      therapist: app.therapist_name || app.therapist || '',
+      therapist_id: app.therapist_id || '',
+      date: app.date || '',
+      time: app.time || '',
+      amount: parseFloat(app.amount) || 0,
+      status: app.status || 'confirmed'
     });
     setAmountInput(app.amount.toString());
-    setMemberSearch(app.customer_name);
+    setMemberSearch(app.customer_name || '');
   };
 
   const handleChange = (e) => {
@@ -380,13 +376,23 @@ const Appointment = () => {
       setFormData({ ...formData, amount: parseFloat(value) || 0 });
       setAmountInput(value);
     } else if (name === 'treatment') {
-      const tr = treatments.find(t => t.name === value);
+      const treatmentsList = treatments.data || treatments || [];
+      const tr = treatmentsList.find(t => t.name === value);
       setFormData({ 
         ...formData, 
-        treatment: value, 
+        treatment: value,
+        treatment_id: tr ? tr.id : '',
         amount: tr ? tr.price : 0 
       });
       setAmountInput(tr ? tr.price.toString() : '0');
+    } else if (name === 'therapist') {
+      const therapistsList = therapists.data || therapists || [];
+      const th = therapistsList.find(t => t.name === value);
+      setFormData({ 
+        ...formData, 
+        therapist: value,
+        therapist_id: th ? th.id : ''
+      });
     } else {
       setFormData({ ...formData, [name]: value });
     }
@@ -410,11 +416,26 @@ const Appointment = () => {
     }
 
     try {
+      // Siapkan data untuk dikirim ke API dengan ID
+      const dataToSend = {
+        member_id: formData.member_id || formData.member_id,
+        customer_name: formData.customer_name,
+        treatment_id: formData.treatment_id,
+        therapist_id: formData.therapist_id,
+        date: formData.date,
+        time: formData.time,
+        amount: formData.amount,
+        status: formData.status
+      };
+
       let response;
       if (isAdding) {
         // Buat appointment baru
-        response = await axios.post(APPOINTMENTS_API_URL, formData);
-        const updatedAppointments = [response.data, ...appointments];
+        response = await axios.post(APPOINTMENTS_API_URL, dataToSend, {
+          headers: { Authorization: `Bearer ${Token}` }
+        });
+        const newAppointment = response.data.data || response.data;
+        const updatedAppointments = [newAppointment, ...appointments];
         setAppointments(updatedAppointments);
         calculateStatistics(updatedAppointments);
         
@@ -426,36 +447,42 @@ const Appointment = () => {
         setIsAdding(false);
         
         // Jika status completed saat membuat, update riwayat member
-        if (formData.status === 'completed' && formData.customer_id) {
-          await updateMemberData(formData.customer_id, response.data);
+        if (formData.status === 'completed' && formData.member_id) {
+          await updateMemberData(formData.member_id, newAppointment);
         }
       } else {
         // Update appointment yang ada
         const oldAppointment = appointments.find(a => a.id === editingAppointment);
         
-        response = await axios.put(`${APPOINTMENTS_API_URL}/${editingAppointment}`, formData);
+        response = await axios.put(`${APPOINTMENTS_API_URL}/${editingAppointment}`, dataToSend, {
+          headers: { Authorization: `Bearer ${Token}` }
+        });
+        const updatedAppointment = response.data.data || response.data;
         const updatedAppointments = appointments.map(app => 
-          app.id === editingAppointment ? response.data : app
+          app.id === editingAppointment ? updatedAppointment : app
         );
         setAppointments(updatedAppointments);
         calculateStatistics(updatedAppointments);
         
         // Update statistik terapis jika status atau terapis berubah
-        if (oldAppointment && (oldAppointment.status !== formData.status || oldAppointment.therapist !== formData.therapist)) {
+        const oldTherapistName = oldAppointment?.therapist_name || oldAppointment?.therapist;
+        const newTherapistName = formData.therapist;
+        
+        if (oldAppointment && (oldAppointment.status !== formData.status || oldTherapistName !== newTherapistName)) {
           // Kurangi statistik terapis lama
-          if (oldAppointment.therapist) {
-            await updateTherapistStatistics(oldAppointment.therapist, oldAppointment.status, null);
+          if (oldTherapistName) {
+            await updateTherapistStatistics(oldTherapistName, oldAppointment.status, null);
           }
           
           // Tambah statistik terapis baru
-          if (formData.therapist) {
-            await updateTherapistStatistics(formData.therapist, null, formData.status);
+          if (newTherapistName) {
+            await updateTherapistStatistics(newTherapistName, null, formData.status);
           }
         }
         
         // Jika status berubah menjadi completed, update riwayat member
-        if (oldAppointment?.status !== 'completed' && formData.status === 'completed' && formData.customer_id) {
-          await updateMemberData(formData.customer_id, response.data);
+        if (oldAppointment?.status !== 'completed' && formData.status === 'completed' && formData.member_id) {
+          await updateMemberData(formData.member_id, updatedAppointment);
         }
       }
       
@@ -489,11 +516,10 @@ const Appointment = () => {
 
   // Dapatkan warna status
   const getStatusColor = (status) => {
-    const normalizedStatus = status?.toLowerCase() || 'pending';
+    const normalizedStatus = status?.toLowerCase() || 'confirmed';
     switch(normalizedStatus) {
       case 'completed': return 'bg-green-100 text-green-800';
       case 'confirmed': return 'bg-blue-100 text-blue-800';
-      case 'pending': return 'bg-yellow-100 text-yellow-800';
       default: return 'bg-gray-100 text-gray-800';
     }
   };
@@ -501,7 +527,6 @@ const Appointment = () => {
   // Dapatkan teks status dalam bahasa Indonesia
   const getStatusText = (status) => {
     const statusMap = {
-      'pending': 'Menunggu',
       'confirmed': 'Dikonfirmasi',
       'completed': 'Selesai'
     };
@@ -558,20 +583,7 @@ const Appointment = () => {
       </div>
 
       {/* Statistik Janji Temu */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <div className="bg-white rounded-xl shadow-sm p-4 border border-gray-200">
-          <div className="flex items-center justify-between">
-            <div>
-              <div className="text-2xl font-bold text-yellow-600">{stats.pending_count}</div>
-              <div className="text-sm text-gray-600">Menunggu</div>
-            </div>
-            <div className="w-10 h-10 bg-yellow-100 rounded-full flex items-center justify-center">
-              <span className="text-yellow-600 font-bold">!</span>
-            </div>
-          </div>
-          <div className="mt-2 text-xs text-gray-500">Menunggu konfirmasi</div>
-        </div>
-        
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <div className="bg-white rounded-xl shadow-sm p-4 border border-gray-200">
           <div className="flex items-center justify-between">
             <div>
@@ -617,13 +629,6 @@ const Appointment = () => {
         <div className="flex flex-col md:flex-row md:items-center justify-between space-y-4 md:space-y-0">
           <div className="flex flex-wrap gap-6">
             <div className="flex items-center">
-              <div className="w-3 h-3 bg-yellow-500 rounded-full mr-2"></div>
-              <div>
-                <span className="text-sm font-medium text-gray-800">Menunggu</span>
-                <div className="text-[10px] text-gray-500 leading-none">Menunggu konfirmasi</div>
-              </div>
-            </div>
-            <div className="flex items-center">
               <div className="w-3 h-3 bg-blue-500 rounded-full mr-2"></div>
               <div>
                 <span className="text-sm font-medium text-gray-800">Dikonfirmasi</span>
@@ -645,7 +650,6 @@ const Appointment = () => {
               className="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brown-500"
             >
               <option value="all">Semua Status</option>
-              <option value="pending">Menunggu</option>
               <option value="confirmed">Dikonfirmasi</option>
               <option value="completed">Selesai</option>
             </select>
@@ -717,15 +721,15 @@ const Appointment = () => {
                     </td>
                     <td className="p-4">
                       <div className="font-medium">{app.customer_name}</div>
-                      {app.customer_id && (
+                      {app.member_id && (
                         <div className="text-[10px] text-gray-500">
-                          ID Member: {app.customer_id}
+                          ID Member: {app.member_id}
                         </div>
                       )}
                     </td>
                     <td className="p-4">
-                      <div>{app.treatment}</div>
-                      <div className="text-[10px] text-brown-600 font-bold uppercase">{app.therapist}</div>
+                      <div>{app.treatment_category}</div>
+                      <div className="text-[10px] text-brown-600 font-bold uppercase">{app.therapist_name}</div>
                     </td>
                     <td className="p-4 text-gray-500">
                       <div>{formatDisplayDate(app.date, app.time)}</div>
@@ -742,15 +746,6 @@ const Appointment = () => {
                     </td>
                     <td className="p-4 text-center">
                       <div className="flex justify-center gap-1">
-                        {app.status === 'pending' && (
-                          <button 
-                            onClick={() => handleQuickStatusUpdate(app.id, 'pending')} 
-                            disabled={actionLoading[app.id]}
-                            className="bg-blue-500 text-white px-3 py-1 rounded-md text-[10px] font-bold uppercase shadow-sm hover:bg-blue-600 disabled:opacity-50 transition-colors duration-200"
-                          >
-                            {actionLoading[app.id] ? 'Memproses...' : 'Konfirmasi'}
-                          </button>
-                        )}
                         {app.status === 'confirmed' && (
                           <button 
                             onClick={() => handleQuickStatusUpdate(app.id, 'confirmed')} 
@@ -779,13 +774,17 @@ const Appointment = () => {
                           onClick={async () => { 
                             if(window.confirm('Apakah Anda yakin ingin menghapus janji temu ini?')) {
                               try {
-                                await axios.delete(`${APPOINTMENTS_API_URL}/${app.id}`);
+                                const token = localStorage.getItem('token');
+
+                                await axios.delete(`${APPOINTMENTS_API_URL}/${app.id}`, {
+                                  headers: { 'Authorization': `Bearer ${token}` }
+                                });
                                 const updatedAppointments = appointments.filter(a => a.id !== app.id);
                                 setAppointments(updatedAppointments);
                                 calculateStatistics(updatedAppointments);
                                 
                                 // Update statistik terapis untuk pengurangan
-                                if (app.therapist) {
+                                if (app.therapist_name) {
                                   await updateTherapistStatistics(app.therapist, app.status, null);
                                 }
                               } catch (err) {
@@ -833,7 +832,9 @@ const Appointment = () => {
                   className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:ring-2 focus:ring-brown-500 outline-none"
                   value={memberSearch}
                   onChange={(e) => { 
-                    setMemberSearch(e.target.value); 
+                    const value = e.target.value;
+                    setMemberSearch(value); 
+                    setFormData({ ...formData, customer_name: value });
                     setShowSearchDropdown(true); 
                   }}
                   onFocus={() => setShowSearchDropdown(true)}
@@ -906,7 +907,7 @@ const Appointment = () => {
                   className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:ring-2 focus:ring-brown-500 outline-none"
                 >
                   <option value="">Pilih Perawatan</option>
-                  {treatments.map(t => (
+                  {(treatments.data || treatments || []).map(t => (
                     <option key={t.id} value={t.name}>
                       {t.name} - {formatRupiah(t.price)}
                     </option>
@@ -928,7 +929,7 @@ const Appointment = () => {
                   className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:ring-2 focus:ring-brown-500 outline-none"
                 >
                   <option value="">Pilih Terapis</option>
-                  {therapists.map(th => (
+                  {(therapists.data || therapists || []).map(th => (
                     <option key={th.id} value={th.name}>
                       {th.name}
                     </option>
@@ -968,7 +969,6 @@ const Appointment = () => {
                   onChange={handleChange} 
                   className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:ring-2 focus:ring-brown-500 outline-none"
                 >
-                  <option value="pending">Menunggu - Menunggu konfirmasi</option>
                   <option value="confirmed">Dikonfirmasi - Janji temu disetujui</option>
                   <option value="completed">Selesai - Perawatan selesai</option>
                 </select>

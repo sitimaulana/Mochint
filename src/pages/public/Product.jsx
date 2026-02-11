@@ -28,7 +28,7 @@ const Product = () => {
       try {
         setLoading(true);
         const response = await axios.get(API_URL);
-        setProducts(response.data.data);
+        setProducts(response.data);
       } catch (err) {
         console.error("Gagal memuat produk:", err);
       } finally {

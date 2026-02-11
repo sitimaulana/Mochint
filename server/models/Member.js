@@ -3,11 +3,24 @@ const { promisePool } = require('../config/database');
 const bcrypt = require('bcryptjs');
 
 class Member {
+  static async getHistoryById(id) {
+    try {
+      const [rows] = await promisePool.query(
+        'SELECT * FROM appointments WHERE member_id = ? ORDER BY date DESC, time DESC',
+        [id]
+      );
+      return rows;
+    } catch (error) {
+      console.error('Error in Member.getHistoryById:', error);
+      throw error;
+    } 
+  }
+
   static async getAll() {
     try {
       console.log('🔍 Fetching all members...');
       const [rows] = await promisePool.query(
-        'SELECT id, name, email, phone, address, join_date FROM members ORDER BY created_at DESC'
+        'SELECT * FROM members ORDER BY created_at DESC'
       );
       console.log(`✅ Found ${rows.length} members`);
       return rows;
@@ -20,7 +33,7 @@ class Member {
   static async getById(id) {
     try {
       const [rows] = await promisePool.query(
-        'SELECT id, name, email, phone, address, join_date FROM members WHERE id = ? LIMIT 1',
+        'SELECT * FROM members WHERE id = ? LIMIT 1',
         [id]
       );
       return rows[0] || null;

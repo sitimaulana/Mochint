@@ -31,9 +31,18 @@ const Treatment = () => {
       try {
         setLoading(true);
         const response = await axios.get(API_URL);
-        setTreatments(response.data.data);
+        const data = response.data.data;
+        setTreatments(data);
+        
+        // Set kategori pertama dari data jika ada
+        if (data.length > 0) {
+          const firstCategory = data[0].category;
+          setSelectedCategory(firstCategory);
+        }
       } catch (err) {
         console.error("Error fetching treatments from database:", err);
+        console.error("API URL:", API_URL);
+        console.error("Error details:", err.response?.status, err.response?.data);
       } finally {
         setLoading(false);
       }
@@ -41,7 +50,10 @@ const Treatment = () => {
     fetchTreatments();
   }, []);
 
-  const categories = ['Beauty Treatment', 'Special Treatment', 'Ultimate Treatment', 'Promo Treatment'];
+  // Ambil kategori unik dari data treatments
+  const categories = treatments.length > 0 
+    ? [...new Set(treatments.map(t => t.category))]
+    : [];
 
   // Filter data dinamis dari database
   const filteredTreatments = treatments.filter(item => 
@@ -53,6 +65,18 @@ const Treatment = () => {
     return (
       <div className="min-h-screen bg-[#FDFBF7] flex items-center justify-center font-sans font-bold text-[#8D6E63]">
         Mempersiapkan Layanan Terbaik...
+      </div>
+    );
+  }
+
+  if (treatments.length === 0) {
+    return (
+      <div className="min-h-screen bg-[#FDFBF7] flex items-center justify-center font-sans">
+        <div className="text-center">
+          <p className="text-[#8D6E63] font-bold text-lg mb-2">Data Treatment Tidak Tersedia</p>
+          <p className="text-gray-400 text-sm mb-4">Pastikan server API berjalan di http://localhost:5000</p>
+          <p className="text-gray-400 text-xs">Buka console browser (F12) untuk melihat error details</p>
+        </div>
       </div>
     );
   }
@@ -88,23 +112,27 @@ const Treatment = () => {
               <h3 className="text-xl font-display font-bold mb-6 border-b border-gray-50 pb-4 tracking-tight">Kategori</h3>
               
               <div className="space-y-4">
-                {categories.map((cat) => (
-                  <label key={cat} className="flex items-center gap-4 cursor-pointer group">
-                    <div className="relative flex items-center justify-center">
-                      <input
-                        type="radio"
-                        name="category"
-                        className="peer appearance-none w-6 h-6 border-2 border-gray-200 rounded-full checked:border-[#8D6E63] transition-all"
-                        checked={selectedCategory === cat}
-                        onChange={() => setSelectedCategory(cat)}
-                      />
-                      <div className="absolute w-3 h-3 bg-[#8D6E63] rounded-full scale-0 peer-checked:scale-100 transition-transform"></div>
-                    </div>
-                    <span className={`text-sm font-bold transition-colors font-sans ${selectedCategory === cat ? 'text-[#8D6E63]' : 'text-gray-400 group-hover:text-gray-600'}`}>
-                      {cat}
-                    </span>
-                  </label>
-                ))}
+                {categories.length > 0 ? (
+                  categories.map((cat) => (
+                    <label key={cat} className="flex items-center gap-4 cursor-pointer group">
+                      <div className="relative flex items-center justify-center">
+                        <input
+                          type="radio"
+                          name="category"
+                          className="peer appearance-none w-6 h-6 border-2 border-gray-200 rounded-full checked:border-[#8D6E63] transition-all"
+                          checked={selectedCategory === cat}
+                          onChange={() => setSelectedCategory(cat)}
+                        />
+                        <div className="absolute w-3 h-3 bg-[#8D6E63] rounded-full scale-0 peer-checked:scale-100 transition-transform"></div>
+                      </div>
+                      <span className={`text-sm font-bold transition-colors font-sans ${selectedCategory === cat ? 'text-[#8D6E63]' : 'text-gray-400 group-hover:text-gray-600'}`}>
+                        {cat}
+                      </span>
+                    </label>
+                  ))
+                ) : (
+                  <p className="text-sm text-gray-400 italic">Memuat kategori...</p>
+                )}
               </div>
             </div>
           </div>

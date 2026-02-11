@@ -36,9 +36,9 @@ const Dashboard = () => {
         axios.get(THERAPISTS_API_URL, { headers: { Authorization: `Bearer ${Token}` } })
       ]);
 
-      setAppointments(appointmentsRes.data || []);
-      setMembers(membersRes.data || []);
-      setTherapists(therapistsRes.data || []);
+      setAppointments(appointmentsRes.data.data || []);
+      setMembers(membersRes.data.data || []);
+      setTherapists(therapistsRes.data.data || []);
       setError(null);
     } catch (err) {
       console.error('Error mengambil data dashboard:', err);
@@ -54,10 +54,9 @@ const Dashboard = () => {
 
   const calculateAppointmentStats = () => {
     const total = appointments.length;
-    const pending = appointments.filter(a => a.status?.toLowerCase() === 'pending').length;
-    const confirmed = appointments.filter(a => a.status?.toLowerCase() === 'confirmed').length;
-    const completed = appointments.filter(a => a.status?.toLowerCase() === 'completed').length;
-    return { total, pending, confirmed, completed };
+    const confirmed = appointments.filter(a => a?.status?.toLowerCase() === 'confirmed').length;
+    const completed = appointments.filter(a => a?.status?.toLowerCase() === 'completed').length;
+    return { total, confirmed, completed };
   };
 
   const appointmentStats = calculateAppointmentStats();
@@ -147,9 +146,7 @@ const Dashboard = () => {
     try {
       let nextStatus;
 
-      if (currentStatus === 'pending') {
-        nextStatus = 'confirmed';
-      } else if (currentStatus === 'confirmed') {
+      if (currentStatus === 'confirmed') {
         nextStatus = 'completed';
       } else {
         return;
@@ -177,7 +174,7 @@ const Dashboard = () => {
 
     const totalVisits = appointments
       .filter(app => app.status?.toLowerCase() === 'completed')
-      .filter(app => app.customer_id)
+      .filter(app => app.member_id)
       .length;
 
     const currentDate = new Date();
@@ -231,9 +228,9 @@ const Dashboard = () => {
     const memberVisits = {};
 
     appointments
-      .filter(app => app.status?.toLowerCase() === 'completed' && app.customer_id)
+      .filter(app => app.status?.toLowerCase() === 'completed' && app.member_id)
       .forEach(app => {
-        const memberId = app.customer_id;
+        const memberId = app.member_id;
         if (!memberVisits[memberId]) {
           memberVisits[memberId] = {
             memberId,
@@ -283,6 +280,9 @@ const Dashboard = () => {
       }
     })
     .slice(0, 5);
+
+    console.log(recentTreatments);
+    
 
   const calculateTotalRevenue = () => {
     return appointments
@@ -412,7 +412,7 @@ const Dashboard = () => {
           value={todayAppointments.length.toString()}
           icon={CalendarIcon}
           color="blue"
-          subtitle="Hanya pending & confirmed"
+          subtitle="Hanya confirmed"
         />
         <StatCard
           title="Total Kunjungan"
@@ -457,9 +457,9 @@ const Dashboard = () => {
                       <h3 className="font-medium text-gray-800 truncate">
                         {appointment.customer_name || 'T/A'}
                       </h3>
-                      {appointment.customer_id && (
+                      {appointment.member_id && (
                         <span className="text-xs bg-gray-100 text-gray-600 px-2 py-1 rounded ml-2">
-                          ID: {appointment.customer_id}
+                          ID: {appointment.member_id}
                         </span>
                       )}
                     </div>
@@ -484,20 +484,11 @@ const Dashboard = () => {
                         ? 'bg-blue-100 text-blue-800'
                         : 'bg-yellow-100 text-yellow-800'
                       }`}>
-                      {appointment.status || 'pending'}
+                      {appointment.status || 'confirmed'}
                     </span>
                   </div>
 
                   <div className="flex space-x-1">
-                    {appointment.status?.toLowerCase() === 'pending' && (
-                      <button
-                        onClick={() => handleQuickUpdateStatus(appointment.id, 'pending')}
-                        className="px-3 py-1 bg-blue-500 text-white text-xs rounded hover:bg-blue-600 transition-colors duration-200 font-medium"
-                        title="Konfirmasi Janji Temu"
-                      >
-                        Konfirmasi
-                      </button>
-                    )}
                     {appointment.status?.toLowerCase() === 'confirmed' && (
                       <button
                         onClick={() => handleQuickUpdateStatus(appointment.id, 'confirmed')}
@@ -520,7 +511,7 @@ const Dashboard = () => {
               </svg>
             </div>
             <h3 className="text-lg font-medium text-gray-900 mb-2">Tidak Ada Janji Temu Aktif Hari Ini</h3>
-            <p className="text-gray-500 mb-4">Anda tidak memiliki janji temu pending atau confirmed untuk hari ini.</p>
+            <p className="text-gray-500 mb-4">Anda tidak memiliki janji temu confirmed untuk hari ini.</p>
             <div className="flex justify-center space-x-3">
               <a
                 href="/admin/appointment"
@@ -641,9 +632,9 @@ const Dashboard = () => {
                   </span>
                 </div>
                 <div className="flex flex-col sm:flex-row sm:items-center text-sm text-gray-500">
-                  <span>{treatment.treatment || 'T/A'}</span>
+                  <span>{treatment.treatment_category || 'T/A'}</span>
                   <span className="hidden sm:inline mx-2">•</span>
-                  <span className="text-brown-600 font-medium">{treatment.therapist || 'T/A'}</span>
+                  <span className="text-brown-600 font-medium">{treatment.therapist_name || 'T/A'}</span>
                   <span className="hidden sm:inline mx-2">•</span>
                   <span>
                     {treatment.date ? new Date(treatment.date).toLocaleDateString('id-ID') : 'T/A'}

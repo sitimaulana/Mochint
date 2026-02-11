@@ -53,10 +53,11 @@ const Member = () => {
       ]);
       
       // Proses members dengan data dari appointments
-      const processedMembers = membersRes.data.map(member => {
+      const processedMembers = membersRes.data.data.map(member => {
+
         // Ambil appointments untuk member ini
-        const memberAppointments = appointmentsRes.data.filter(
-          app => app.customer_id && app.customer_id.toString() === member.id.toString()
+        const memberAppointments = appointmentsRes.data.data.filter(
+          app => app.member_id && app.member_id.toString() === member.id.toString()
         );
         
         // Filter appointments yang statusnya 'completed'
@@ -104,7 +105,7 @@ const Member = () => {
   const updateMemberVisitStats = (memberId) => {
     // Filter appointments untuk member ini yang status 'completed'
     const memberAppointments = appointments.filter(
-      app => app.customer_id && app.customer_id.toString() === memberId.toString()
+      app => app.member_id && app.member_id.toString() === memberId.toString()
     );
     
     const completedAppointments = memberAppointments.filter(
@@ -153,7 +154,9 @@ const Member = () => {
       
       // Coba dari API terlebih dahulu
       try {
-        const response = await axios.get(`${HISTORY_API_URL}/${memberId}`);
+        const response = await axios.get(`${HISTORY_API_URL}/${memberId}`, {
+          headers: { Authorization: `Bearer ${Token}` }
+        }); 
         
         if (debugMode) {
           console.log(`📡 [DEBUG] Status Response API Riwayat: ${response.status}`);
@@ -178,9 +181,9 @@ const Member = () => {
       }
       
       // Fallback: ambil dari appointments yang selesai
-      const completedAppointments = appointments.filter(app => 
-        app.customer_id && 
-        app.customer_id.toString() === memberId.toString() &&
+      const completedAppointments = appointments.data.filter(app => 
+        app.member_id && 
+        app.member_id.toString() === memberId.toString() &&
         app.status === 'completed'
       );
       
@@ -191,7 +194,7 @@ const Member = () => {
       // Konversi appointments ke format riwayat
       const fallbackHistory = completedAppointments.map(app => ({
         id: app.id,
-        member_id: app.customer_id,
+        member_id: app.member_id,
         appointment_id: app.appointment_id || `APT-${app.id}`,
         customer_name: app.customer_name,
         treatment_name: app.treatment,
@@ -235,8 +238,8 @@ const Member = () => {
 
   // Handle ketika status appointment berubah di halaman Appointment
   const handleAppointmentStatusChange = (appointment) => {
-    if (appointment.customer_id && appointment.status === 'completed') {
-      updateMemberVisitStats(appointment.customer_id);
+    if (appointment.member_id && appointment.status === 'completed') {
+      updateMemberVisitStats(appointment.member_id);
     }
   };
 
@@ -267,6 +270,9 @@ const Member = () => {
     
     return matchesSearch && matchesStatus;
   });
+
+  console.log(filteredMembers);
+  
 
   const handleAdd = () => {
     setIsAdding(true);
@@ -329,15 +335,15 @@ const Member = () => {
           name: formData.name.trim(),
           email: formData.email?.trim() || '',
           phone: formData.phone || '',
-          address: formData.address?.trim() || '', // Include alamat
-          join_date: formData.joinDate,
-          total_visits: parseInt(formData.totalVisits) || 0,
-          status: formData.status || 'active',
-          last_visit: formData.lastVisit || 'Belum Pernah'
+          address: formData.address?.trim() || '',
+          password: '123456' // Default password
         };
         
-        const response = await axios.post(MEMBERS_API_URL, newMemberData);
-        setMembers([response.data, ...members]);
+        const response = await axios.post(MEMBERS_API_URL, newMemberData, {
+          headers: { Authorization: `Bearer ${Token}` }
+        });
+        const newMember = response.data.data || response.data;
+        setMembers([newMember, ...members]);
         setIsAdding(false);
       } else {
         if (!formData.name?.trim()) {
@@ -357,9 +363,12 @@ const Member = () => {
           last_visit: formData.lastVisit || 'Belum Pernah'
         };
         
-        const response = await axios.put(`${MEMBERS_API_URL}/${editingMember}`, updatedMemberData);
+        const response = await axios.put(`${MEMBERS_API_URL}/${editingMember}`, updatedMemberData, {
+          headers: { Authorization: `Bearer ${Token}` }
+        });
+        const updatedMember = response.data.data || response.data;
         setMembers(members.map(member => 
-          member.id === editingMember ? response.data : member
+          member.id === editingMember ? { ...member, ...updatedMember } : member
         ));
       }
       
@@ -398,7 +407,9 @@ const Member = () => {
   const confirmDelete = async () => {
     setDeleteLoading(true);
     try {
-      await axios.delete(`${MEMBERS_API_URL}/${showDeleteConfirm}`);
+      await axios.delete(`${MEMBERS_API_URL}/${showDeleteConfirm}`, {
+        headers: { Authorization: `Bearer ${Token}` }
+      });
       setMembers(members.filter(member => member.id !== showDeleteConfirm));
       setShowDeleteConfirm(null);
     } catch (err) {
@@ -437,7 +448,7 @@ const Member = () => {
       console.error('❌ Error dalam viewHistory:', error);
       // Fallback ke appointments jika semua gagal
       const fallbackHistory = appointments.filter(app => 
-        app.customer_id && app.customer_id.toString() === member.id.toString() &&
+        app.member_id && app.member_id.toString() === member.id.toString() &&
         app.status === 'completed'
       ).map(app => ({
         id: app.id,
@@ -661,8 +672,8 @@ const Member = () => {
                         <div>
                           <div className="font-medium text-gray-800">{member.name || 'N/A'}</div>
                           <div className="text-xs text-gray-500">
-                            {(appointments.filter(app => 
-                              app.customer_id && app.customer_id.toString() === member.id.toString()
+                            {(appointments.data.filter(app => 
+                              app.member_id && app.member_id === member.id
                             ).length) || 0} janji temu
                           </div>
                         </div>
@@ -691,11 +702,11 @@ const Member = () => {
                     </td>
                     <td className="py-3">
                       <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                        member.status === 'active'
+                        member.status == 'active'
                           ? 'bg-green-100 text-green-800'
                           : 'bg-gray-100 text-gray-800'
                       }`}>
-                        {member.status === 'active' ? 'Aktif' : 'Tidak Aktif'}
+                        {member.status == 'active' ? 'Aktif' : 'Tidak Aktif'}
                       </span>
                     </td>
                     <td className="py-3">

@@ -48,17 +48,15 @@ class Therapist {
       name,
       email,
       phone,
-      specialization,
-      experience_years = 0,
       status = 'active',
-      working_hours = ''
+      join_date
     } = therapistData;
 
     const [result] = await promisePool.query(
       `INSERT INTO therapists 
-       (id, name, email, phone, specialization, experience_years, status, working_hours)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
-      [id, name, email, phone, specialization || null, experience_years, status, working_hours || null]
+       (id, name, email, phone, status, join_date)
+       VALUES (?, ?, ?, ?, ?, ?)`,
+      [id, name, email || null, phone || null, status, join_date || null]
     );
 
     return { id, insertId: result.insertId };
@@ -70,18 +68,19 @@ class Therapist {
       name,
       email,
       phone,
-      specialization,
-      experience_years,
       status,
-      working_hours
+      join_date
     } = therapistData;
 
     const [result] = await promisePool.query(
       `UPDATE therapists SET
-        name = ?, email = ?, phone = ?, specialization = ?,
-        experience_years = ?, status = ?, working_hours = ?
+        name = ?, 
+        email = ?, 
+        phone = ?, 
+        status = ?, 
+        join_date = ?
        WHERE id = ?`,
-      [name, email, phone, specialization || null, experience_years || null, status, working_hours || null, id]
+      [name, email || null, phone || null, status, join_date || null, id]
     );
 
     return result.affectedRows;
@@ -145,6 +144,7 @@ class Therapist {
         COUNT(*) as total,
         SUM(CASE WHEN status = 'active' THEN 1 ELSE 0 END) as active,
         SUM(CASE WHEN status = 'inactive' THEN 1 ELSE 0 END) as inactive,
+        SUM(CASE WHEN status = 'on_leave' THEN 1 ELSE 0 END) as on_leave,
         SUM(total_treatments) as total_treatments,
         ROUND(AVG(total_treatments), 1) as avg_treatments,
         MAX(total_treatments) as max_treatments,
@@ -154,19 +154,9 @@ class Therapist {
     return rows[0];
   }
 
-  // Get specialization statistics
+  // Get specialization statistics - return empty array karena tidak ada kolom specialization
   static async getSpecializationStats() {
-    const [rows] = await promisePool.query(`
-      SELECT 
-        specialization,
-        COUNT(*) as therapist_count,
-        SUM(total_treatments) as total_treatments
-      FROM therapists
-      WHERE specialization IS NOT NULL AND specialization != ''
-      GROUP BY specialization
-      ORDER BY therapist_count DESC
-    `);
-    return rows;
+    return [];
   }
 
   // Search therapists
@@ -176,13 +166,13 @@ class Therapist {
        WHERE name LIKE ? 
           OR email LIKE ? 
           OR phone LIKE ?
-          OR specialization LIKE ?
-          OR notes LIKE ?
           OR id LIKE ?
        ORDER BY name`,
       [
-        `%${searchTerm}%`, `%${searchTerm}%`, `%${searchTerm}%`,
-        `%${searchTerm}%`, `%${searchTerm}%`, `%${searchTerm}%`
+        `%${searchTerm}%`, 
+        `%${searchTerm}%`, 
+        `%${searchTerm}%`, 
+        `%${searchTerm}%`
       ]
     );
     return rows;
@@ -194,7 +184,6 @@ class Therapist {
       SELECT 
         th.id,
         th.name,
-        th.specialization,
         th.total_treatments,
         th.status,
         COUNT(DISTINCT a.id) as total_appointments,
@@ -204,7 +193,7 @@ class Therapist {
         COALESCE(SUM(a.amount), 0) as total_revenue
       FROM therapists th
       LEFT JOIN appointments a ON th.id = a.therapist_id
-      GROUP BY th.id, th.name, th.specialization, th.total_treatments, th.status
+      GROUP BY th.id, th.name, th.total_treatments, th.status
       ORDER BY total_treatments DESC
     `);
     return rows;

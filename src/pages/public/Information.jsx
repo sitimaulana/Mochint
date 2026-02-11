@@ -8,14 +8,14 @@ const Information = () => {
   const [articles, setArticles] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  const API_URL = 'http://localhost:5000/api/articles';
+  const API_URL = 'http://localhost:5000/api/articles/user';
 
   useEffect(() => {
     const fetchArticles = async () => {
       try {
         const response = await axios.get(API_URL);
         // Filter hanya yang Published dan urutkan berdasarkan updated_at/created_at terbaru
-        const publishedData = response.data.data
+        const publishedData = response.data
           .filter(a => a.status === 'Published')
           .sort((a, b) => new Date(b.updated_at || b.created_at) - new Date(a.updated_at || a.created_at));
         

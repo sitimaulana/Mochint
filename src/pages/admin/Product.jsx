@@ -27,6 +27,7 @@ const Product = () => {
   const API_URL = 'http://localhost:5000/api/products';
   
   const categories = ['Semua Produk', 'Acne', 'Brightening', 'Best Seller', 'Lainnya'];
+  
   useEffect(() => {
     fetchProducts();
   }, []);
@@ -34,12 +35,17 @@ const Product = () => {
   const fetchProducts = async () => {
     try {
       setLoading(true);
-      const response = await axios.get(API_URL);
-      setProducts(response.data);
       setError(null);
+      const response = await axios.get(API_URL);
+      
+      const productsData = Array.isArray(response.data) ? response.data : [];
+      
+      setProducts(productsData);
     } catch (err) {
-      setError('Gagal memuat produk. Silakan coba lagi.');
+      const errorMessage = err.response?.data?.error || err.message || 'Gagal memuat produk';
+      setError(errorMessage);
       console.error('Error memuat produk:', err);
+      setProducts([]);
     } finally {
       setLoading(false);
     }
@@ -50,12 +56,9 @@ const Product = () => {
     return new Intl.NumberFormat('id-ID', {
       style: 'currency',
       currency: 'IDR',
-      minimumFractionDigits: 0
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 0  // Tambahkan ini untuk menghilangkan desimal
     }).format(number);
-  };
-
-  const parseRupiah = (rupiah) => {
-    return parseInt(rupiah.toString().replace(/\D/g, '')) || 0;
   };
 
   const handleAdd = () => {
@@ -82,26 +85,16 @@ const Product = () => {
     setEditingProduct(product._id || product.id);
     setIsAdding(false);
     
-    // FIX: Ambil nilai price langsung dari produk tanpa manipulasi
-    const priceFromServer = product.price;
-    
-    // Konversi ke string jika perlu, tapi pastikan tidak ada formatting
-    let priceString;
-    if (typeof priceFromServer === 'string') {
-      // Jika sudah string, hapus semua non-digit
-      priceString = priceFromServer.replace(/\D/g, '');
-    } else if (typeof priceFromServer === 'number') {
-      // Jika number, langsung ubah ke string
-      priceString = priceFromServer.toString();
-    } else {
-      // Fallback
-      priceString = '';
-    }
+    // Ambil price langsung sebagai integer, bukan float
+    const priceValue = parseInt(product.price) || 0;
     
     setFormData({
-      ...product,
-      price: priceString, // Simpan angka mentah tanpa formatting
-      weight: product.weight || '',
+      name: product.name || '',
+      category: product.category || 'Semua Produk',
+      price: priceValue.toString(), // Convert integer ke string
+      weight: (product.weight || 0).toString(),
+      description: product.description || '',
+      image: product.image || '',
       marketplaceLinks: product.marketplaceLinks || {
         shopee: '',
         tokopedia: '',
@@ -123,34 +116,46 @@ const Product = () => {
         return;
       }
 
-      // FIX: Parse price dari input yang sudah berupa angka tanpa formatting
-      const priceValue = parseRupiah(formData.price);
+      const priceValue = parseInt(formData.price.toString().replace(/\D/g, '')) || 0;
       
-      // LOGIKA PENERIMAAN DATA BERAT: Pastikan dikirim sebagai Integer
       const productData = {
-        name: formData.name,
+        name: formData.name.trim(),
         category: formData.category,
         price: priceValue,
-        weight: parseInt(formData.weight) || 0, // Diterima sebagai angka (INT)
-        description: formData.description || '',
+        weight: parseInt(formData.weight) || 0,
+        description: formData.description?.trim() || '',
         image: previewImage || formData.image || '',
-        marketplaceLinks: formData.marketplaceLinks || {}
+        marketplaceLinks: formData.marketplaceLinks || {
+          shopee: '',
+          tokopedia: '',
+          lazada: '',
+          other: ''
+        }
+      };
+
+      const token = localStorage.getItem('token');
+      const config = {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
       };
 
       if (isAdding) {
-        const response = await axios.post(API_URL, productData);
+        const response = await axios.post(API_URL, productData, config);
         setProducts([response.data, ...products]);
-        setIsAdding(false);
       } else {
-        const response = await axios.put(`${API_URL}/${editingProduct}`, productData);
+        const response = await axios.put(`${API_URL}/${editingProduct}`, productData, config);
         setProducts(products.map(product => 
-          (product._id || product.id) === editingProduct ? response.data : product
+          product.id === editingProduct ? response.data : product
         ));
       }
 
       handleCancel();
+      alert('Produk berhasil disimpan!');
     } catch (err) {
-      alert('Gagal menyimpan produk. Silakan coba lagi.');
+      const errorMessage = err.response?.data?.error || 'Gagal menyimpan produk';
+      alert(errorMessage);
       console.error('Error menyimpan produk:', err);
     }
   };
@@ -176,25 +181,40 @@ const Product = () => {
   };
 
   const handleDelete = async (id) => {
-    if (window.confirm('Apakah Anda yakin ingin menghapus produk ini?')) {
-      try {
-        await axios.delete(`${API_URL}/${id}`);
-        setProducts(products.filter(product => (product._id || product.id) !== id));
-      } catch (err) {
-        alert('Gagal menghapus produk. Silakan coba lagi.');
-        console.error('Error menghapus produk:', err);
-      }
+    if (!window.confirm('Apakah Anda yakin ingin menghapus produk ini?')) {
+      return;
+    }
+
+    try {
+      const token = localStorage.getItem('token');
+      await axios.delete(`${API_URL}/${id}`, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+      
+      setProducts(products.filter(product => product.id !== id));
+      alert('Produk berhasil dihapus!');
+    } catch (err) {
+      const errorMessage = err.response?.data?.error || 'Gagal menghapus produk';
+      alert(errorMessage);
+      console.error('Error menghapus produk:', err);
     }
   };
 
   const handleChange = (e) => {
     const { name, value } = e.target;
+    
     if (name === 'price') {
-      // FIX: Hanya terima angka, tidak perlu formatting di input
+      // FIX: Hanya izinkan angka, tanpa formatting
       const digitsOnly = value.replace(/\D/g, '');
-      setFormData({ ...formData, [name]: digitsOnly });
+      setFormData(prev => ({ ...prev, [name]: digitsOnly }));
+    } else if (name === 'weight') {
+      // Untuk weight juga sama, hanya angka
+      const digitsOnly = value.replace(/\D/g, '');
+      setFormData(prev => ({ ...prev, [name]: digitsOnly }));
     } else {
-      setFormData({ ...formData, [name]: value });
+      setFormData(prev => ({ ...prev, [name]: value }));
     }
   };
 
@@ -211,6 +231,12 @@ const Product = () => {
   const handleImageUpload = (e) => {
     const file = e.target.files[0];
     if (file) {
+      // Validasi ukuran file (max 2MB)
+      if (file.size > 2 * 1024 * 1024) {
+        alert('Ukuran file terlalu besar. Maksimal 2MB');
+        return;
+      }
+
       const reader = new FileReader();
       reader.onloadend = () => {
         setPreviewImage(reader.result);
@@ -404,14 +430,14 @@ const Product = () => {
                     />
                   </div>
                   <p className="text-xs text-gray-500 mt-1">
-                    Nilai saat ini: {formData.price ? formatRupiah(formData.price) : 'Rp 0'}
+                    Preview: {formData.price ? formatRupiah(formData.price) : 'Rp 0'}
                   </p>
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Berat (Gram)</label>
                   <div className="relative">
                     <input 
-                      type="number" 
+                      type="text" 
                       name="weight" 
                       value={formData.weight || ''} 
                       onChange={handleChange} 

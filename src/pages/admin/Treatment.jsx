@@ -31,8 +31,11 @@ const Treatment = () => {
   const fetchTreatments = async () => {
     try {
       setLoading(true);
-      const response = await axios.get(API_URL);
-      setTreatments(response.data);
+      const Token = localStorage.getItem('token');
+      const response = await axios.get(API_URL, {
+        headers: { Authorization: `Bearer ${Token}` }
+      });
+      setTreatments(response.data.data || []);
       setError(null);
     } catch (err) {
       setError('Gagal memuat perawatan. Silakan coba lagi.');
@@ -45,11 +48,7 @@ const Treatment = () => {
   // Format Rupiah
   const formatRupiah = (angka) => {
     const number = parseInt(angka) || 0;
-    return new Intl.NumberFormat('id-ID', {
-      style: 'currency',
-      currency: 'IDR',
-      minimumFractionDigits: 0
-    }).format(number);
+    return 'Rp ' + number.toLocaleString('id-ID');
   };
 
   // Parse Rupiah
@@ -78,7 +77,7 @@ const Treatment = () => {
     setIsAdding(false);
     setFormData({
       ...treatment,
-      price: treatment.price.toString().replace(/\D/g, '') || '0',
+      price: String(parseInt(treatment.price) || 0),
       facilities: treatment.facilities || []
     });
     setNewFacility('');
@@ -138,14 +137,22 @@ const Treatment = () => {
         facilities: formData.facilities.filter(facility => facility.trim() !== '')
       };
 
+      const Token = localStorage.getItem('token');
+      
       if (isAdding) {
-        const response = await axios.post(API_URL, treatmentData);
-        setTreatments([response.data, ...treatments]);
+        const response = await axios.post(API_URL, treatmentData, {
+          headers: { Authorization: `Bearer ${Token}` }
+        });
+        const newTreatment = response.data.data || response.data;
+        setTreatments([newTreatment, ...treatments]);
         setIsAdding(false);
       } else {
-        const response = await axios.put(`${API_URL}/${editingTreatment}`, treatmentData);
+        const response = await axios.put(`${API_URL}/${editingTreatment}`, treatmentData, {
+          headers: { Authorization: `Bearer ${Token}` }
+        });
+        const updatedTreatment = response.data.data || response.data;
         setTreatments(treatments.map(treatment =>
-          (treatment._id || treatment.id) === editingTreatment ? response.data : treatment
+          (treatment._id || treatment.id) === editingTreatment ? updatedTreatment : treatment
         ));
       }
 
@@ -176,7 +183,10 @@ const Treatment = () => {
   const handleDelete = async (id) => {
     if (window.confirm('Apakah Anda yakin ingin menghapus perawatan ini?')) {
       try {
-        await axios.delete(`${API_URL}/${id}`);
+        const Token = localStorage.getItem('token');
+        await axios.delete(`${API_URL}/${id}`, {
+          headers: { Authorization: `Bearer ${Token}` }
+        });
         setTreatments(treatments.filter(treatment => (treatment._id || treatment.id) !== id));
       } catch (err) {
         alert('Gagal menghapus perawatan. Silakan coba lagi.');
@@ -228,7 +238,7 @@ const Treatment = () => {
   }
 
   // Error state
-  if (error && treatments.length === 0) {
+  if (error && (!Array.isArray(treatments) || treatments.length === 0)) {
     return (
       <div className="bg-white rounded-xl shadow-sm p-8 text-center">
         <div className="text-red-500 mb-4">
@@ -281,7 +291,7 @@ const Treatment = () => {
 
       {/* Treatments Grid View */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {treatments.map((treatment) => (
+        {Array.isArray(treatments) && treatments.map((treatment) => (
           <div key={treatment._id || treatment.id} className="bg-white rounded-xl shadow-sm overflow-hidden hover:shadow-md transition-shadow">
             {/* Treatment Image */}
             <div className="h-48 bg-gray-100 relative">
@@ -687,7 +697,7 @@ const Treatment = () => {
       )}
 
       {/* Empty State */}
-      {treatments.length === 0 && !loading && (
+      {Array.isArray(treatments) && treatments.length === 0 && !loading && (
         <div className="bg-white rounded-xl shadow-sm p-12 text-center">
           <svg className="w-16 h-16 mx-auto text-gray-400 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />

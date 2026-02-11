@@ -6,7 +6,7 @@ const swaggerUi = require('swagger-ui-express');
 const swaggerDocument = require('./docs/swagger.json');
 
 const { promisePool } = require('./config/database');
-const createAllTables = require('./initTables'); // optional if ada
+const createAllTables = require('./initTables'); 
 const authenticateToken = require('./middleware/auth');
 
 const authRoutes = require('./routes/authRoutes');
@@ -16,8 +16,7 @@ const therapistRoutes = require('./routes/therapistRoutes');
 const memberRoutes = require('./routes/memberRoutes');
 const productRoutes = require('./routes/productsRoute');
 const reviewsRoutes = require('./routes/reviewsRoutes');
-const articleRoutes = require('./routes/articelsRoutes');
-
+const articlesRoutes = require('./routes/articlesRoutes');
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -47,7 +46,7 @@ app.use('/api/treatments', treatmentRoutes);
 app.use('/api/therapists', therapistRoutes);
 app.use('/api/products', productRoutes);
 app.use('/api/reviews', reviewsRoutes);
-app.use('/api/articles', articleRoutes);
+app.use('/api/articles', articlesRoutes);
 
 // Protected routes (require token)
 app.use('/api/appointments', authenticateToken, appointmentRoutes);
