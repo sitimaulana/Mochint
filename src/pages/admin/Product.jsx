@@ -24,6 +24,7 @@ const Product = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [notification, setNotification] = useState({ show: false, type: '', title: '', message: '' });
+  const [searchTerm, setSearchTerm] = useState('');
 
   const API_URL = 'http://localhost:5000/api/products';
   
@@ -320,11 +321,46 @@ const Product = () => {
         </button>
       </div>
 
+      {/* Search Bar */}
+      <div className="bg-white rounded-xl shadow-sm p-4 border border-gray-200">
+        <div className="relative">
+          <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+            <svg className="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+            </svg>
+          </div>
+          <input
+            type="search"
+            placeholder="Cari produk berdasarkan nama, kategori, atau deskripsi..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg bg-gray-50 focus:outline-none focus:ring-2 focus:ring-brown-500 focus:border-transparent transition-colors duration-200"
+          />
+        </div>
+        {searchTerm && (
+          <p className="mt-2 text-sm text-gray-600">
+            Menampilkan {products.filter(product => 
+              (product.name || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+              (product.category || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+              (product.description || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+              (product.id || '').toString().toLowerCase().includes(searchTerm.toLowerCase())
+            ).length} dari {products.length} produk
+          </p>
+        )}
+      </div>
+
       <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-200">
         <h2 className="text-lg font-semibold text-gray-800 mb-4">Katalog Produk</h2>
         {products.length > 0 ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-            {products.map((product) => (
+            {products
+              .filter(product => 
+                (product.name || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+                (product.category || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+                (product.description || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+                (product.id || '').toString().toLowerCase().includes(searchTerm.toLowerCase())
+              )
+              .map((product) => (
               <div key={product._id || product.id} className="bg-white rounded-lg border border-gray-200 overflow-hidden hover:shadow-md transition-shadow duration-200">
                 <div className="h-48 overflow-hidden bg-gray-100">
                   <img 

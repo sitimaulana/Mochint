@@ -5,16 +5,23 @@ import { Menu, X, User, Calendar, MessageCircle, ChevronDown, LogOut } from 'luc
 const Navbar = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isMemberMenuOpen, setIsMemberMenuOpen] = useState(false);
+  const [isAdminMenuOpen, setIsAdminMenuOpen] = useState(false);
   const [user, setUser] = useState(null);
+  const [admin, setAdmin] = useState(null);
 
   const navigate = useNavigate();
   const location = useLocation();
 
   useEffect(() => {
     const activeUser = JSON.parse(localStorage.getItem('active_user'));
+    const adminToken = localStorage.getItem('token');
+    const adminUser = JSON.parse(localStorage.getItem('user'));
+    
     setUser(activeUser);
+    setAdmin(adminToken && adminUser ? adminUser : null);
     setIsMenuOpen(false);
     setIsMemberMenuOpen(false);
+    setIsAdminMenuOpen(false);
   }, [location]);
 
   const LOGO_FILENAME = "logomochint.svg"; 
@@ -38,18 +45,34 @@ const Navbar = () => {
   ];
 
   const handleMemberClick = (e) => {
-    if (!user) {
+    e.preventDefault();
+    if (!user && !admin) {
       navigate('/member-app');
-    } else {
-      e.preventDefault();
+    } else if (user) {
       setIsMemberMenuOpen(!isMemberMenuOpen);
+      setIsAdminMenuOpen(false);
+    } else if (admin) {
+      setIsAdminMenuOpen(!isAdminMenuOpen);
+      setIsMemberMenuOpen(false);
     }
   };
 
   const handleLogout = () => {
     localStorage.removeItem('active_user');
+    localStorage.removeItem('token');
+    localStorage.removeItem('user');
     setUser(null);
+    setAdmin(null);
     setIsMemberMenuOpen(false);
+    setIsMenuOpen(false);
+    navigate('/');
+  };
+
+  const handleAdminLogout = () => {
+    localStorage.removeItem('token');
+    localStorage.removeItem('user');
+    setAdmin(null);
+    setIsAdminMenuOpen(false);
     setIsMenuOpen(false);
     navigate('/');
   };
@@ -57,8 +80,11 @@ const Navbar = () => {
   return (
     <nav className="sticky top-0 z-50 bg-white/95 backdrop-blur-md shadow-sm border-b border-gray-100 font-sans">
       {/* OVERLAY */}
-      {isMemberMenuOpen && (
-        <div className="fixed inset-0 z-40" onClick={() => setIsMemberMenuOpen(false)}></div>
+      {(isMemberMenuOpen || isAdminMenuOpen) && (
+        <div className="fixed inset-0 z-40" onClick={() => {
+          setIsMemberMenuOpen(false);
+          setIsAdminMenuOpen(false);
+        }}></div>
       )}
 
       <div className="container mx-auto px-6 py-4 relative z-50">
@@ -98,15 +124,50 @@ const Navbar = () => {
                 <div key={item.name} className="relative ml-2">
                   <button
                     onClick={handleMemberClick}
-                    className={`flex items-center px-6 py-2.5 font-sans font-bold text-[13px] uppercase tracking-wider transition-all rounded-xl border-2 ${location.pathname.includes('/member') || user
+                    className={`flex items-center px-6 py-2.5 font-sans font-bold text-[13px] uppercase tracking-wider transition-all rounded-xl border-2 ${
+                      location.pathname.includes('/member') || location.pathname.includes('/admin') || user || admin
                         ? `bg-[#3E2723] text-white border-[#3E2723] shadow-lg`
                         : `text-[#8D6E63] border-[#8D6E63] hover:bg-[#8D6E63] hover:text-white`
                       }`}
                   >
                     <User size={16} className="mr-2" />
-                    {user ? `Hi, ${user.name.split(' ')[0]}` : 'Aplikasi Member'}
-                    {user && <ChevronDown size={14} className="ml-1" />}
+                    {user ? `Hi, ${user.name.split(' ')[0]}` : admin ? 'Administrator' : 'Aplikasi Member'}
+                    {(user || admin) && <ChevronDown size={14} className="ml-1" />}
                   </button>
+
+                  {/* Dropdown Menu Admin */}
+                  {admin && isAdminMenuOpen && (
+                    <div className="absolute right-0 mt-4 w-64 bg-white rounded-2xl shadow-[0_20px_50px_rgba(0,0,0,0.15)] border border-gray-50 py-2 z-50 overflow-hidden animate-in slide-in-from-top-2 duration-200">
+                      <div className="px-6 py-4 border-b border-gray-50 bg-[#FDFBF7]">
+                        <p className="font-display font-bold text-[#3E2723] truncate text-sm">Administrator</p>
+                        <p className="text-[10px] text-[#8D6E63] font-black uppercase tracking-widest mt-0.5">ADMIN PANEL</p>
+                      </div>
+
+                      <div className="p-2">
+                        <button
+                          onClick={() => {
+                            navigate('/admin/dashboard');
+                            setIsAdminMenuOpen(false);
+                          }}
+                          className="flex items-center w-full px-4 py-3 text-[13px] font-bold text-gray-600 hover:bg-[#FDFBF7] hover:text-[#8D6E63] rounded-xl transition-colors font-sans"
+                        >
+                          <svg className="w-[18px] h-[18px] mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
+                          </svg>
+                          Dashboard Admin
+                        </button>
+                      </div>
+
+                      <div className="border-t border-gray-50 mt-1 p-2">
+                        <button
+                          onClick={handleAdminLogout}
+                          className="flex items-center w-full px-4 py-3 text-[13px] font-bold text-red-500 hover:bg-red-50 rounded-xl transition-colors font-sans"
+                        >
+                          <LogOut size={18} className="mr-3" /> Logout
+                        </button>
+                      </div>
+                    </div>
+                  )}
 
                   {/* Dropdown Menu Member */}
                   {user && isMemberMenuOpen && (
@@ -197,6 +258,11 @@ const Navbar = () => {
             {user && (
               <button onClick={handleLogout} className="w-full text-left px-4 py-3 text-red-500 font-bold text-sm flex items-center gap-3 hover:bg-red-50 rounded-xl mt-2 transition-colors">
                 <LogOut size={18} /> Logout
+              </button>
+            )}
+            {admin && (
+              <button onClick={handleAdminLogout} className="w-full text-left px-4 py-3 text-red-500 font-bold text-sm flex items-center gap-3 hover:bg-red-50 rounded-xl mt-2 transition-colors">
+                <LogOut size={18} /> Logout Admin
               </button>
             )}
           </div>

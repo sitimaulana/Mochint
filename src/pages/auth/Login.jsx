@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import api from '../../api/client';
 
@@ -8,6 +8,17 @@ const Login = ({ onSwitch, onForgot, onLoginSuccess }) => {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
   const navigate = useNavigate();
+
+  useEffect(() => {
+    const activeUser = localStorage.getItem('active_user');
+    const adminToken = localStorage.getItem('token');
+    
+    if (activeUser) {
+      navigate('/member');
+    } else if (adminToken) {
+      navigate('/admin/dashboard');
+    }
+  }, [navigate]);
 
   const handleLogin = async (e) => {
     e.preventDefault();

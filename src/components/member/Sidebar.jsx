@@ -8,11 +8,10 @@ import {
   Home, 
   LogOut,
   ChevronRight,
-  User,
   Menu,
   X
 } from 'lucide-react';
-import { authAPI } from '../../api/client';
+// Hapus import authAPI karena tidak digunakan
 
 const Sidebar = () => {
   const location = useLocation();
@@ -27,17 +26,12 @@ const Sidebar = () => {
         const userStr = localStorage.getItem('user');
         const activeUserStr = localStorage.getItem('active_user');
         
-        console.log('Sidebar - localStorage user:', userStr);
-        console.log('Sidebar - localStorage active_user:', activeUserStr);
-        
         // Prioritize active_user, fallback to user
         const userData = activeUserStr ? JSON.parse(activeUserStr) : 
                         userStr ? JSON.parse(userStr) : null;
         
         if (userData) {
           setUser(userData);
-        } else {
-          console.warn('No user data found in localStorage');
         }
       } catch (error) {
         console.error('Error loading user data:', error);
@@ -46,7 +40,6 @@ const Sidebar = () => {
     
     loadUserData();
     
-    // Listen for storage changes (if user data is updated elsewhere)
     const handleStorageChange = (e) => {
       if (e.key === 'user' || e.key === 'active_user') {
         loadUserData();
@@ -74,41 +67,43 @@ const Sidebar = () => {
     };
   }, [isMobileMenuOpen]);
 
-  // Fungsi untuk mengecek rute aktif agar styling berubah
+  // Fungsi untuk mengecek rute aktif
   const isActive = (path) => {
-    // Exact match for dashboard
     if (path === '/member' && location.pathname === '/member') return true;
-    // For booking steps
     if (path.startsWith('/member/booking') && location.pathname.startsWith('/member/booking')) {
       return true;
     }
-    // For other paths
     return location.pathname === path;
   };
 
-  // FUNGSI LOGOUT (Menghapus session dan pindah ke Home)
-  const handleLogout = () => {
+  // FUNGSI LOGOUT - Langsung hapus localStorage
+  const handleLogout = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    
     console.log('Logging out...');
     
-    // Clear all auth-related data
-    authAPI.logout();
-    
-    // Additional cleanup just in case
+    // Langsung hapus semua data dari localStorage
     localStorage.removeItem('token');
     localStorage.removeItem('user');
     localStorage.removeItem('active_user');
     localStorage.removeItem('isAdmin');
+    localStorage.removeItem('access_token');
+    localStorage.removeItem('refresh_token');
     
-    // Navigate to home
-    navigate('/');
+    // Clear session storage juga jika ada
+    sessionStorage.clear();
     
     // Close mobile menu
     setIsMobileMenuOpen(false);
     
-    // Optional: reload to reset app state
+    // Navigate to home with replace to prevent back navigation
+    navigate('/', { replace: true });
+    
+    // Force reload to reset app state
     setTimeout(() => {
       window.location.reload();
-    }, 100);
+    }, 50);
   };
 
   const menuItems = [
@@ -118,21 +113,20 @@ const Sidebar = () => {
     { name: 'Riwayat', path: '/member/history', icon: <History size={20} />, mobileIcon: <History size={24} /> },
   ];
 
-  // If no user data, don't show user info but still show sidebar
   const userName = user?.name || user?.email || 'Member';
   const userInitial = userName.charAt(0).toUpperCase();
 
   return (
     <>
-      {/* Desktop Sidebar - Hidden on mobile/tablet */}
+      {/* Desktop Sidebar */}
       <aside className="w-72 bg-white border-r border-gray-100 h-screen hidden lg:flex flex-col sticky top-0 font-sans">
-        {/* Logo / Title Area */}
+        {/* Logo */}
         <div className="p-10 border-b border-gray-50">
           <h2 className="text-3xl font-display font-bold text-[#3E2723] tracking-tighter">Mochint</h2>
-          <p className="text-[10px] font-black text-[#8D6E63] uppercase tracking-[0.3em] mt-1.5 font-sans">Layanan Member</p>
+          <p className="text-[10px] font-black text-[#8D6E63] uppercase tracking-[0.3em] mt-1.5">Layanan Member</p>
         </div>
 
-        {/* User Info Section */}
+        {/* User Info */}
         <div className="p-6 border-b border-gray-50 bg-[#FDFBF7]/50">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 bg-[#3E2723] rounded-xl flex items-center justify-center text-white font-bold text-lg shadow-md">
@@ -149,7 +143,7 @@ const Sidebar = () => {
           </div>
         </div>
 
-        {/* Main Navigation */}
+        {/* Navigation */}
         <nav className="flex-1 px-6 py-8 space-y-2 overflow-y-auto">
           {menuItems.map((item) => (
             <Link
@@ -162,10 +156,10 @@ const Sidebar = () => {
               }`}
             >
               <div className="flex items-center gap-4">
-                <div className={`${isActive(item.path) ? 'text-[#D7CCC8]' : 'text-inherit opacity-70 group-hover:opacity-100'}`}>
+                <div className={`${isActive(item.path) ? 'text-[#D7CCC8]' : 'opacity-70 group-hover:opacity-100'}`}>
                   {item.icon}
                 </div>
-                <span className={`font-sans font-bold text-[13px] tracking-widest uppercase transition-all ${
+                <span className={`font-sans font-bold text-[13px] tracking-widest uppercase ${
                   isActive(item.path) ? 'opacity-100' : 'opacity-80 group-hover:opacity-100'
                 }`}>
                   {item.name}
@@ -186,7 +180,8 @@ const Sidebar = () => {
             <span>Beranda</span>
           </Link>
           <button 
-            className="w-full flex items-center gap-4 p-4 text-red-400 hover:bg-red-50 rounded-2xl transition-all font-sans font-bold text-xs uppercase tracking-widest text-left group"
+            type="button"
+            className="w-full flex items-center gap-4 p-4 text-red-400 hover:bg-red-50 rounded-2xl transition-all font-sans font-bold text-xs uppercase tracking-widest text-left group cursor-pointer"
             onClick={handleLogout}
           >
             <LogOut size={20} className="group-hover:-translate-x-1 transition-transform" />
@@ -195,67 +190,58 @@ const Sidebar = () => {
         </div>
       </aside>
 
-      {/* Mobile/Tablet Layout - Visible on screens below lg (1024px) */}
-      <div className="lg:hidden min-h-screen flex flex-col">
-        {/* Mobile Header - Fixed at top */}
-        <header className="fixed top-0 left-0 right-0 bg-white border-b border-gray-100 px-4 py-3 z-30 flex items-center justify-between shadow-sm">
-          <div className="flex items-center gap-3">
-            <button
-              onClick={() => setIsMobileMenuOpen(true)}
-              className="p-2 hover:bg-gray-50 rounded-lg transition-colors"
-              aria-label="Buka menu"
-            >
-              <Menu size={24} className="text-[#3E2723]" />
-            </button>
-            <div>
-              <h2 className="text-xl font-display font-bold text-[#3E2723] tracking-tighter">Mochint</h2>
-              <p className="text-[8px] font-black text-[#8D6E63] uppercase tracking-[0.3em]">Member</p>
-            </div>
+      {/* Mobile Header */}
+      <div className="lg:hidden fixed top-0 left-0 right-0 bg-white border-b border-gray-100 px-4 py-3 z-30 flex items-center justify-between shadow-sm">
+        <div className="flex items-center gap-3">
+          <button
+            type="button"
+            onClick={() => setIsMobileMenuOpen(true)}
+            className="p-2 hover:bg-gray-50 rounded-lg transition-colors cursor-pointer"
+            aria-label="Buka menu"
+          >
+            <Menu size={24} className="text-[#3E2723]" />
+          </button>
+          <div>
+            <h2 className="text-xl font-display font-bold text-[#3E2723] tracking-tighter">Mochint</h2>
+            <p className="text-[8px] font-black text-[#8D6E63] uppercase tracking-[0.3em]">Member</p>
           </div>
-          <div className="w-8 h-8 bg-[#3E2723] rounded-lg flex items-center justify-center text-white font-bold text-sm shadow-md">
-            {userInitial}
-          </div>
-        </header>
-
-        {/* Main Content Area - With padding for fixed header and bottom nav */}
-        <main className="flex-1 pt-16 pb-20 px-4">
-          {/* This is where your page content will go */}
-          {/* The children components will be rendered here via router */}
-        </main>
-
-        {/* Fixed Bottom Navigation - Always visible, no scroll needed */}
-        <nav className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-100 px-2 py-1 z-30 flex items-center justify-around shadow-lg">
-          {menuItems.map((item) => (
-            <Link
-              key={item.name}
-              to={item.path}
-              className={`flex flex-col items-center p-2 rounded-xl transition-all relative ${
-                isActive(item.path)
-                  ? 'text-[#3E2723]'
-                  : 'text-gray-400 hover:text-[#8D6E63]'
-              }`}
-            >
-              <div className={`${isActive(item.path) ? 'scale-110' : ''} transition-transform`}>
-                {item.mobileIcon}
-              </div>
-              <span className={`text-[10px] font-bold mt-1 ${
-                isActive(item.path) ? 'text-[#3E2723]' : 'text-gray-400'
-              }`}>
-                {item.name}
-              </span>
-              {isActive(item.path) && (
-                <div className="absolute -top-1 w-1 h-1 bg-[#3E2723] rounded-full" />
-              )}
-            </Link>
-          ))}
-        </nav>
+        </div>
+        <div className="w-8 h-8 bg-[#3E2723] rounded-lg flex items-center justify-center text-white font-bold text-sm shadow-md">
+          {userInitial}
+        </div>
       </div>
 
-      {/* Mobile Sidebar Drawer */}
+      {/* Mobile Bottom Navigation */}
+      <nav className="lg:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-gray-100 px-2 py-1 z-30 flex items-center justify-around shadow-lg">
+        {menuItems.map((item) => (
+          <Link
+            key={item.name}
+            to={item.path}
+            className={`flex flex-col items-center p-2 rounded-xl transition-all relative ${
+              isActive(item.path)
+                ? 'text-[#3E2723]'
+                : 'text-gray-400 hover:text-[#8D6E63]'
+            }`}
+          >
+            <div className={`${isActive(item.path) ? 'scale-110' : ''} transition-transform`}>
+              {item.mobileIcon}
+            </div>
+            <span className={`text-[10px] font-bold mt-1 ${
+              isActive(item.path) ? 'text-[#3E2723]' : 'text-gray-400'
+            }`}>
+              {item.name}
+            </span>
+            {isActive(item.path) && (
+              <div className="absolute -top-1 w-1 h-1 bg-[#3E2723] rounded-full" />
+            )}
+          </Link>
+        ))}
+      </nav>
+
+      {/* Mobile Drawer */}
       <div className={`lg:hidden fixed inset-0 z-50 transition-all duration-300 ${
         isMobileMenuOpen ? 'visible' : 'invisible'
       }`}>
-        {/* Backdrop */}
         <div 
           className={`absolute inset-0 bg-black transition-opacity duration-300 ${
             isMobileMenuOpen ? 'opacity-50' : 'opacity-0'
@@ -263,7 +249,6 @@ const Sidebar = () => {
           onClick={() => setIsMobileMenuOpen(false)}
         />
         
-        {/* Drawer */}
         <div className={`absolute top-0 left-0 w-72 h-full bg-white shadow-2xl transition-transform duration-300 transform ${
           isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full'
         }`}>
@@ -275,9 +260,9 @@ const Sidebar = () => {
                 <p className="text-[8px] font-black text-[#8D6E63] uppercase tracking-[0.3em] mt-1">Layanan Member</p>
               </div>
               <button
+                type="button"
                 onClick={() => setIsMobileMenuOpen(false)}
-                className="p-2 hover:bg-gray-50 rounded-lg transition-colors"
-                aria-label="Tutup menu"
+                className="p-2 hover:bg-gray-50 rounded-lg transition-colors cursor-pointer"
               >
                 <X size={20} className="text-[#3E2723]" />
               </button>
@@ -311,6 +296,7 @@ const Sidebar = () => {
                       ? 'bg-[#3E2723] text-white'
                       : 'text-gray-400 hover:bg-[#FDFBF7] hover:text-[#8D6E63]'
                   }`}
+                  onClick={() => setIsMobileMenuOpen(false)}
                 >
                   <div className="flex items-center gap-4">
                     <div className={`${isActive(item.path) ? 'text-[#D7CCC8]' : ''}`}>
@@ -336,7 +322,8 @@ const Sidebar = () => {
                 <span>Beranda</span>
               </Link>
               <button 
-                className="w-full flex items-center gap-4 p-4 text-red-400 hover:bg-red-50 rounded-xl transition-all font-sans font-bold text-sm text-left group"
+                type="button"
+                className="w-full flex items-center gap-4 p-4 text-red-400 hover:bg-red-50 rounded-xl transition-all font-sans font-bold text-sm text-left group cursor-pointer"
                 onClick={handleLogout}
               >
                 <LogOut size={20} className="group-hover:-translate-x-1 transition-transform" />

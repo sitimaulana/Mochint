@@ -280,16 +280,14 @@ const Member = () => {
     const matchesSearch = 
       (member.name || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
       (member.email || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
-      (member.phone || '').includes(searchTerm) ||
-      (member.address || '').toLowerCase().includes(searchTerm.toLowerCase()) || // Cari alamat
-      (member.id || '').toLowerCase().includes(searchTerm.toLowerCase());
+      (member.phone || '').toString().includes(searchTerm) ||
+      (member.address || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (member.id || '').toString().toLowerCase().includes(searchTerm.toLowerCase());
     
     const matchesStatus = selectedStatus === 'all' || member.status === selectedStatus;
     
     return matchesSearch && matchesStatus;
   });
-
-  console.log(filteredMembers);
   
 
   const handleAdd = () => {
