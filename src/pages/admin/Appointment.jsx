@@ -8,7 +8,6 @@ const Appointment = () => {
   const THERAPISTS_API_URL = 'http://localhost:5000/api/therapists';
   const TREATMENTS_API_URL = 'http://localhost:5000/api/treatments';
   const MEMBER_HISTORY_API_URL = 'http://localhost:5000/api/members/history';
-  const APPOINTMENT_STATS_API_URL = 'http://localhost:5000/api/appointments/statistics';
 
   const Token = localStorage.getItem('token')
 
@@ -42,15 +41,33 @@ const Appointment = () => {
     members: true,
     therapists: true,
     treatments: true,
-    stats: false // statistik dihitung manual
+    stats: false
   });
   const [error, setError] = useState(null);
   const [actionLoading, setActionLoading] = useState({});
   const [refreshKey, setRefreshKey] = useState(0);
+  
+  // State untuk notification modal
+  const [notification, setNotification] = useState({
+    show: false,
+    type: '',
+    title: '',
+    message: ''
+  });
 
   useEffect(() => { 
     fetchAllData(); 
   }, [refreshKey]);
+
+  // Auto-hide notification setelah 3 detik
+  useEffect(() => {
+    if (notification.show) {
+      const timer = setTimeout(() => {
+        setNotification({ ...notification, show: false });
+      }, 3000);
+      return () => clearTimeout(timer);
+    }
+  }, [notification.show]);
 
   const fetchAllData = async () => {
     try {
@@ -76,12 +93,10 @@ const Appointment = () => {
       }));
       
       setAppointments(appointmentsData);
-      // Pastikan struktur data konsisten dengan {data: [...]}
       setMembers(membersRes.data.data ? membersRes.data : { data: membersRes.data });
       setTherapists(therapistsRes.data.data ? therapistsRes.data : { data: therapistsRes.data });
       setTreatments(treatmentsRes.data.data ? treatmentsRes.data : { data: treatmentsRes.data });
       
-      // Hitung statistik secara manual dari appointments
       calculateStatistics(appointmentsData);
       
       setError(null);
@@ -99,13 +114,11 @@ const Appointment = () => {
     }
   };
 
-  // Fungsi untuk menghitung statistik secara manual
   const calculateStatistics = (appointmentsData) => {
     const confirmed_count = appointmentsData.filter(app => app.status === 'confirmed').length;
     const completed_count = appointmentsData.filter(app => app.status === 'completed').length;
     const total_count = appointmentsData.length;
     
-    // Hitung pendapatan
     const total_revenue = appointmentsData.reduce((sum, app) => sum + (app.amount || 0), 0);
     const completed_revenue = appointmentsData
       .filter(app => app.status === 'completed')
@@ -120,22 +133,18 @@ const Appointment = () => {
     });
   };
 
-  // --- FUNGSI UNTUK RIWAYAT MEMBER ---
   const addToMemberHistory = async (appointment) => {
     try {
-      // Cek apakah appointment sudah selesai dan memiliki member_id
       if (appointment.status !== 'completed' || !appointment.member_id) {
         return;
       }
 
-      // Cari data member untuk mendapatkan informasi lengkap
       const member = members.find(m => m.id == appointment.member_id);
       if (!member) {
         console.error('Member tidak ditemukan untuk ID:', appointment.member_id);
         return;
       }
 
-      // Data untuk member_history
       const historyData = {
         member_id: appointment.member_id,
         appointment_id: appointment.id,
@@ -149,9 +158,7 @@ const Appointment = () => {
         notes: `Appointment selesai pada ${appointment.date}`
       };
 
-      // Simpan ke member_history
       await axios.post(MEMBER_HISTORY_API_URL, historyData);
-      
       console.log('Menambahkan appointment ke riwayat member:', appointment.id);
       
     } catch (err) {
@@ -159,10 +166,8 @@ const Appointment = () => {
     }
   };
 
-  // --- UPDATE KUNJUNGAN DAN RIWAYAT MEMBER ---
   const updateMemberData = async (memberId, appointment) => {
     try {
-      // 1. Update jumlah kunjungan member dan kunjungan terakhir
       const memberResponse = await axios.get(`${MEMBERS_API_URL}/${memberId}`);
       const member = memberResponse.data;
       
@@ -174,7 +179,6 @@ const Appointment = () => {
         last_visit: appointment.date
       });
       
-      // Update state members lokal
       setMembers(prevMembers => 
         prevMembers.map(m => 
           m.id == memberId 
@@ -183,9 +187,7 @@ const Appointment = () => {
         )
       );
       
-      // 2. Tambahkan ke riwayat member
       await addToMemberHistory(appointment);
-      
       console.log(`Memperbarui data member ${memberId} dan riwayat`);
       
     } catch (err) {
@@ -193,26 +195,23 @@ const Appointment = () => {
     }
   };
 
-  // --- UPDATE STATISTIK TERAPIS ---
   const updateTherapistStatistics = async (therapistName, oldStatus, newStatus) => {
     try {
       if (!therapistName) return;
       
-      // Cari terapis berdasarkan nama
-      const therapist = therapists.find(t => t.name === therapistName);
+      const therapistsList = therapists.data || therapists || [];
+      const therapist = therapistsList.find(t => t.name === therapistName);
       if (!therapist) {
         console.error('Terapis tidak ditemukan:', therapistName);
         return;
       }
 
-      // Update statistik terapis di server
       await axios.put(`${THERAPISTS_API_URL}/${therapist.id}`, {
         total_confirmed: calculateTherapistConfirmed(therapist, oldStatus, newStatus),
         total_completed: calculateTherapistCompleted(therapist, oldStatus, newStatus),
         total_treatments: newStatus === 'completed' ? (therapist.total_treatments || 0) + 1 : therapist.total_treatments
       });
 
-      // Refresh data terapis
       const therapistsResponse = await axios.get(THERAPISTS_API_URL);
       setTherapists(therapistsResponse.data);
       
@@ -221,7 +220,6 @@ const Appointment = () => {
     }
   };
 
-  // Fungsi helper untuk menghitung statistik terapis
   const calculateTherapistConfirmed = (therapist, oldStatus, newStatus) => {
     let confirmed = therapist.total_confirmed || 0;
     
@@ -230,7 +228,7 @@ const Appointment = () => {
     } else if (oldStatus !== 'confirmed' && newStatus === 'confirmed') {
       confirmed = confirmed + 1;
     } else if (!oldStatus && newStatus === 'confirmed') {
-      confirmed = confirmed + 1; // Saat membuat baru
+      confirmed = confirmed + 1;
     }
     
     return confirmed;
@@ -244,21 +242,18 @@ const Appointment = () => {
     } else if (oldStatus !== 'completed' && newStatus === 'completed') {
       completed = completed + 1;
     } else if (!oldStatus && newStatus === 'completed') {
-      completed = completed + 1; // Saat membuat baru
+      completed = completed + 1;
     }
     
     return completed;
   };
 
-  // --- AKSI CEPAT STATUS ---
   const handleQuickStatusUpdate = async (id, currentStatus) => {
     let nextStatus;
     
-    // Tentukan status berikutnya berdasarkan status saat ini
     if (currentStatus === 'confirmed') {
       nextStatus = 'completed';
     } else if (currentStatus === 'completed') {
-      // Jika ingin bisa kembali ke confirmed (opsional)
       nextStatus = 'confirmed';
     }
     
@@ -268,51 +263,51 @@ const Appointment = () => {
       const appointment = appointments.find(a => a.id === id);
       if (!appointment) return;
       
-      console.log(`Memperbarui appointment ${id} dari ${currentStatus} ke ${nextStatus}`);
-      
-      // Update status appointment di database
-      const response = await axios.put(`${APPOINTMENTS_API_URL}/${id}/complete`, {
+      await axios.put(`${APPOINTMENTS_API_URL}/${id}/complete`, {
         status: nextStatus
       }, { headers: { Authorization: `Bearer ${Token}` } });
       
-      const updatedAppointment = response.data;
-      
-      // Update state lokal
       const updatedAppointments = appointments.map(app => 
         app.id === id ? { ...app, status: nextStatus } : app
       );
       setAppointments(updatedAppointments);
       
-      // Update statistik
       calculateStatistics(updatedAppointments);
       
-      // Update statistik terapis
-      if (appointment.therapist) {
-        await updateTherapistStatistics(appointment.therapist, currentStatus, nextStatus);
+      if (appointment.therapist_name || appointment.therapist) {
+        await updateTherapistStatistics(appointment.therapist_name || appointment.therapist, currentStatus, nextStatus);
       }
       
-      // Jika status berubah menjadi 'completed', update riwayat member
       if (nextStatus === 'completed' && currentStatus !== 'completed') {
         if (appointment.member_id) {
           await updateMemberData(appointment.member_id, appointment);
         }
       }
       
-      console.log(`Status diperbarui dari ${currentStatus} ke ${nextStatus} untuk appointment ${id}`);
+      setNotification({
+        show: true,
+        type: 'success',
+        title: 'Status Berhasil Diperbarui!',
+        message: `Appointment berhasil diubah menjadi ${getStatusText(nextStatus)}`
+      });
       
     } catch (err) { 
-      alert("Gagal memperbarui status"); 
       console.error('Error memperbarui status appointment:', err);
+      
+      setNotification({
+        show: true,
+        type: 'error',
+        title: 'Gagal Memperbarui Status',
+        message: err.response?.data?.message || 'Terjadi kesalahan saat memperbarui status'
+      });
     } finally { 
       setActionLoading(prev => ({ ...prev, [id]: false })); 
     }
   };
 
-  // --- LOGIKA PENCARIAN MEMBER ---
   const filteredMembersResults = useMemo(() => {
     if (!memberSearch) return [];
     
-    // Pastikan members memiliki property data
     const membersList = members.data || members || [];
     if (!Array.isArray(membersList)) return [];
        
@@ -323,7 +318,7 @@ const Appointment = () => {
   }, [members, memberSearch]);
 
   const selectMember = (member) => {
-    setFormData({ ...formData, member_id: member.id, member_id: member.id, customer_name: member.name });
+    setFormData({ ...formData, member_id: member.id, customer_name: member.name });
     setMemberSearch(member.name);
     setShowSearchDropdown(false);
   };
@@ -333,7 +328,6 @@ const Appointment = () => {
     return appointments.filter(app => app.status === selectedStatus);
   }, [appointments, selectedStatus]);
 
-  // --- HANDLERS ---
   const handleAdd = () => {
     setIsAdding(true);
     const today = new Date().toISOString().split('T')[0];
@@ -341,7 +335,7 @@ const Appointment = () => {
     const time = `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}`;
     
     setFormData({
-      customer_name: '', member_id: '', member_id: '', treatment: '', treatment_id: '', therapist: '', therapist_id: '',
+      customer_name: '', member_id: '', treatment: '', treatment_id: '', therapist: '', therapist_id: '',
       date: today,
       time: time, amount: 0, status: 'confirmed'
     });
@@ -352,12 +346,10 @@ const Appointment = () => {
   const handleEdit = (app) => {
     setEditingAppointment(app.id);
     
-    // Map data dari database ke form
     setFormData({ 
       customer_name: app.customer_name || '',
-      member_id: app.member_id || app.member_id || '',
-      member_id: app.member_id || app.member_id || '',
-      treatment: app.treatment_name || app.treatment || '',
+      member_id: app.member_id || '',
+      treatment: app.treatment_category || app.treatment || '',
       treatment_id: app.treatment_id || '',
       therapist: app.therapist_name || app.therapist || '',
       therapist_id: app.therapist_id || '',
@@ -399,26 +391,39 @@ const Appointment = () => {
   };
 
   const handleSave = async () => {
-    // Validasi
     if (!formData.customer_name.trim()) {
-      alert('Nama pelanggan wajib diisi');
+      setNotification({
+        show: true,
+        type: 'error',
+        title: 'Validasi Gagal',
+        message: 'Nama pelanggan wajib diisi'
+      });
       return;
     }
     
     if (!formData.treatment.trim()) {
-      alert('Perawatan wajib diisi');
+      setNotification({
+        show: true,
+        type: 'error',
+        title: 'Validasi Gagal',
+        message: 'Perawatan wajib diisi'
+      });
       return;
     }
     
     if (!formData.therapist.trim()) {
-      alert('Terapis wajib diisi');
+      setNotification({
+        show: true,
+        type: 'error',
+        title: 'Validasi Gagal',
+        message: 'Terapis wajib diisi'
+      });
       return;
     }
 
     try {
-      // Siapkan data untuk dikirim ke API dengan ID
       const dataToSend = {
-        member_id: formData.member_id || formData.member_id,
+        member_id: formData.member_id,
         customer_name: formData.customer_name,
         treatment_id: formData.treatment_id,
         therapist_id: formData.therapist_id,
@@ -430,7 +435,6 @@ const Appointment = () => {
 
       let response;
       if (isAdding) {
-        // Buat appointment baru
         response = await axios.post(APPOINTMENTS_API_URL, dataToSend, {
           headers: { Authorization: `Bearer ${Token}` }
         });
@@ -439,19 +443,23 @@ const Appointment = () => {
         setAppointments(updatedAppointments);
         calculateStatistics(updatedAppointments);
         
-        // Update statistik terapis untuk appointment baru
         if (formData.therapist) {
           await updateTherapistStatistics(formData.therapist, null, formData.status);
         }
         
         setIsAdding(false);
         
-        // Jika status completed saat membuat, update riwayat member
         if (formData.status === 'completed' && formData.member_id) {
           await updateMemberData(formData.member_id, newAppointment);
         }
+        
+        setNotification({
+          show: true,
+          type: 'success',
+          title: 'Berhasil Menambahkan!',
+          message: 'Janji temu baru berhasil ditambahkan'
+        });
       } else {
-        // Update appointment yang ada
         const oldAppointment = appointments.find(a => a.id === editingAppointment);
         
         response = await axios.put(`${APPOINTMENTS_API_URL}/${editingAppointment}`, dataToSend, {
@@ -464,32 +472,41 @@ const Appointment = () => {
         setAppointments(updatedAppointments);
         calculateStatistics(updatedAppointments);
         
-        // Update statistik terapis jika status atau terapis berubah
         const oldTherapistName = oldAppointment?.therapist_name || oldAppointment?.therapist;
         const newTherapistName = formData.therapist;
         
         if (oldAppointment && (oldAppointment.status !== formData.status || oldTherapistName !== newTherapistName)) {
-          // Kurangi statistik terapis lama
           if (oldTherapistName) {
             await updateTherapistStatistics(oldTherapistName, oldAppointment.status, null);
           }
           
-          // Tambah statistik terapis baru
           if (newTherapistName) {
             await updateTherapistStatistics(newTherapistName, null, formData.status);
           }
         }
         
-        // Jika status berubah menjadi completed, update riwayat member
         if (oldAppointment?.status !== 'completed' && formData.status === 'completed' && formData.member_id) {
           await updateMemberData(formData.member_id, updatedAppointment);
         }
+        
+        setNotification({
+          show: true,
+          type: 'success',
+          title: 'Berhasil Memperbarui!',
+          message: 'Data janji temu berhasil diperbarui'
+        });
       }
       
       handleCancel();
     } catch (err) { 
-      alert("Gagal menyimpan"); 
       console.error('Error menyimpan appointment:', err);
+      
+      setNotification({
+        show: true,
+        type: 'error',
+        title: 'Gagal Menyimpan',
+        message: err.response?.data?.message || 'Terjadi kesalahan saat menyimpan data'
+      });
     }
   };
 
@@ -505,7 +522,6 @@ const Appointment = () => {
     minimumFractionDigits: 0 
   }).format(val || 0);
 
-  // Format tanggal untuk ditampilkan
   const formatDisplayDate = (dateStr, timeStr) => {
     try {
       return `${dateStr}, ${timeStr}`;
@@ -514,7 +530,6 @@ const Appointment = () => {
     }
   };
 
-  // Dapatkan warna status
   const getStatusColor = (status) => {
     const normalizedStatus = status?.toLowerCase() || 'confirmed';
     switch(normalizedStatus) {
@@ -524,7 +539,6 @@ const Appointment = () => {
     }
   };
 
-  // Dapatkan teks status dalam bahasa Indonesia
   const getStatusText = (status) => {
     const statusMap = {
       'confirmed': 'Dikonfirmasi',
@@ -533,7 +547,6 @@ const Appointment = () => {
     return statusMap[status] || status;
   };
 
-  // Loading state
   const isLoading = Object.values(loading).some(l => l === true);
 
   if (isLoading) {
@@ -783,13 +796,25 @@ const Appointment = () => {
                                 setAppointments(updatedAppointments);
                                 calculateStatistics(updatedAppointments);
                                 
-                                // Update statistik terapis untuk pengurangan
                                 if (app.therapist_name) {
-                                  await updateTherapistStatistics(app.therapist, app.status, null);
+                                  await updateTherapistStatistics(app.therapist_name, app.status, null);
                                 }
+                                
+                                setNotification({
+                                  show: true,
+                                  type: 'success',
+                                  title: 'Berhasil Menghapus!',
+                                  message: 'Janji temu berhasil dihapus'
+                                });
                               } catch (err) {
                                 console.error('Error menghapus:', err);
-                                alert('Gagal menghapus janji temu');
+                                
+                                setNotification({
+                                  show: true,
+                                  type: 'error',
+                                  title: 'Gagal Menghapus',
+                                  message: err.response?.data?.message || 'Terjadi kesalahan saat menghapus data'
+                                });
                               }
                             }
                           }} 
@@ -806,6 +831,55 @@ const Appointment = () => {
           </table>
         </div>
       </div>
+
+      {/* Notification Modal */}
+      {notification.show && (
+        <div className="fixed top-4 right-4 z-[60] animate-slide-in-right">
+          <div className={`rounded-lg shadow-2xl p-4 min-w-[320px] max-w-md ${
+            notification.type === 'success' 
+              ? 'bg-green-50 border-l-4 border-green-500' 
+              : 'bg-red-50 border-l-4 border-red-500'
+          }`}>
+            <div className="flex items-start">
+              <div className={`flex-shrink-0 ${
+                notification.type === 'success' ? 'text-green-500' : 'text-red-500'
+              }`}>
+                {notification.type === 'success' ? (
+                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                ) : (
+                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                )}
+              </div>
+              <div className="ml-3 flex-1">
+                <h3 className={`text-sm font-bold ${
+                  notification.type === 'success' ? 'text-green-800' : 'text-red-800'
+                }`}>
+                  {notification.title}
+                </h3>
+                <p className={`text-sm mt-1 ${
+                  notification.type === 'success' ? 'text-green-700' : 'text-red-700'
+                }`}>
+                  {notification.message}
+                </p>
+              </div>
+              <button
+                onClick={() => setNotification({ ...notification, show: false })}
+                className={`ml-3 flex-shrink-0 ${
+                  notification.type === 'success' ? 'text-green-400 hover:text-green-600' : 'text-red-400 hover:text-red-600'
+                }`}
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Modal Form */}
       {(editingAppointment || isAdding) && (
