@@ -1,8 +1,10 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { authAPI } from '../../api/client';
 import { UserPlus, ShieldCheck } from 'lucide-react';
 
 const Regist = ({ onSwitch, onRegisterSuccess }) => {
+  const navigate = useNavigate();
   const [formData, setFormData] = useState({
     name: '',
     email: '',
@@ -12,6 +14,17 @@ const Regist = ({ onSwitch, onRegisterSuccess }) => {
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState('');
+
+  useEffect(() => {
+    const activeUser = localStorage.getItem('active_user');
+    const adminToken = localStorage.getItem('token');
+    
+    if (activeUser) {
+      navigate('/member');
+    } else if (adminToken) {
+      navigate('/admin/dashboard');
+    }
+  }, [navigate]);
 
   const handleRegister = async (e) => {
     e.preventDefault();

@@ -20,6 +20,7 @@ const Treatment = () => {
   const [error, setError] = useState(null);
   const [activeTab, setActiveTab] = useState('details');
   const [notification, setNotification] = useState({ show: false, type: '', title: '', message: '' });
+  const [searchTerm, setSearchTerm] = useState('');
 
   // API base URL
   const API_URL = 'http://localhost:5000/api/treatments';
@@ -338,9 +339,44 @@ const Treatment = () => {
         </div>
       )}
 
+      {/* Search Bar */}
+      <div className="bg-white rounded-xl shadow-sm p-4 border border-gray-200">
+        <div className="relative">
+          <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+            <svg className="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+            </svg>
+          </div>
+          <input
+            type="search"
+            placeholder="Cari perawatan berdasarkan nama, kategori, atau deskripsi..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg bg-gray-50 focus:outline-none focus:ring-2 focus:ring-brown-500 focus:border-transparent transition-colors duration-200"
+          />
+        </div>
+        {searchTerm && (
+          <p className="mt-2 text-sm text-gray-600">
+            Menampilkan {Array.isArray(treatments) && treatments.filter(treatment => 
+              (treatment.name || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+              (treatment.category || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+              (treatment.description || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+              (treatment.duration || '').toLowerCase().includes(searchTerm.toLowerCase())
+            ).length} dari {treatments.length} perawatan
+          </p>
+        )}
+      </div>
+
       {/* Treatments Grid View */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {Array.isArray(treatments) && treatments.map((treatment) => (
+        {Array.isArray(treatments) && treatments
+          .filter(treatment => 
+            (treatment.name || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+            (treatment.category || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+            (treatment.description || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+            (treatment.duration || '').toLowerCase().includes(searchTerm.toLowerCase())
+          )
+          .map((treatment) => (
           <div key={treatment._id || treatment.id} className="bg-white rounded-xl shadow-sm overflow-hidden hover:shadow-md transition-shadow">
             {/* Treatment Image */}
             <div className="h-48 bg-gray-100 relative">

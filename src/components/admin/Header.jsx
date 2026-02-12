@@ -42,9 +42,13 @@ const Header = ({ onToggleSidebar }) => {
           </svg>
         </button>
 
-        {/* Right Side Icons */}
-        <div className="flex items-center space-x-4">
-          {/* Admin Profile with Dropdown */}
+        {/* Logo or Brand - Left side */}
+        <div className="flex items-center">
+          <span className="text-xl font-semibold text-gray-800"></span>
+        </div>
+
+        {/* Right Side - Admin Profile with Dropdown */}
+        <div className="flex items-center">
           <div className="relative" ref={dropdownRef}>
             <button
               onClick={() => setIsDropdownOpen(!isDropdownOpen)}
@@ -68,6 +72,19 @@ const Header = ({ onToggleSidebar }) => {
             {/* Dropdown Menu */}
             {isDropdownOpen && (
               <div className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-gray-200 py-1 z-50">
+                <button
+                  onClick={() => {
+                    navigate('/');
+                    setIsDropdownOpen(false);
+                  }}
+                  className="w-full flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
+                >
+                  <svg className="h-5 w-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
+                  </svg>
+                  Ke Halaman Utama
+                </button>
+                <div className="border-t border-gray-100 my-1"></div>
                 <button
                   onClick={handleLogout}
                   className="w-full flex items-center px-4 py-2 text-sm text-red-600 hover:bg-red-50 transition-colors"

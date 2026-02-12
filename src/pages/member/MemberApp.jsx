@@ -1,16 +1,31 @@
 import React, { useState, useEffect } from 'react';
-import { useLocation } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { X, Mail, ArrowLeft, ShieldCheck } from 'lucide-react';
 import Login from '../auth/Login';
 import Register from '../auth/Regist';
 
 const MemberApp = () => {
   const location = useLocation();
+  const navigate = useNavigate();
   
   // State untuk kontrol modal
   const [showLogin, setShowLogin] = useState(false);
   const [showRegister, setShowRegister] = useState(false);
   const [showForgotPassword, setShowForgotPassword] = useState(false);
+
+  // Cek apakah sudah login
+  useEffect(() => {
+    const activeUser = localStorage.getItem('active_user');
+    const adminToken = localStorage.getItem('token');
+    
+    if (activeUser) {
+      navigate('/member');
+      return;
+    } else if (adminToken) {
+      navigate('/admin/dashboard');
+      return;
+    }
+  }, [navigate]);
 
   // Menangkap perintah buka modal dari Home (handleBookingClick)
   useEffect(() => {

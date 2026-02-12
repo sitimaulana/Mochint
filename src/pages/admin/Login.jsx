@@ -1,11 +1,22 @@
 import React from 'react';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 
 const Login = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const navigate = useNavigate();
+
+  useEffect(() => {
+    const adminToken = localStorage.getItem('token');
+    const activeUser = localStorage.getItem('active_user');
+    
+    if (adminToken) {
+      navigate('/admin/dashboard');
+    } else if (activeUser) {
+      navigate('/member');
+    }
+  }, [navigate]);
 
   const handleSubmit = (e) => {
     e.preventDefault();
