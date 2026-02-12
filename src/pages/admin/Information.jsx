@@ -251,6 +251,7 @@ const Information = () => {
             Authorization: `Bearer ${Token}`,
             'Content-Type': 'application/json'
           }
+
         }
       );
       
@@ -272,20 +273,20 @@ const Information = () => {
 
   const getStatusColor = (status) => {
     return status === 'Published' 
-      ? 'bg-green-100 text-green-800' 
-      : 'bg-yellow-100 text-yellow-800';
+      ? 'bg-brown-100 text-brown-800' 
+      : 'bg-brown-100 text-brown-800';
   };
 
   const getCategoryColor = (category) => {
     const colors = {
-      'Perawatan': 'bg-purple-100 text-purple-800',
-      'Produk': 'bg-blue-100 text-blue-800',
-      'Promo': 'bg-pink-100 text-pink-800',
-      'Pengumuman': 'bg-orange-100 text-orange-800',
-      'Acara': 'bg-red-100 text-red-800',
-      'Tips': 'bg-teal-100 text-teal-800'
+      'Perawatan': 'bg-brown-100 text-brown-800',
+      'Produk': 'bg-brown-100 text-brown-800',
+      'Promo': 'bg-brown-100 text-brown-800',
+      'Pengumuman': 'bg-brown-100 text-brown-800',
+      'Acara': 'bg-brown-100 text-brown-800',
+      'Tips': 'bg-brown-100 text-brown-800'
     };
-    return colors[category] || 'bg-gray-100 text-gray-800';
+    return colors[category] || 'bg-brown-100 text-brown-800';
   };
 
   // Loading state

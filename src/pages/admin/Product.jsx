@@ -23,6 +23,7 @@ const Product = () => {
   const [viewingProduct, setViewingProduct] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [notification, setNotification] = useState({ show: false, type: '', title: '', message: '' });
 
   const API_URL = 'http://localhost:5000/api/products';
   
@@ -31,6 +32,16 @@ const Product = () => {
   useEffect(() => {
     fetchProducts();
   }, []);
+
+  // Auto-hide notification after 3 seconds
+  useEffect(() => {
+    if (notification.show) {
+      const timer = setTimeout(() => {
+        setNotification({ ...notification, show: false });
+      }, 3000);
+      return () => clearTimeout(timer);
+    }
+  }, [notification.show]);
 
   const fetchProducts = async () => {
     try {
@@ -112,7 +123,12 @@ const Product = () => {
   const handleSave = async () => {
     try {
       if (!formData.name || !formData.category || !formData.price) {
-        alert('Harap isi semua bidang wajib (Nama, Kategori, Harga)');
+        setNotification({
+          show: true,
+          type: 'error',
+          title: 'Validasi Gagal',
+          message: 'Harap isi semua bidang wajib (Nama, Kategori, Harga)'
+        });
         return;
       }
 
@@ -144,18 +160,34 @@ const Product = () => {
       if (isAdding) {
         const response = await axios.post(API_URL, productData, config);
         setProducts([response.data, ...products]);
+        setNotification({
+          show: true,
+          type: 'success',
+          title: 'Berhasil!',
+          message: 'Produk baru berhasil ditambahkan'
+        });
       } else {
         const response = await axios.put(`${API_URL}/${editingProduct}`, productData, config);
         setProducts(products.map(product => 
           product.id === editingProduct ? response.data : product
         ));
+        setNotification({
+          show: true,
+          type: 'success',
+          title: 'Berhasil!',
+          message: 'Data produk berhasil diperbarui'
+        });
       }
 
       handleCancel();
-      alert('Produk berhasil disimpan!');
     } catch (err) {
       const errorMessage = err.response?.data?.error || 'Gagal menyimpan produk';
-      alert(errorMessage);
+      setNotification({
+        show: true,
+        type: 'error',
+        title: 'Gagal Menyimpan',
+        message: errorMessage
+      });
       console.error('Error menyimpan produk:', err);
     }
   };
@@ -194,10 +226,20 @@ const Product = () => {
       });
       
       setProducts(products.filter(product => product.id !== id));
-      alert('Produk berhasil dihapus!');
+      setNotification({
+        show: true,
+        type: 'success',
+        title: 'Berhasil!',
+        message: 'Produk berhasil dihapus dari sistem'
+      });
     } catch (err) {
       const errorMessage = err.response?.data?.error || 'Gagal menghapus produk';
-      alert(errorMessage);
+      setNotification({
+        show: true,
+        type: 'error',
+        title: 'Gagal Menghapus',
+        message: errorMessage
+      });
       console.error('Error menghapus produk:', err);
     }
   };
@@ -503,6 +545,50 @@ const Product = () => {
               </button>
               <button onClick={handleSave} className="px-4 py-2 bg-brown-600 text-white rounded-lg hover:bg-brown-700">
                 {isAdding ? 'Tambah Produk' : 'Simpan Perubahan'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Notification Modal */}
+      {notification.show && (
+        <div className="fixed top-4 right-4 z-50 animate-slide-in-right">
+          <div className={`rounded-lg shadow-lg p-4 max-w-md ${
+            notification.type === 'success' ? 'bg-green-50 border border-green-200' : 'bg-red-50 border border-red-200'
+          }`}>
+            <div className="flex items-start">
+              <div className="flex-shrink-0">
+                {notification.type === 'success' ? (
+                  <svg className="h-6 w-6 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                ) : (
+                  <svg className="h-6 w-6 text-red-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                )}
+              </div>
+              <div className="ml-3 flex-1">
+                <h3 className={`text-sm font-medium ${
+                  notification.type === 'success' ? 'text-green-800' : 'text-red-800'
+                }`}>
+                  {notification.title}
+                </h3>
+                <p className={`mt-1 text-sm ${
+                  notification.type === 'success' ? 'text-green-700' : 'text-red-700'
+                }`}>
+                  {notification.message}
+                </p>
+              </div>
+              <button
+                onClick={() => setNotification({ ...notification, show: false })}
+                className={`ml-4 flex-shrink-0 rounded-md inline-flex ${
+                  notification.type === 'success' ? 'text-green-500 hover:text-green-700' : 'text-red-500 hover:text-red-700'
+                }`}>
+                <svg className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                  <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
+                </svg>
               </button>
             </div>
           </div>

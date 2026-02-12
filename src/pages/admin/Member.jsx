@@ -38,11 +38,29 @@ const Member = () => {
   const [historyLoading, setHistoryLoading] = useState(false);
   const [memberHistory, setMemberHistory] = useState([]);
   const [debugMode, setDebugMode] = useState(false);
+  
+  // State untuk notification modal
+  const [notification, setNotification] = useState({
+    show: false,
+    type: '', // 'success' atau 'error'
+    title: '',
+    message: ''
+  });
 
   // Ambil data members dan appointments
   useEffect(() => {
     fetchAllData();
   }, []);
+
+  // Auto-hide notification setelah 3 detik
+  useEffect(() => {
+    if (notification.show) {
+      const timer = setTimeout(() => {
+        setNotification({ ...notification, show: false });
+      }, 3000);
+      return () => clearTimeout(timer);
+    }
+  }, [notification.show]);
 
   const fetchAllData = async () => {
     try {
@@ -345,6 +363,14 @@ const Member = () => {
         const newMember = response.data.data || response.data;
         setMembers([newMember, ...members]);
         setIsAdding(false);
+        
+        // Tampilkan notifikasi sukses
+        setNotification({
+          show: true,
+          type: 'success',
+          title: 'Berhasil Menambahkan!',
+          message: 'Member baru berhasil ditambahkan'
+        });
       } else {
         if (!formData.name?.trim()) {
           alert('Nama wajib diisi');
@@ -370,12 +396,27 @@ const Member = () => {
         setMembers(members.map(member => 
           member.id === editingMember ? { ...member, ...updatedMember } : member
         ));
+        
+        // Tampilkan notifikasi sukses
+        setNotification({
+          show: true,
+          type: 'success',
+          title: 'Berhasil Memperbarui!',
+          message: 'Data member berhasil diperbarui'
+        });
       }
       
       handleCancel();
     } catch (err) {
-      alert(err.response?.data?.error || 'Gagal menyimpan member');
       console.error('Error menyimpan member:', err);
+      
+      // Tampilkan notifikasi error
+      setNotification({
+        show: true,
+        type: 'error',
+        title: 'Gagal Menyimpan',
+        message: err.response?.data?.error || 'Terjadi kesalahan saat menyimpan data member'
+      });
     } finally {
       setSaveLoading(false);
     }
@@ -412,9 +453,24 @@ const Member = () => {
       });
       setMembers(members.filter(member => member.id !== showDeleteConfirm));
       setShowDeleteConfirm(null);
+      
+      // Tampilkan notifikasi sukses
+      setNotification({
+        show: true,
+        type: 'success',
+        title: 'Berhasil Menghapus!',
+        message: 'Member berhasil dihapus dari sistem'
+      });
     } catch (err) {
-      alert(err.response?.data?.error || 'Gagal menghapus member');
       console.error('Error menghapus member:', err);
+      
+      // Tampilkan notifikasi error
+      setNotification({
+        show: true,
+        type: 'error',
+        title: 'Gagal Menghapus',
+        message: err.response?.data?.error || 'Terjadi kesalahan saat menghapus member'
+      });
     } finally {
       setDeleteLoading(false);
     }
@@ -520,22 +576,7 @@ const Member = () => {
 
   return (
     <div className="space-y-6">
-      {/* Debug Mode Toggle */}
-      <div className="flex justify-end">
-        <button
-          onClick={() => setDebugMode(!debugMode)}
-          className={`px-3 py-1 text-sm rounded-lg ${debugMode ? 'bg-yellow-500 text-white' : 'bg-gray-200 text-gray-700'}`}
-        >
-          {debugMode ? '🔧 Mode Debug ON' : '🔧 Mode Debug OFF'}
-        </button>
-        <button
-          onClick={testHistoryAPI}
-          className="ml-2 px-3 py-1 bg-purple-500 text-white text-sm rounded-lg hover:bg-purple-600"
-        >
-          🧪 Test API
-        </button>
-      </div>
-
+      
       {/* Error Alert */}
       {error && (
         <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg">
@@ -970,6 +1011,55 @@ const Member = () => {
                 ) : (
                   'Hapus Member'
                 )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Notification Modal */}
+      {notification.show && (
+        <div className="fixed top-4 right-4 z-[60] animate-slide-in-right">
+          <div className={`rounded-lg shadow-2xl p-4 min-w-[320px] max-w-md ${
+            notification.type === 'success' 
+              ? 'bg-green-50 border-l-4 border-green-500' 
+              : 'bg-red-50 border-l-4 border-red-500'
+          }`}>
+            <div className="flex items-start">
+              <div className={`flex-shrink-0 ${
+                notification.type === 'success' ? 'text-green-500' : 'text-red-500'
+              }`}>
+                {notification.type === 'success' ? (
+                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                ) : (
+                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                )}
+              </div>
+              <div className="ml-3 flex-1">
+                <h3 className={`text-sm font-bold ${
+                  notification.type === 'success' ? 'text-green-800' : 'text-red-800'
+                }`}>
+                  {notification.title}
+                </h3>
+                <p className={`text-sm mt-1 ${
+                  notification.type === 'success' ? 'text-green-700' : 'text-red-700'
+                }`}>
+                  {notification.message}
+                </p>
+              </div>
+              <button
+                onClick={() => setNotification({ ...notification, show: false })}
+                className={`ml-3 flex-shrink-0 ${
+                  notification.type === 'success' ? 'text-green-400 hover:text-green-600' : 'text-red-400 hover:text-red-600'
+                }`}
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
               </button>
             </div>
           </div>

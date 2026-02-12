@@ -304,33 +304,41 @@ const Dashboard = () => {
   const getTopTherapists = (count = 3) => {
     const therapistStats = {};
 
+    // Hitung completed appointments per terapis
     appointments
-      .filter(app => app.status?.toLowerCase() === 'completed' && app.therapist)
+      .filter(app => app.status?.toLowerCase() === 'completed')
       .forEach(app => {
-        const therapistName = app.therapist.toString().trim();
-        if (!therapistStats[therapistName]) {
-          therapistStats[therapistName] = {
-            name: therapistName,
-            completedAppointments: 0,
-            totalAppointments: 0
-          };
-        }
-        therapistStats[therapistName].completedAppointments++;
-      });
-
-    appointments
-      .filter(app => app.therapist)
-      .forEach(app => {
-        const therapistName = app.therapist.toString().trim();
-        if (therapistStats[therapistName]) {
-          therapistStats[therapistName].totalAppointments++;
+        // Support both therapist and therapist_name fields
+        const therapistName = (app.therapist_name || app.therapist)?.toString().trim();
+        
+        if (therapistName) {
+          if (!therapistStats[therapistName]) {
+            therapistStats[therapistName] = {
+              name: therapistName,
+              completedAppointments: 0,
+              totalAppointments: 0
+            };
+          }
+          therapistStats[therapistName].completedAppointments++;
         }
       });
 
+    // Hitung total appointments per terapis (semua status)
+    appointments.forEach(app => {
+      // Support both therapist and therapist_name fields
+      const therapistName = (app.therapist_name || app.therapist)?.toString().trim();
+      
+      if (therapistName && therapistStats[therapistName]) {
+        therapistStats[therapistName].totalAppointments++;
+      }
+    });
+
+    // Sort by completed appointments (terbanyak ke tersedikit)
     const sortedTherapists = Object.values(therapistStats)
       .sort((a, b) => b.completedAppointments - a.completedAppointments)
       .slice(0, count);
 
+    // Map dengan data terapis dari database
     return sortedTherapists.map(therapistStat => {
       const therapistFromDb = therapists.find(t =>
         t.name?.toString().trim().toLowerCase() === therapistStat.name.toLowerCase()
