@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 
-const Header = () => {
+const Header = ({ onToggleSidebar }) => {
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const dropdownRef = useRef(null);
   const navigate = useNavigate();
@@ -30,7 +30,18 @@ const Header = () => {
 
   return (
     <header className="bg-white shadow-sm border-b">
-      <div className="flex items-center justify-end px-6 py-4">
+      <div className="flex items-center justify-between px-6 py-4">
+        {/* Hamburger Menu Button - Only visible on mobile */}
+        <button
+          onClick={onToggleSidebar}
+          className="md:hidden p-2 rounded-lg hover:bg-gray-100 transition-colors"
+          aria-label="Toggle Sidebar"
+        >
+          <svg className="h-6 w-6 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+          </svg>
+        </button>
+
         {/* Right Side Icons */}
         <div className="flex items-center space-x-4">
           {/* Admin Profile with Dropdown */}
