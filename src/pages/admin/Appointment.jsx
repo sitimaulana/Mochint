@@ -671,11 +671,11 @@ const Appointment = () => {
         <div className="bg-white rounded-xl shadow-sm p-3 sm:p-4 border border-gray-200">
           <div className="flex items-center justify-between">
             <div>
-              <div className="text-xl sm:text-2xl font-bold text-purple-600">{stats.total_count}</div>
+              <div className="text-xl sm:text-2xl font-bold text-brown-600">{stats.total_count}</div>
               <div className="text-xs sm:text-sm text-gray-600">Total</div>
             </div>
-            <div className="w-8 h-8 sm:w-10 sm:h-10 bg-purple-100 rounded-full flex items-center justify-center">
-              <span className="text-purple-600 text-sm sm:text-base font-bold">∑</span>
+            <div className="w-8 h-8 sm:w-10 sm:h-10 bg-brown-100 rounded-full flex items-center justify-center">
+              <span className="text-brown-600 text-sm sm:text-base font-bold">∑</span>
             </div>
           </div>
           <div className="mt-2 text-[10px] sm:text-xs text-gray-500">Semua janji temu</div>
@@ -824,7 +824,7 @@ const Appointment = () => {
                       <div className="flex flex-col sm:flex-row justify-center gap-1 sm:gap-2">
                         <button 
                           onClick={() => handleEdit(app)} 
-                          className="bg-blue-500 text-white px-2 sm:px-3 py-0.5 sm:py-1 rounded-md text-[10px] sm:text-xs font-bold hover:bg-blue-600 transition-colors duration-200"
+                          className="bg-blue-600 text-white px-2 sm:px-3 py-0.5 sm:py-1 rounded-md text-[10px] sm:text-xs font-bold hover:bg-blue-700 transition-colors duration-200"
                         >
                           Edit
                         </button>
@@ -946,38 +946,49 @@ const Appointment = () => {
                   Cari Member
                   <span className="text-red-500 ml-1">*</span>
                 </label>
-                <input 
-                  type="text" 
-                  className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:ring-2 focus:ring-brown-500 outline-none"
-                  value={memberSearch}
-                  onChange={(e) => { 
-                    const value = e.target.value;
-                    setMemberSearch(value); 
-                    setFormData({ ...formData, customer_name: value });
-                    setShowSearchDropdown(true); 
-                  }}
-                  onFocus={() => setShowSearchDropdown(true)}
-                  placeholder="Ketik nama atau ID..."
-                />
-                <div className="text-xs text-gray-500 mt-1">Cari berdasarkan nama atau ID member</div>
-                {showSearchDropdown && filteredMembersResults.length > 0 && (
-                  <div className="absolute z-10 w-full bg-white border mt-1 rounded-md shadow-lg max-h-60 overflow-y-auto">
-                    {filteredMembersResults.map(m => (
-                      <div 
-                        key={m.id} 
-                        onClick={() => selectMember(m)} 
-                        className="p-2 text-sm hover:bg-gray-100 cursor-pointer border-b last:border-b-0 flex justify-between items-center"
-                      >
-                        <div>
-                          <div className="font-medium">{m.name}</div>
-                          <div className="text-xs text-gray-500">ID: {m.id} | Kunjungan: {m.total_visits || 0}</div>
-                        </div>
-                        <span className="text-xs bg-blue-100 text-blue-600 px-2 py-1 rounded">
-                          Pilih
-                        </span>
-                      </div>
-                    ))}
+                {editingAppointment ? (
+                  <div className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm bg-gray-50">
+                    <div className="font-medium text-gray-800">{formData.customer_name || 'N/A'}</div>
+                    {formData.member_id && (
+                      <div className="text-xs text-gray-500 mt-1">ID Member: {formData.member_id}</div>
+                    )}
                   </div>
+                ) : (
+                  <>
+                    <input 
+                      type="text" 
+                      className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:ring-2 focus:ring-brown-500 outline-none"
+                      value={memberSearch}
+                      onChange={(e) => { 
+                        const value = e.target.value;
+                        setMemberSearch(value); 
+                        setFormData({ ...formData, customer_name: value });
+                        setShowSearchDropdown(true); 
+                      }}
+                      onFocus={() => setShowSearchDropdown(true)}
+                      placeholder="Ketik nama atau ID..."
+                    />
+                    <div className="text-xs text-gray-500 mt-1">Cari berdasarkan nama atau ID member</div>
+                    {showSearchDropdown && filteredMembersResults.length > 0 && (
+                      <div className="absolute z-10 w-full bg-white border mt-1 rounded-md shadow-lg max-h-60 overflow-y-auto">
+                        {filteredMembersResults.map(m => (
+                          <div 
+                            key={m.id} 
+                            onClick={() => selectMember(m)} 
+                            className="p-2 text-sm hover:bg-gray-100 cursor-pointer border-b last:border-b-0 flex justify-between items-center"
+                          >
+                            <div>
+                              <div className="font-medium">{m.name}</div>
+                              <div className="text-xs text-gray-500">ID: {m.id} | Kunjungan: {m.total_visits || 0}</div>
+                            </div>
+                            <span className="text-xs bg-blue-100 text-blue-600 px-2 py-1 rounded">
+                              Pilih
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </>
                 )}
               </div>
 
@@ -987,55 +998,63 @@ const Appointment = () => {
                   Tanggal Janji Temu
                   <span className="text-red-500 ml-1">*</span>
                 </label>
-                <div className="relative">
-                  <input 
-                    type="text" 
-                    name="date" 
-                    value={formData.date ? formatDateForDisplay(formData.date) : ''} 
-                    onChange={(e) => {
-                      const value = e.target.value;
-                      // Allow only numbers and forward slashes
-                      const filtered = value.replace(/[^0-9/]/g, '');
-                      
-                      // Auto-add slashes
-                      let formatted = filtered;
-                      if (filtered.length === 2 && !filtered.includes('/')) {
-                        formatted = filtered + '/';
-                      } else if (filtered.length === 5 && filtered.split('/').length === 2) {
-                        formatted = filtered + '/';
-                      }
-                      
-                      // Update display value
-                      e.target.value = formatted;
-                      
-                      // If complete date format (DD/MM/YYYY), convert and save
-                      if (formatted.length === 10) {
-                        const storageDate = formatDateForStorage(formatted);
-                        setFormData({ ...formData, date: storageDate });
-                      } else {
-                        setFormData({ ...formData, date: '' });
-                      }
-                    }} 
-                    placeholder="DD/MM/YYYY"
-                    maxLength="10"
-                    className="w-full border border-gray-300 rounded-md px-3 py-2 pr-10 text-sm focus:ring-2 focus:ring-brown-500 outline-none"
-                  />
-                  {/* Hidden date input for calendar picker */}
-                  <input 
-                    type="date"
-                    value={formData.date}
-                    onChange={(e) => setFormData({ ...formData, date: e.target.value })}
-                    className="absolute right-0 top-0 w-10 h-full opacity-0 cursor-pointer"
-                    style={{ zIndex: 2 }}
-                  />
-                  {/* Calendar icon */}
-                  <div className="absolute right-3 top-1/2 transform -translate-y-1/2 pointer-events-none">
-                    <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                    </svg>
+                {editingAppointment ? (
+                  <div className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm bg-gray-50">
+                    <div className="font-medium text-gray-800">{formatDateForDisplay(formData.date) || 'N/A'}</div>
                   </div>
-                </div>
-                <div className="text-xs text-gray-500">Ketik manual (DD/MM/YYYY) atau klik icon kalender</div>
+                ) : (
+                  <>
+                    <div className="relative">
+                      <input 
+                        type="text" 
+                        name="date" 
+                        value={formData.date ? formatDateForDisplay(formData.date) : ''} 
+                        onChange={(e) => {
+                          const value = e.target.value;
+                          // Allow only numbers and forward slashes
+                          const filtered = value.replace(/[^0-9/]/g, '');
+                          
+                          // Auto-add slashes
+                          let formatted = filtered;
+                          if (filtered.length === 2 && !filtered.includes('/')) {
+                            formatted = filtered + '/';
+                          } else if (filtered.length === 5 && filtered.split('/').length === 2) {
+                            formatted = filtered + '/';
+                          }
+                          
+                          // Update display value
+                          e.target.value = formatted;
+                          
+                          // If complete date format (DD/MM/YYYY), convert and save
+                          if (formatted.length === 10) {
+                            const storageDate = formatDateForStorage(formatted);
+                            setFormData({ ...formData, date: storageDate });
+                          } else {
+                            setFormData({ ...formData, date: '' });
+                          }
+                        }} 
+                        placeholder="DD/MM/YYYY"
+                        maxLength="10"
+                        className="w-full border border-gray-300 rounded-md px-3 py-2 pr-10 text-sm focus:ring-2 focus:ring-brown-500 outline-none"
+                      />
+                      {/* Hidden date input for calendar picker */}
+                      <input 
+                        type="date"
+                        value={formData.date}
+                        onChange={(e) => setFormData({ ...formData, date: e.target.value })}
+                        className="absolute right-0 top-0 w-10 h-full opacity-0 cursor-pointer"
+                        style={{ zIndex: 2 }}
+                      />
+                      {/* Calendar icon */}
+                      <div className="absolute right-3 top-1/2 transform -translate-y-1/2 pointer-events-none">
+                        <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                        </svg>
+                      </div>
+                    </div>
+                    <div className="text-xs text-gray-500">Ketik manual (DD/MM/YYYY) atau klik icon kalender</div>
+                  </>
+                )}
               </div>
 
               {/* Waktu */}
@@ -1044,30 +1063,38 @@ const Appointment = () => {
                   Waktu Janji Temu
                   <span className="text-red-500 ml-1">*</span>
                 </label>
-                <div className="grid grid-cols-4 sm:grid-cols-6 gap-2 max-h-48 overflow-y-auto p-2 bg-gray-50 rounded-lg">
-                  {generateTimeSlots().map((time) => {
-                    const isSelected = formData.time === time;
-                    return (
-                      <button
-                        key={time}
-                        type="button"
-                        onClick={() => setFormData({ ...formData, time })}
-                        className={`p-2 rounded-lg border-2 transition-all text-xs font-bold ${
-                          isSelected 
-                            ? 'bg-brown-600 border-brown-600 text-white shadow-md' 
-                            : 'bg-white border-gray-200 text-gray-700 hover:border-brown-400 hover:bg-brown-50'
-                        }`}
-                      >
-                        {time}
-                      </button>
-                    );
-                  })}
-                </div>
-                <div className="text-xs text-gray-500">Pilih waktu janji temu (Jam operasional: 08:00 - 20:00)</div>
-                {formData.time && (
-                  <div className="text-xs font-bold text-brown-600 bg-brown-50 px-3 py-2 rounded-md">
-                    ✓ Waktu dipilih: {formData.time}
+                {editingAppointment ? (
+                  <div className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm bg-gray-50">
+                    <div className="font-medium text-gray-800">{formData.time || 'N/A'}</div>
                   </div>
+                ) : (
+                  <>
+                    <div className="grid grid-cols-4 sm:grid-cols-6 gap-2 max-h-48 overflow-y-auto p-2 bg-gray-50 rounded-lg">
+                      {generateTimeSlots().map((time) => {
+                        const isSelected = formData.time === time;
+                        return (
+                          <button
+                            key={time}
+                            type="button"
+                            onClick={() => setFormData({ ...formData, time })}
+                            className={`p-2 rounded-lg border-2 transition-all text-xs font-bold ${
+                              isSelected 
+                                ? 'bg-brown-600 border-brown-600 text-white shadow-md' 
+                                : 'bg-white border-gray-200 text-gray-700 hover:border-brown-400 hover:bg-brown-50'
+                            }`}
+                          >
+                            {time}
+                          </button>
+                        );
+                      })}
+                    </div>
+                    <div className="text-xs text-gray-500">Pilih waktu janji temu (Jam operasional: 08:00 - 20:00)</div>
+                    {formData.time && (
+                      <div className="text-xs font-bold text-brown-600 bg-brown-50 px-3 py-2 rounded-md">
+                        ✓ Waktu dipilih: {formData.time}
+                      </div>
+                    )}
+                  </>
                 )}
               </div>
 
@@ -1077,20 +1104,28 @@ const Appointment = () => {
                   Pilih Perawatan
                   <span className="text-red-500 ml-1">*</span>
                 </label>
-                <select 
-                  name="treatment" 
-                  value={formData.treatment} 
-                  onChange={handleChange} 
-                  className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:ring-2 focus:ring-brown-500 outline-none"
-                >
-                  <option value="">Pilih Perawatan</option>
-                  {(treatments.data || treatments || []).map(t => (
-                    <option key={t.id} value={t.name}>
-                      {t.name} - {formatRupiah(t.price)}
-                    </option>
-                  ))}
-                </select>
-                <div className="text-xs text-gray-500">Pilih jenis perawatan</div>
+                {editingAppointment ? (
+                  <div className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm bg-gray-50">
+                    <div className="font-medium text-gray-800">{formData.treatment || 'N/A'}</div>
+                  </div>
+                ) : (
+                  <>
+                    <select 
+                      name="treatment" 
+                      value={formData.treatment} 
+                      onChange={handleChange} 
+                      className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:ring-2 focus:ring-brown-500 outline-none"
+                    >
+                      <option value="">Pilih Perawatan</option>
+                      {(treatments.data || treatments || []).map(t => (
+                        <option key={t.id} value={t.name}>
+                          {t.name} - {formatRupiah(t.price)}
+                        </option>
+                      ))}
+                    </select>
+                    <div className="text-xs text-gray-500">Pilih jenis perawatan</div>
+                  </>
+                )}
               </div>
 
               {/* Terapis */}
@@ -1121,18 +1156,26 @@ const Appointment = () => {
                   Jumlah Perawatan (IDR)
                   <span className="text-red-500 ml-1">*</span>
                 </label>
-                <input 
-                  type="number" 
-                  name="amount" 
-                  value={amountInput} 
-                  onChange={handleChange} 
-                  className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm font-bold text-green-700 focus:ring-2 focus:ring-brown-500 outline-none" 
-                  min="0"
-                />
-                <div className="text-xs text-gray-500">Masukkan jumlah perawatan dalam IDR</div>
-                <div className="text-sm font-bold text-green-700">
-                  {formatRupiah(formData.amount)}
-                </div>
+                {editingAppointment ? (
+                  <div className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm bg-gray-50">
+                    <div className="font-bold text-green-700">{formatRupiah(formData.amount)}</div>
+                  </div>
+                ) : (
+                  <>
+                    <input 
+                      type="number" 
+                      name="amount" 
+                      value={amountInput} 
+                      onChange={handleChange} 
+                      className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm font-bold text-green-700 focus:ring-2 focus:ring-brown-500 outline-none" 
+                      min="0"
+                    />
+                    <div className="text-xs text-gray-500">Masukkan jumlah perawatan dalam IDR</div>
+                    <div className="text-sm font-bold text-green-700">
+                      {formatRupiah(formData.amount)}
+                    </div>
+                  </>
+                )}
               </div>
 
               {/* Status */}

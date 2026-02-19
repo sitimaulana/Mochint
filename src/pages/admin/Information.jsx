@@ -632,7 +632,7 @@ const Information = () => {
                 <div className="flex gap-2">
                   <button
                     onClick={() => handleEdit(article)}
-                    className="flex-1 px-3 py-2 bg-blue-100 text-blue-700 rounded-lg hover:bg-blue-200 text-sm"
+                    className="flex-1 px-3 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 text-sm"
                   >
                     Edit
                   </button>
@@ -694,7 +694,7 @@ const Information = () => {
                     <div className="flex gap-2">
                       <button
                         onClick={() => handleEdit(article)}
-                        className="px-3 sm:px-4 py-2 bg-blue-100 text-blue-700 rounded-lg hover:bg-blue-200 text-xs sm:text-sm font-medium transition-colors"
+                        className="px-3 sm:px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 text-xs sm:text-sm font-medium transition-colors"
                       >
                         Edit
                       </button>

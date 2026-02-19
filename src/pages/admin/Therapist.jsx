@@ -531,7 +531,7 @@ const Therapist = () => {
                           </button>
                           <button
                             onClick={() => handleEdit(therapist)}
-                            className="px-3 py-1 bg-blue-500 text-white text-xs rounded hover:bg-blue-600 transition-colors duration-200"
+                            className="px-3 py-1 bg-blue-600 text-white text-xs rounded hover:bg-blue-700 transition-colors duration-200"
                           >
                             Edit
                           </button>
