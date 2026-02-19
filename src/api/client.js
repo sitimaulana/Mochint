@@ -340,77 +340,84 @@ const appointmentsAPI = {
 // ============================
 
 const reviewsAPI = {
-  // Create review
-  create: async (reviewData) => {
-    try {
-      log('📝 Creating review:', reviewData);
-      
-      // Simpan ke localStorage untuk sementara
-      const existingReviews = safeJsonParse(localStorage.getItem('public_reviews'), []);
-      const savedReview = {
-        id: Date.now(),
-        ...reviewData,
-        location: reviewData.location || 'Verified Member', 
-        date: new Date().toLocaleDateString('id-ID'),
-        timestamp: new Date().toISOString(),
-        rating: reviewData.rating || 5
-      };
-      
-      const updatedReviews = [savedReview, ...existingReviews];
-      localStorage.setItem('public_reviews', JSON.stringify(updatedReviews));
-      
-      log('✅ Review saved to localStorage');
-      
-      return {
-        success: true,
-        data: savedReview,
-        message: 'Review submitted successfully'
-      };
-      
-    } catch (error) {
-      logError('❌ Create review error:', error);
-      throw new Error('Failed to create review: ' + error.message);
-    }
-  },
-  
-  // Get all reviews
   getAll: async () => {
     try {
-      log('Fetching all reviews');
-      const reviews = safeJsonParse(localStorage.getItem('public_reviews'), []);
-      log(`✅ Found ${reviews.length} reviews`);
-      return reviews;
+      log('Fetching all reviews...');
+      const response = await enhancedFetch(`${API_URL}/reviews`);
+      const data = await handleResponse(response);
+      log('Reviews fetched:', data.count || 0, 'items');
+      return data;
     } catch (error) {
-      logError('Get all reviews error:', error);
-      return [];
+      logError('Error fetching reviews:', error);
+      throw error;
     }
   },
   
-  // Get public reviews (for homepage/dashboard)
-  getPublic: async () => {
+  getById: async (id) => {
     try {
-      log('Fetching public reviews');
-      const allReviews = safeJsonParse(localStorage.getItem('public_reviews'), []);
-      const publicReviews = allReviews.slice(0, 5);
-      log(`✅ Found ${publicReviews.length} public reviews`);
-      return publicReviews;
+      log('Fetching review by ID:', id);
+      const response = await enhancedFetch(`${API_URL}/reviews/${id}`);
+      return await handleResponse(response);
     } catch (error) {
-      logError('Get public reviews error:', error);
-      return [];
+      logError('Error fetching review by ID:', error);
+      throw error;
     }
   },
   
-  // Get recent reviews
-  getRecent: async (limit = 3) => {
+  getByUserId: async (userId) => {
     try {
-      log(`Fetching recent reviews (limit: ${limit})`);
-      const allReviews = safeJsonParse(localStorage.getItem('public_reviews'), []);
-      const recentReviews = allReviews.slice(0, limit);
-      log(`✅ Found ${recentReviews.length} recent reviews`);
-      return recentReviews;
+      log('Fetching reviews for user ID:', userId);
+      const response = await enhancedFetch(`${API_URL}/reviews/user/${userId}`);
+      return await handleResponse(response);
     } catch (error) {
-      logError('Get recent reviews error:', error);
-      return [];
+      logError('Error fetching user reviews:', error);
+      throw error;
+    }
+  },
+  
+  create: async (reviewData) => {
+    try {
+      log('Creating new review:', reviewData);
+      const response = await enhancedFetch(`${API_URL}/reviews`, {
+        method: 'POST',
+        headers: getHeaders(),
+        body: JSON.stringify(reviewData)
+      });
+      const data = await handleResponse(response);
+      log('✅ Review created successfully:', data);
+      return data;
+    } catch (error) {
+      logError('❌ Error creating review:', error);
+      throw error;
+    }
+  },
+  
+  update: async (id, reviewData) => {
+    try {
+      log('Updating review ID:', id);
+      const response = await enhancedFetch(`${API_URL}/reviews/${id}`, {
+        method: 'PUT',
+        headers: getHeaders(),
+        body: JSON.stringify(reviewData)
+      });
+      return await handleResponse(response);
+    } catch (error) {
+      logError('Error updating review:', error);
+      throw error;
+    }
+  },
+  
+  delete: async (id) => {
+    try {
+      log('Deleting review ID:', id);
+      const response = await enhancedFetch(`${API_URL}/reviews/${id}`, {
+        method: 'DELETE',
+        headers: getHeaders()
+      });
+      return await handleResponse(response);
+    } catch (error) {
+      logError('Error deleting review:', error);
+      throw error;
     }
   }
 };
@@ -736,7 +743,7 @@ export {
   publicAPI,
   membersAPI,
   appointmentsAPI,
-  reviewsAPI,
+  reviewsAPI, // ← PENTING: Pastikan reviewsAPI di-export
   dashboardAPI,
   isAuthenticated,
   getCurrentUser,
@@ -744,8 +751,7 @@ export {
   isAdmin,
   isMember,
   clearAuthData,
-  checkTokenExpiration,
+  fetchHomeData,
   testAPIConnection,
-  testDatabaseConnection,
-  fetchHomeData
+  testDatabaseConnection
 };

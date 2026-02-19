@@ -191,7 +191,7 @@ const BookingSuccess = () => {
             </div>
 
             <button 
-              onClick={() => navigate('/member')}
+              onClick={() => navigate('/member/appointment')}
               className="w-full py-5 bg-[#8D6E63] text-white font-display font-bold rounded-[20px] shadow-xl shadow-[#8D6E63]/20 hover:bg-[#5D4037] transition-all uppercase text-[10px] tracking-[0.2em]"
             >
               Lihat Appointment List

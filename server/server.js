@@ -45,7 +45,7 @@ app.use('/api/auth', authRoutes);
 app.use('/api/treatments', treatmentRoutes);
 app.use('/api/therapists', therapistRoutes);
 app.use('/api/products', productRoutes);
-app.use('/api/reviews', reviewsRoutes);
+app.use('/api/reviews', reviewsRoutes); // Register route sekali saja
 app.use('/api/articles', articlesRoutes);
 
 // Protected routes (require token)

@@ -64,17 +64,27 @@ const BookingStep2 = () => {
     return ['All', ...uniqueCategories.sort()];
   }, [allTreatments]);
 
-  // 5. Format harga
-  const formatPrice = (price) => {
-    if (typeof price === 'number') {
-      return `Rp ${price.toLocaleString('id-ID', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`;
-    }
-    return price;
+  // 5. Format harga - DIPERBAIKI sesuai dengan Treatment.jsx
+  const formatRupiah = (angka) => {
+    const number = parseInt(angka) || 0;
+    return 'Rp ' + number.toLocaleString('id-ID', { minimumFractionDigits: 0, maximumFractionDigits: 0 });
   };
 
-  // 6. Navigasi ke Step 3
+  // 6. Navigasi ke Step 3 - DIPERBAIKI
   const handleBookNow = (treatment) => {
-    sessionStorage.setItem('selectedTreatment', JSON.stringify(treatment));
+    // Pastikan semua data treatment termasuk price tersimpan
+    const treatmentData = {
+      id: treatment.id || treatment._id,
+      name: treatment.name,
+      category: treatment.category,
+      description: treatment.description,
+      duration: treatment.duration,
+      price: parseInt(treatment.price) || 0, // Pastikan price tersimpan sebagai number
+      image: treatment.image,
+      facilities: treatment.facilities || []
+    };
+    
+    sessionStorage.setItem('selectedTreatment', JSON.stringify(treatmentData));
     navigate('/member/booking/step-3');
   };
 
@@ -224,7 +234,7 @@ const BookingStep2 = () => {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {filteredTreatments.length > 0 ? (
               filteredTreatments.map((item) => (
-                <div key={item.id} className="bg-white p-6 rounded-[30px] border border-gray-100 shadow-sm hover:shadow-md transition-all flex flex-col justify-between group">
+                <div key={item.id || item._id} className="bg-white p-6 rounded-[30px] border border-gray-100 shadow-sm hover:shadow-md transition-all flex flex-col justify-between group">
                   <div>
                     <div className="flex justify-between items-start mb-2">
                       <h4 className="font-display font-bold text-[#2D3436] group-hover:text-[#8D6E63] transition-colors tracking-tight text-lg">
@@ -240,7 +250,7 @@ const BookingStep2 = () => {
                     )}
                   </div>
                   <div className="flex justify-between items-center pt-4 border-t border-gray-50">
-                    <span className="text-xl font-display font-bold text-[#2D3436]">{formatPrice(item.price)}</span>
+                    <span className="text-xl font-display font-bold text-[#2D3436]">{formatRupiah(item.price)}</span>
                     <button 
                       onClick={() => handleBookNow(item)}
                       className="px-6 py-2 bg-[#8D6E63] text-white text-[10px] font-display font-bold rounded-xl hover:bg-[#5D4037] transition-all uppercase tracking-[0.2em] shadow-sm"

@@ -2,6 +2,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Home, Calendar as CalendarIcon, Clock, Info, Bed, Loader2 } from 'lucide-react';
 import { appointmentAPI } from '../../../services/api';
+import axios from 'axios';
 
 const BookingStep3 = () => {
   const navigate = useNavigate();
@@ -220,13 +221,28 @@ const BookingStep3 = () => {
     return calculateBedAvailability[time] || 0;
   };
 
-  // Generate slots yang tersedia untuk ditampilkan
-  const getAvailableTimeSlots = () => {
+  // Generate semua slot waktu dengan info ketersediaan
+  const getAllTimeSlotsWithAvailability = () => {
     if (!selectedDate) return [];
     
-    return generateAllTimeSlots().filter(slot => {
-      // Cek apakah slot valid untuk booking
-      return isTimeSlotValid(slot);
+    return generateAllTimeSlots().map(slot => {
+      const endTime = calculateEndTime(slot);
+      const slotEndTime = new Date(`2000-01-01T${endTime}:00`);
+      const clinicCloseTime = new Date(`2000-01-01T${CLINIC_HOURS.close.toString().padStart(2, '0')}:00:00`);
+      
+      // Cek apakah treatment selesai sebelum klinik tutup
+      const exceedsClosingTime = slotEndTime > clinicCloseTime;
+      
+      // Cek ketersediaan bed
+      const availableBeds = getAvailableBedsForSlot(slot);
+      const hasAvailableBeds = availableBeds > 0;
+      
+      return {
+        time: slot,
+        availableBeds: availableBeds,
+        isAvailable: hasAvailableBeds && !exceedsClosingTime,
+        exceedsClosingTime: exceedsClosingTime
+      };
     });
   };
 
@@ -550,17 +566,23 @@ const BookingStep3 = () => {
                         <p className="text-sm text-amber-700 font-medium">{error}</p>
                       </div>
                     )}
-                    <div className="grid grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">{getAvailableTimeSlots().map((time) => {
-                        const availableBeds = getAvailableBedsForSlot(time);
+                    <div className="grid grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
+                      {getAllTimeSlotsWithAvailability().map((slot) => {
+                        const { time, availableBeds, isAvailable, exceedsClosingTime } = slot;
                         const isSelected = selectedTime === time;
                         
                         // Tentukan warna indikator berdasarkan ketersediaan
                         let indicatorColor = '';
                         let statusText = '';
                         
-                        if (availableBeds === 0) {
-                          indicatorColor = 'bg-red-500';
-                          statusText = 'FULL';
+                        if (!isAvailable) {
+                          if (exceedsClosingTime) {
+                            indicatorColor = 'bg-gray-400';
+                            statusText = 'TUTUP';
+                          } else if (availableBeds === 0) {
+                            indicatorColor = 'bg-red-500';
+                            statusText = 'PENUH';
+                          }
                         } else if (availableBeds === 1) {
                           indicatorColor = 'bg-amber-500';
                           statusText = '1 BED';
@@ -575,55 +597,63 @@ const BookingStep3 = () => {
                         return (
                           <button
                             key={time}
-                            disabled={availableBeds === 0}
-                            onClick={() => setSelectedTime(time)}
+                            disabled={!isAvailable}
+                            onClick={() => isAvailable && setSelectedTime(time)}
                             className={`relative p-4 rounded-2xl border-2 transition-all flex flex-col items-center gap-1 font-sans group ${
                               isSelected 
-                              ? 'bg-[#3E2723] border-[#3E2723] text-white shadow-lg scale-105 z-10' 
-                              : availableBeds === 0 
-                                ? 'bg-gray-50 border-transparent opacity-30 cursor-not-allowed' 
-                                : 'bg-white border-gray-100 text-[#3E2723] hover:border-[#8D6E63]/50 hover:shadow-md'
+                                ? 'bg-[#3E2723] border-[#3E2723] text-white shadow-lg scale-105 z-10' 
+                                : !isAvailable 
+                                  ? 'bg-gray-50 border-gray-200 opacity-50 cursor-not-allowed' 
+                                  : 'bg-white border-gray-100 text-[#3E2723] hover:border-[#8D6E63]/50 hover:shadow-md'
                             }`}
                           >
                             <div className={`absolute top-2 right-2 w-2 h-2 rounded-full ${indicatorColor}`}></div>
-                            <span className="text-sm font-bold font-display">{time}</span>
+                            <span className={`text-sm font-bold font-display`}>
+                              {time}
+                            </span>
                             <span className={`text-[8px] font-black uppercase tracking-widest ${
-                              isSelected ? 'text-white/70' : 'text-gray-500'
+                              isSelected ? 'text-white/70' : !isAvailable ? 'text-gray-400' : 'text-gray-500'
                             }`}>
                               {statusText}
                             </span>
-                            <div className="absolute bottom-1 left-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                              <Bed size={10} className="text-gray-400" />
-                            </div>
+                            {!isAvailable && !exceedsClosingTime && (
+                              <div className="absolute bottom-1 left-2">
+                                <Bed size={10} className="text-red-400" />
+                              </div>
+                            )}
+                            {isAvailable && (
+                              <div className="absolute bottom-1 left-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                                <Bed size={10} className="text-gray-400" />
+                              </div>
+                            )}
                           </button>
                         );
                       })}
                     </div>
                     
                     {/* Informasi jam operasional dan legenda */}
-                    <div className="mt-6 p-4 bg-[#FDFBF7] rounded-2xl border border-gray-100">{getAvailableTimeSlots().length === 0 && (
-                        <div className="text-center py-8">
-                          <p className="text-gray-500 font-medium mb-2">Tidak ada slot tersedia untuk tanggal ini</p>
-                          <p className="text-xs text-gray-400">Semua waktu sudah terisi penuh atau di luar jam operasional</p>
-                        </div>
-                      )}
+                    <div className="mt-6 p-4 bg-[#FDFBF7] rounded-2xl border border-gray-100">
                       <div className="flex flex-wrap items-center justify-between gap-4">
-                        <div className="flex items-center gap-3">
+                        <div className="flex flex-wrap items-center gap-3">
                           <div className="flex items-center gap-1">
                             <div className="w-3 h-3 rounded-full bg-green-500"></div>
-                            <span className="text-xs font-medium text-gray-600">3 bed tersedia</span>
+                            <span className="text-xs font-medium text-gray-600">3 bed</span>
                           </div>
                           <div className="flex items-center gap-1">
                             <div className="w-3 h-3 rounded-full bg-blue-500"></div>
-                            <span className="text-xs font-medium text-gray-600">2 bed tersedia</span>
+                            <span className="text-xs font-medium text-gray-600">2 bed</span>
                           </div>
                           <div className="flex items-center gap-1">
                             <div className="w-3 h-3 rounded-full bg-amber-500"></div>
-                            <span className="text-xs font-medium text-gray-600">1 bed tersedia</span>
+                            <span className="text-xs font-medium text-gray-600">1 bed</span>
                           </div>
                           <div className="flex items-center gap-1">
                             <div className="w-3 h-3 rounded-full bg-red-500"></div>
                             <span className="text-xs font-medium text-gray-600">Penuh</span>
+                          </div>
+                          <div className="flex items-center gap-1">
+                            <div className="w-3 h-3 rounded-full bg-gray-400"></div>
+                            <span className="text-xs font-medium text-gray-600">Tutup</span>
                           </div>
                         </div>
                         
@@ -632,8 +662,6 @@ const BookingStep3 = () => {
                         </div>
                       </div>
                     </div>
-                    
-      
                   </>
                 )}
               </div>
@@ -670,7 +698,7 @@ const BookingStep3 = () => {
                   <div className="space-y-2 mt-3 pt-3 border-t border-gray-200">
                     <div className="flex items-center justify-between text-xs">
                       <span className="text-gray-600">Total Slots:</span>
-                      <span className="font-bold text-[#3E2723]">{generateAllTimeSlots().length} slot</span>
+                      <span className="font-bold text-[#3E2723]">{getAllTimeSlotsWithAvailability().length} slot</span>
                     </div>
                     <div className="flex items-center justify-between text-xs">
                       <span className="text-gray-600">Terjadwal:</span>
@@ -678,7 +706,9 @@ const BookingStep3 = () => {
                     </div>
                     <div className="flex items-center justify-between text-xs">
                       <span className="text-gray-600">Tersedia:</span>
-                      <span className="font-bold text-green-600">{getAvailableTimeSlots().length} slot</span>
+                      <span className="font-bold text-green-600">
+                        {getAllTimeSlotsWithAvailability().filter(s => s.isAvailable).length} slot
+                      </span>
                     </div>
                   </div>
                 </div>
@@ -762,3 +792,32 @@ const BookingStep3 = () => {
 };
 
 export default BookingStep3;
+
+// Saat submit booking
+const handleSubmitBooking = async () => {
+  try {
+    const selectedTreatment = JSON.parse(sessionStorage.getItem('selectedTreatment'));
+    
+    const appointmentData = {
+      customer_name: formData.customerName,
+      member_id: formData.memberId || null,
+      treatment_id: selectedTreatment.id,
+      treatment: selectedTreatment.name,
+      therapist_id: formData.therapistId,
+      therapist: formData.therapistName,
+      date: formData.date,
+      time: formData.time,
+      amount: parseInt(selectedTreatment.price) || 0, // Ambil price dari treatment
+      status: 'confirmed'
+    };
+    
+    const response = await axios.post('http://localhost:5000/api/appointments', appointmentData, {
+      headers: { Authorization: `Bearer ${token}` }
+    });
+    
+    // Success handling
+    // ...
+  } catch (error) {
+    console.error('Error creating appointment:', error);
+  }
+};

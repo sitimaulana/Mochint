@@ -365,18 +365,23 @@ const Appointment = () => {
   const handleChange = (e) => {
     const { name, value } = e.target;
     if (name === 'amount') {
-      setFormData({ ...formData, amount: parseFloat(value) || 0 });
+      const numericValue = parseFloat(value) || 0;
+      setFormData({ ...formData, amount: numericValue });
       setAmountInput(value);
     } else if (name === 'treatment') {
       const treatmentsList = treatments.data || treatments || [];
       const tr = treatmentsList.find(t => t.name === value);
+      
+      // PERBAIKAN: Pastikan price dari treatment diambil dengan benar
+      const treatmentPrice = tr ? parseInt(tr.price) || 0 : 0;
+      
       setFormData({ 
         ...formData, 
         treatment: value,
         treatment_id: tr ? tr.id : '',
-        amount: tr ? tr.price : 0 
+        amount: treatmentPrice // Set amount dari harga treatment
       });
-      setAmountInput(tr ? tr.price.toString() : '0');
+      setAmountInput(treatmentPrice.toString());
     } else if (name === 'therapist') {
       const therapistsList = therapists.data || therapists || [];
       const th = therapistsList.find(t => t.name === value);

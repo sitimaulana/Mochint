@@ -18,6 +18,7 @@
     "swagger-ui-express": "^5.0.1"
   },
   "devDependencies": {
+    "nodemo": "^1.0.0",
     "nodemon": "^3.1.11"
   },
   "keywords": [],

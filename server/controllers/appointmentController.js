@@ -48,13 +48,12 @@ exports.createAppointment = async (req, res) => {
   try {
     const appointmentData = req.body;
     
-    // Generate appointment_id jika tidak ada (format: APT00001)
+    // Generate appointment_id jika tidak ada
     if (!appointmentData.appointment_id) {
       const lastAppointment = await Appointment.getLastAppointmentId();
       let nextNumber = 1;
       
       if (lastAppointment && lastAppointment.appointment_id) {
-        // Extract number from APT00001 format
         const lastNumber = parseInt(lastAppointment.appointment_id.substring(3));
         nextNumber = lastNumber + 1;
       }
@@ -70,9 +69,22 @@ exports.createAppointment = async (req, res) => {
       });
     }
     
-    const result = await Appointment.create(appointmentData);
+    // PERBAIKAN: Validasi dan ambil harga dari treatment jika amount tidak ada
+    if (!appointmentData.amount || appointmentData.amount === 0) {
+      if (appointmentData.treatment_id) {
+        const Treatment = require('../models/Treatment');
+        const treatment = await Treatment.getById(appointmentData.treatment_id);
+        
+        if (treatment) {
+          appointmentData.amount = parseInt(treatment.price) || 0;
+        }
+      }
+    }
     
-    // Ambil data lengkap dengan JOIN untuk response
+    // Pastikan amount adalah number
+    appointmentData.amount = parseInt(appointmentData.amount) || 0;
+    
+    const result = await Appointment.create(appointmentData);
     const createdAppointment = await Appointment.getByIdWithDetails(result.insertId || result.id);
     
     res.status(201).json({ 
