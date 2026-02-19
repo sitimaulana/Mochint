@@ -268,7 +268,7 @@ const BedManagement = () => {
       </div>
 
       {/* Statistics Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3 sm:gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
         <div className="bg-white rounded-xl shadow-sm p-4 border border-gray-200">
           <div className="flex items-center justify-between">
             <div>
@@ -313,18 +313,6 @@ const BedManagement = () => {
             </div>
             <div className="w-10 h-10 bg-brown-100 rounded-full flex items-center justify-center">
               <Calendar className="text-brown-600" size={20} />
-            </div>
-          </div>
-        </div>
-
-        <div className="bg-gradient-to-r from-brown-500 to-brown-600 rounded-xl shadow-sm p-4 border border-brown-700 text-white">
-          <div className="flex items-center justify-between">
-            <div>
-              <div className="text-2xl font-bold">{stats.utilizationRate}%</div>
-              <div className="text-xs text-brown-100">Tingkat Utilisasi</div>
-            </div>
-            <div className="w-10 h-10 bg-white/20 rounded-full flex items-center justify-center">
-              <Bed className="text-white" size={20} />
             </div>
           </div>
         </div>

@@ -490,7 +490,7 @@ const Treatment = () => {
               <div className="flex space-x-2">
                 <button
                   onClick={() => handleEdit(treatment)}
-                  className="flex-1 px-3 py-2 bg-brown-600 text-white rounded-lg hover:bg-brown-700 text-sm font-medium"
+                  className="flex-1 px-3 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 text-sm font-medium"
                 >
                   Edit
                 </button>

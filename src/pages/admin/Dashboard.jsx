@@ -419,21 +419,21 @@ const Dashboard = () => {
           title="Janji Temu Hari Ini"
           value={todayAppointments.length.toString()}
           icon={CalendarIcon}
-          color="blue"
+          color="brown"
           subtitle="Hanya confirmed"
         />
         <StatCard
           title="Total Kunjungan"
           value={memberStats.totalVisits.toString()}
           icon={ChartBarIcon}
-          color="green"
+          color="brown"
           subtitle={`${memberStats.newThisMonth} baru bulan ini`}
         />
         <StatCard
           title="Total Pendapatan"
           value={formattedTotalRevenue}
           icon={DollarIcon}
-          color="orange"
+          color="brown"
           subtitle="Dari janji temu selesai"
         />
       </div>

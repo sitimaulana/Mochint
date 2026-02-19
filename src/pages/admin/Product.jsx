@@ -333,8 +333,11 @@ const Product = () => {
   };
 
   if (loading) return (
-    <div className="flex justify-center items-center h-64">
-      <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-brown-600"></div>
+    <div className="flex justify-center items-center min-h-[400px] p-4">
+      <div className="text-center">
+        <div className="animate-spin rounded-full h-10 w-10 sm:h-12 sm:w-12 border-b-2 border-brown-600 mx-auto"></div>
+        <p className="mt-3 sm:mt-4 text-sm sm:text-base text-gray-600">Memuat produk...</p>
+      </div>
     </div>
   );
 
@@ -381,10 +384,10 @@ const Product = () => {
         )}
       </div>
 
-      <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-200">
+      <div className="bg-white rounded-xl shadow-sm p-3 sm:p-6 border border-gray-200">
         <h2 className="text-base sm:text-lg font-semibold text-gray-800 mb-3 sm:mb-4">Katalog Produk</h2>
         {products.length > 0 ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4 md:gap-6">
             {products
               .filter(product => 
                 (product.name || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -393,44 +396,44 @@ const Product = () => {
                 (product.id || '').toString().toLowerCase().includes(searchTerm.toLowerCase())
               )
               .map((product) => (
-              <div key={product._id || product.id} className="bg-white rounded-lg border border-gray-200 overflow-hidden hover:shadow-md transition-shadow duration-200">
-                <div className="h-48 overflow-hidden bg-gray-100">
+              <div key={product._id || product.id} className="bg-white rounded-lg border border-gray-200 overflow-hidden hover:shadow-md transition-all duration-200">
+                <div className="h-40 sm:h-48 overflow-hidden bg-gray-100">
                   <img 
                     src={product.image || 'https://via.placeholder.com/400x300?text=Tidak+Ada+Gambar'} 
                     alt={product.name} 
-                    className="w-full h-full object-cover" 
+                    className="w-full h-full object-cover hover:scale-105 transition-transform duration-200" 
                   />
                 </div>
-                <div className="p-4">
-                  <div className="flex justify-between items-start mb-2">
-                    <div>
-                      <h3 className="font-semibold text-gray-800 truncate">{product.name}</h3>
-                      <div className="flex gap-2">
-                        <span className="inline-block px-2 py-1 bg-gray-100 text-gray-600 text-xs rounded-full mt-1 uppercase font-bold tracking-wider">
+                <div className="p-3 sm:p-4">
+                  <div className="mb-2">
+                    <h3 className="font-semibold text-sm sm:text-base text-gray-800 truncate mb-1">{product.name}</h3>
+                    <div className="flex items-center justify-between gap-2">
+                      <div className="flex gap-1.5">
+                        <span className="inline-block px-2 py-0.5 bg-gray-100 text-gray-600 text-[10px] sm:text-xs rounded-full uppercase font-bold tracking-wider">
                           {product.category}
                         </span>
                         {product.weight && (
-                          <span className="inline-block px-2 py-1 bg-brown-50 text-brown-600 text-xs rounded-full mt-1 font-medium">
+                          <span className="inline-block px-2 py-0.5 bg-brown-50 text-brown-600 text-[10px] sm:text-xs rounded-full font-medium">
                             {product.weight} gr
                           </span>
                         )}
                       </div>
+                      <div className="text-sm sm:text-lg font-bold text-brown-600">{formatRupiah(product.price)}</div>
                     </div>
-                    <div className="text-lg font-bold text-brown-600">{formatRupiah(product.price)}</div>
                   </div>
-                  <p className="text-sm text-gray-600 mb-4 line-clamp-2">
+                  <p className="text-xs sm:text-sm text-gray-600 mb-3 line-clamp-2 min-h-[32px] sm:min-h-[40px]">
                     {product.description || 'Tidak ada deskripsi'}
                   </p>
-                  <div className="flex justify-between items-center">
-                    <div className="text-xs text-gray-500">ID: {product.id || product._id}</div>
-                    <div className="flex space-x-2">
-                      <button onClick={() => handleView(product)} className="px-3 py-1 bg-gray-100 text-gray-700 text-xs rounded hover:bg-gray-200">
+                  <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2">
+                    <div className="text-[10px] sm:text-xs text-gray-500">ID: {product.id || product._id}</div>
+                    <div className="flex gap-1.5 sm:gap-2">
+                      <button onClick={() => handleView(product)} className="flex-1 sm:flex-none px-2 sm:px-3 py-1 sm:py-1.5 bg-gray-100 text-gray-700 text-[10px] sm:text-xs rounded hover:bg-gray-200 transition-colors duration-200">
                         Lihat
                       </button>
-                      <button onClick={() => handleEdit(product)} className="px-3 py-1 bg-blue-500 text-white text-xs rounded hover:bg-blue-600">
+                      <button onClick={() => handleEdit(product)} className="flex-1 sm:flex-none px-2 sm:px-3 py-1 sm:py-1.5 bg-blue-600 text-white text-[10px] sm:text-xs rounded hover:bg-blue-700 transition-colors duration-200">
                         Edit
                       </button>
-                      <button onClick={() => handleDelete(product._id || product.id)} className="px-3 py-1 bg-red-500 text-white text-xs rounded hover:bg-red-600">
+                      <button onClick={() => handleDelete(product._id || product.id)} className="flex-1 sm:flex-none px-2 sm:px-3 py-1 sm:py-1.5 bg-red-500 text-white text-[10px] sm:text-xs rounded hover:bg-red-600 transition-colors duration-200">
                         Hapus
                       </button>
                     </div>
@@ -440,7 +443,16 @@ const Product = () => {
             ))}
           </div>
         ) : (
-          <div className="text-center py-12 text-gray-500">Tidak ada produk ditemukan.</div>
+          <div className="text-center py-8 sm:py-12">
+            <svg className="w-12 h-12 sm:w-16 sm:h-16 mx-auto text-gray-400 mb-3 sm:mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
+            </svg>
+            <h3 className="text-base sm:text-lg font-medium text-gray-900 mb-2">Tidak ada produk ditemukan</h3>
+            <p className="text-sm sm:text-base text-gray-500 mb-4">Mulai tambahkan produk pertama Anda</p>
+            <button onClick={handleAdd} className="px-4 py-2 bg-brown-600 text-white text-sm sm:text-base rounded-lg hover:bg-brown-700 transition-colors duration-200">
+              Tambah Produk
+            </button>
+          </div>
         )}
       </div>
 
@@ -621,29 +633,29 @@ const Product = () => {
 
       {/* Notification Modal */}
       {notification.show && (
-        <div className="fixed top-4 right-4 z-50 animate-slide-in-right">
-          <div className={`rounded-lg shadow-lg p-4 max-w-md ${
+        <div className="fixed top-4 right-4 left-4 sm:left-auto z-50 animate-slide-in-right">
+          <div className={`rounded-lg shadow-lg p-3 sm:p-4 w-full sm:min-w-[320px] sm:max-w-md ${
             notification.type === 'success' ? 'bg-green-50 border border-green-200' : 'bg-red-50 border border-red-200'
           }`}>
             <div className="flex items-start">
               <div className="flex-shrink-0">
                 {notification.type === 'success' ? (
-                  <svg className="h-6 w-6 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <svg className="h-5 w-5 sm:h-6 sm:w-6 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                   </svg>
                 ) : (
-                  <svg className="h-6 w-6 text-red-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <svg className="h-5 w-5 sm:h-6 sm:w-6 text-red-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z" />
                   </svg>
                 )}
               </div>
-              <div className="ml-3 flex-1">
-                <h3 className={`text-sm font-medium ${
+              <div className="ml-2 sm:ml-3 flex-1 min-w-0">
+                <h3 className={`text-xs sm:text-sm font-medium ${
                   notification.type === 'success' ? 'text-green-800' : 'text-red-800'
                 }`}>
                   {notification.title}
                 </h3>
-                <p className={`mt-1 text-sm ${
+                <p className={`mt-0.5 sm:mt-1 text-xs sm:text-sm ${
                   notification.type === 'success' ? 'text-green-700' : 'text-red-700'
                 }`}>
                   {notification.message}
@@ -651,10 +663,10 @@ const Product = () => {
               </div>
               <button
                 onClick={() => setNotification({ ...notification, show: false })}
-                className={`ml-4 flex-shrink-0 rounded-md inline-flex ${
+                className={`ml-2 sm:ml-4 flex-shrink-0 rounded-md inline-flex ${
                   notification.type === 'success' ? 'text-green-500 hover:text-green-700' : 'text-red-500 hover:text-red-700'
                 }`}>
-                <svg className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                <svg className="h-4 w-4 sm:h-5 sm:w-5" viewBox="0 0 20 20" fill="currentColor">
                   <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
                 </svg>
               </button>
@@ -665,40 +677,91 @@ const Product = () => {
 
       {/* MODAL LIHAT PRODUK */}
       {viewingProduct && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-lg p-6 w-full max-w-2xl overflow-y-auto">
-            <div className="flex justify-between items-center mb-6">
-              <h3 className="text-lg font-semibold text-gray-800">{viewingProduct.name}</h3>
-              <button onClick={() => setViewingProduct(null)} className="text-gray-400 hover:text-gray-600">
-                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-3 sm:p-4">
+          <div className="bg-white rounded-lg p-4 sm:p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+            <div className="flex justify-between items-start mb-4 sm:mb-6">
+              <div className="flex-1 pr-3">
+                <h3 className="text-base sm:text-lg font-semibold text-gray-800">{viewingProduct.name}</h3>
+                <span className="inline-block px-2 py-1 bg-gray-100 text-gray-600 text-xs rounded-full mt-1 uppercase font-bold tracking-wider">
+                  {viewingProduct.category}
+                </span>
+              </div>
+              <button onClick={() => setViewingProduct(null)} className="text-gray-400 hover:text-gray-600 flex-shrink-0">
+                <svg className="w-5 h-5 sm:w-6 sm:h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                 </svg>
               </button>
             </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <img 
-                src={viewingProduct.image || 'https://via.placeholder.com/400x300?text=Tidak+Ada+Gambar'} 
-                className="w-full h-64 object-cover rounded-lg" 
-                alt={viewingProduct.name} 
-              />
-              <div className="space-y-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
+              <div>
+                <img 
+                  src={viewingProduct.image || 'https://via.placeholder.com/400x300?text=Tidak+Ada+Gambar'} 
+                  className="w-full h-48 sm:h-64 object-cover rounded-lg" 
+                  alt={viewingProduct.name} 
+                />
+                {viewingProduct.weight && (
+                  <div className="mt-3 flex items-center text-sm text-gray-600">
+                    <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 6l3 1m0 0l-3 9a5.002 5.002 0 006.001 0M6 7l3 9M6 7l6-2m6 2l3-1m-3 1l-3 9a5.002 5.002 0 006.001 0M18 7l3 9m-3-9l-6-2m0-2v2m0 16V5m0 16H9m3 0h3" />
+                    </svg>
+                    <span className="font-medium">{viewingProduct.weight} gram</span>
+                  </div>
+                )}
+              </div>
+              <div className="space-y-3 sm:space-y-4">
                 <div>
-                  <label className="text-sm font-medium text-gray-700">Kategori</label>
-                  <div className="mt-1 font-sans text-sm uppercase">{viewingProduct.category}</div>
+                  <label className="text-xs sm:text-sm font-medium text-gray-700">Harga</label>
+                  <div className="text-xl sm:text-2xl font-bold text-brown-600 mt-1">{formatRupiah(viewingProduct.price)}</div>
                 </div>
                 <div>
-                  <label className="text-sm font-medium text-gray-700">Berat</label>
-                  <div className="mt-1 font-sans text-sm">{viewingProduct.weight || 0} gram</div>
+                  <label className="text-xs sm:text-sm font-medium text-gray-700">Deskripsi</label>
+                  <p className="text-sm sm:text-base text-gray-600 mt-1">{viewingProduct.description || 'Tidak ada deskripsi'}</p>
                 </div>
-                <div>
-                  <label className="text-sm font-medium text-gray-700">Harga</label>
-                  <div className="text-2xl font-bold text-brown-600">{formatRupiah(viewingProduct.price)}</div>
-                </div>
-                <p className="text-gray-600 text-sm">{viewingProduct.description || 'Tidak ada deskripsi'}</p>
+                
+                {/* Marketplace Links */}
+                {(viewingProduct.marketplaceLinks?.shopee || viewingProduct.marketplaceLinks?.tokopedia || viewingProduct.marketplaceLinks?.lazada || viewingProduct.marketplaceLinks?.other) && (
+                  <div className="pt-3 border-t border-gray-200">
+                    <label className="text-xs sm:text-sm font-medium text-gray-700 mb-2 block">Link Marketplace</label>
+                    <div className="space-y-2">
+                      {viewingProduct.marketplaceLinks?.shopee && (
+                        <a href={viewingProduct.marketplaceLinks.shopee} target="_blank" rel="noopener noreferrer" className="flex items-center text-xs sm:text-sm text-orange-600 hover:text-orange-700">
+                          <svg className="w-4 h-4 mr-2" fill="currentColor" viewBox="0 0 24 24">
+                            <path d="M12 2L2 7v10c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V7l-10-5z"/>
+                          </svg>
+                          Shopee
+                        </a>
+                      )}
+                      {viewingProduct.marketplaceLinks?.tokopedia && (
+                        <a href={viewingProduct.marketplaceLinks.tokopedia} target="_blank" rel="noopener noreferrer" className="flex items-center text-xs sm:text-sm text-green-600 hover:text-green-700">
+                          <svg className="w-4 h-4 mr-2" fill="currentColor" viewBox="0 0 24 24">
+                            <path d="M12 2L2 7v10c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V7l-10-5z"/>
+                          </svg>
+                          Tokopedia
+                        </a>
+                      )}
+                      {viewingProduct.marketplaceLinks?.lazada && (
+                        <a href={viewingProduct.marketplaceLinks.lazada} target="_blank" rel="noopener noreferrer" className="flex items-center text-xs sm:text-sm text-blue-600 hover:text-blue-700">
+                          <svg className="w-4 h-4 mr-2" fill="currentColor" viewBox="0 0 24 24">
+                            <path d="M12 2L2 7v10c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V7l-10-5z"/>
+                          </svg>
+                          Lazada
+                        </a>
+                      )}
+                      {viewingProduct.marketplaceLinks?.other && (
+                        <a href={viewingProduct.marketplaceLinks.other} target="_blank" rel="noopener noreferrer" className="flex items-center text-xs sm:text-sm text-gray-600 hover:text-gray-700">
+                          <svg className="w-4 h-4 mr-2" fill="currentColor" viewBox="0 0 24 24">
+                            <path d="M12 2L2 7v10c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V7l-10-5z"/>
+                          </svg>
+                          Marketplace Lainnya
+                        </a>
+                      )}
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
-            <div className="flex justify-end mt-6">
-              <button onClick={() => setViewingProduct(null)} className="px-4 py-2 bg-brown-600 text-white rounded-lg">
+            <div className="flex justify-end mt-4 sm:mt-6">
+              <button onClick={() => setViewingProduct(null)} className="w-full sm:w-auto px-4 py-2 text-sm sm:text-base bg-brown-600 text-white rounded-lg hover:bg-brown-700">
                 Tutup
               </button>
             </div>
