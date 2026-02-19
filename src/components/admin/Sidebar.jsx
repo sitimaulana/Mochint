@@ -9,7 +9,7 @@ const Sidebar = ({ isOpen, onClose }) => {
     { name: 'Member', path: '/admin/member' },
     { name: 'Perawatan', path: '/admin/treatment' },
     { name: 'Produk', path: '/admin/product' },
-    { name: 'Terapist', path: '/admin/therapist' },
+    { name: 'Terapis', path: '/admin/therapist' },
     { name: 'Informasi', path: '/admin/information' },
   ];
 

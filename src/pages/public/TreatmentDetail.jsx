@@ -1,115 +1,186 @@
 import React from 'react';
-import { X, Home, ChevronRight, Sparkles, Clock, CircleDot } from 'lucide-react';
+import { X, Home, ChevronRight, Sparkles, Clock, CircleDot, ArrowLeft } from 'lucide-react';
 
 const TreatmentDetail = ({ isOpen, onClose, treatment }) => {
   if (!isOpen || !treatment) return null;
 
-  // Helper untuk format Rupiah agar rapi
+  // Helper untuk format Rupiah
   const formatPrice = (price) => {
-    return new Intl.NumberFormat('id-ID', { minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(price);
+    return new Intl.NumberFormat('id-ID', { 
+      minimumFractionDigits: 0, 
+      maximumFractionDigits: 0 
+    }).format(price);
   };
 
   return (
-    <div className="fixed inset-0 z-[999] flex items-center justify-center p-4">
-      {/* Backdrop - Dibuat lebih gelap sedikit agar fokus ke modal */}
+    <div className="fixed inset-0 z-[999] flex items-center justify-center p-0 sm:p-4">
+      {/* Backdrop */}
       <div 
-        className="fixed inset-0 bg-black/50 backdrop-blur-md animate-in fade-in duration-500" 
+        className="fixed inset-0 bg-black/50 backdrop-blur-md animate-in fade-in duration-300" 
         onClick={onClose}
       ></div>
 
-      {/* Main Container */}
-      <div className="relative w-full max-w-6xl bg-white rounded-[40px] shadow-[0_35px_60px_-15px_rgba(0,0,0,0.3)] overflow-hidden animate-in zoom-in-95 duration-300 z-[1000] flex flex-col md:flex-row h-[90vh] md:h-auto max-h-[90vh]">
+      {/* Main Container - FIXED MAX HEIGHT */}
+      <div className="relative w-full h-full md:h-[90vh] md:max-w-6xl bg-white md:rounded-[40px] shadow-2xl overflow-hidden animate-in zoom-in-95 slide-in-from-bottom md:slide-in-from-bottom-0 duration-300 z-[1000] flex flex-col md:flex-row">
         
-        {/* KOLOM KIRI: Informasi Detail */}
-        <div className="flex-[1.2] flex flex-col h-full bg-white">
-          
-          {/* Header & Breadcrumbs */}
-          <div className="p-8 border-b border-gray-100 flex justify-between items-center sticky top-0 bg-white z-20">
-            <nav className="flex items-center gap-2 text-[10px] font-extrabold uppercase tracking-[0.2em] text-[#8D6E63] font-sans">
-              <Home size={14} />
-              <ChevronRight size={12} className="opacity-30" />
-              <span>Layanan</span>
-              <ChevronRight size={12} className="opacity-30" />
-              <span className="text-[#3E2723]">
-                {treatment.name}
-              </span>
-            </nav>
+        {/* ✨ MOBILE HEADER - Sticky di atas image */}
+        <div className="md:hidden absolute top-0 left-0 right-0 z-30 bg-gradient-to-b from-black/70 to-transparent p-4">
+          <div className="flex items-center justify-between">
             <button 
-              onClick={onClose} 
-              className="p-2.5 bg-[#FDFBF7] text-[#5D4037] hover:bg-[#8D6E63] hover:text-white rounded-full transition-all shadow-sm"
+              onClick={onClose}
+              className="p-2 bg-white/90 backdrop-blur-sm text-[#3E2723] rounded-full shadow-lg active:scale-95 transition-transform"
             >
-              <X size={20} />
+              <ArrowLeft size={20} />
             </button>
-          </div>
-
-          {/* Body Content */}
-          <div className="p-10 md:p-14 overflow-y-auto space-y-10">
-            {/* Title Section */}
-            <div className="space-y-4">
-              <div className="inline-flex items-center gap-2 px-4 py-1.5 bg-[#8D6E63] text-white rounded-full text-[10px] font-black uppercase tracking-widest shadow-md">
-                <Sparkles size={12} /> {treatment.category}
-              </div>
-              <h2 className="text-4xl md:text-6xl font-display font-bold text-[#3E2723] leading-tight tracking-tight">
-                {treatment.name}
-              </h2>
+            <div className="flex-1 text-center">
+              <span className="text-white text-xs font-bold tracking-wider uppercase px-3 py-1 bg-white/20 backdrop-blur-sm rounded-full">
+                {treatment.category}
+              </span>
             </div>
-
-            {/* Deskripsi */}
-            <div className="space-y-4">
-              <h4 className="text-[11px] font-black uppercase tracking-[0.3em] text-[#A1887F] flex items-center gap-3 font-sans">
-                <span className="w-10 h-[2px] bg-[#8D6E63]/30"></span> Detail Layanan
-              </h4>
-              <p className="font-sans text-[#4E342E] leading-relaxed text-lg font-medium opacity-90">
-                {treatment.description}
-              </p>
-            </div>
-
-            {/* Fasilitas - Mengambil data ARRAY dari database */}
-            <div className="space-y-5">
-              <h4 className="text-[11px] font-black uppercase tracking-[0.3em] text-[#A1887F] flex items-center gap-3 font-sans">
-                <span className="w-10 h-[2px] bg-[#8D6E63]/30"></span> Fasilitas Premium
-              </h4>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                {treatment.facilities && treatment.facilities.length > 0 ? (
-                  treatment.facilities.map((item, index) => (
-                    <div 
-                      key={index} 
-                      className="flex items-center gap-3 px-5 py-3 bg-[#FDFBF7] border-l-4 border-[#8D6E63] rounded-r-2xl text-[12px] font-bold text-[#5D4037] font-sans shadow-sm"
-                    >
-                      <CircleDot size={12} className="text-[#8D6E63]" />
-                      {item}
-                    </div>
-                  ))
-                ) : (
-                  <p className="text-xs text-gray-400 italic">Fasilitas informasi akan segera diperbarui.</p>
-                )}
-              </div>
-            </div>
-
-            {/* Harga & Durasi - Sinkron Database */}
-            <div className="pt-10 border-t border-gray-100 flex items-center justify-between">
-              <div>
-                <p className="text-[11px] font-black text-[#A1887F] uppercase tracking-widest mb-1 font-sans">Harga</p>
-                <p className="text-3xl font-display font-bold text-[#8D6E63]">Rp {formatPrice(treatment.price)}</p>
-              </div>
-              <div className="px-6 py-3 bg-[#5D4037] text-white rounded-2xl flex items-center gap-3 shadow-lg">
-                <Clock size={18} className="text-[#D7CCC8]" />
-                <span className="text-[12px] font-bold font-sans">{treatment.duration || '60 - 90 Menit'}</span>
-              </div>
-            </div>
+            <div className="w-10"></div>
           </div>
         </div>
 
-        {/* KOLOM KANAN: Foto Treatment */}
-        <div className="flex-1 relative min-h-[400px] md:min-h-full order-1 md:order-2">
+        {/* ✨ MOBILE IMAGE - Full width di top */}
+        <div className="md:hidden relative w-full h-64 sm:h-80 flex-shrink-0">
           <img 
             src={treatment.image} 
             alt={treatment.name} 
             className="absolute inset-0 w-full h-full object-cover" 
           />
-          {/* Gradient Overlay agar gambar lebih dramatis */}
+          <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent"></div>
+        </div>
+
+        {/* ✨ KOLOM KIRI: Informasi Detail */}
+        <div className="flex-[1.2] flex flex-col bg-white h-full overflow-hidden">
+          
+          {/* ✨ DESKTOP Header - NO SCROLL */}
+          <div className="hidden md:block p-6 lg:p-8 border-b border-gray-100 bg-white flex-shrink-0">
+            <div className="flex justify-between items-center">
+              <nav className="flex items-center gap-2 text-[10px] font-extrabold uppercase tracking-[0.2em] text-[#8D6E63] font-sans">
+                <Home size={14} />
+                <ChevronRight size={12} className="opacity-30" />
+                <span>Layanan</span>
+                <ChevronRight size={12} className="opacity-30" />
+                <span className="text-[#3E2723] truncate max-w-[150px]">
+                  {treatment.name}
+                </span>
+              </nav>
+              <button 
+                onClick={onClose} 
+                className="p-2.5 bg-[#FDFBF7] text-[#5D4037] hover:bg-[#8D6E63] hover:text-white rounded-full transition-all shadow-sm active:scale-95"
+              >
+                <X size={20} />
+              </button>
+            </div>
+          </div>
+
+          {/* ✨ SCROLLABLE CONTENT AREA */}
+          <div className="flex-1 overflow-y-auto scrollbar-thin">
+            <div className="p-5 sm:p-6 lg:p-10 xl:p-14 space-y-6 sm:space-y-8 lg:space-y-10">
+              
+              {/* Title Section */}
+              <div className="space-y-3 sm:space-y-4">
+                {/* Desktop Category Badge */}
+                <div className="hidden md:inline-flex items-center gap-2 px-4 py-1.5 bg-[#8D6E63] text-white rounded-full text-[10px] font-black uppercase tracking-widest shadow-md">
+                  <Sparkles size={12} /> {treatment.category}
+                </div>
+                
+                <h2 className="text-3xl sm:text-4xl lg:text-5xl xl:text-6xl font-display font-bold text-[#3E2723] leading-tight tracking-tight">
+                  {treatment.name}
+                </h2>
+              </div>
+
+              {/* ✨ MOBILE Price & Duration - Top */}
+              <div className="md:hidden grid grid-cols-2 gap-3 pb-6 border-b border-gray-100">
+                <div className="bg-[#FDFBF7] p-4 rounded-2xl">
+                  <p className="text-[10px] font-black text-[#A1887F] uppercase tracking-wider mb-1">Harga</p>
+                  <p className="text-xl sm:text-2xl font-display font-bold text-[#8D6E63]">
+                    Rp {formatPrice(treatment.price)}
+                  </p>
+                </div>
+                <div className="bg-[#5D4037] p-4 rounded-2xl flex flex-col justify-center items-center text-white">
+                  <Clock size={20} className="text-[#D7CCC8] mb-1" />
+                  <span className="text-[11px] font-bold text-center leading-tight">
+                    {treatment.duration || '60-90 Menit'}
+                  </span>
+                </div>
+              </div>
+
+              {/* Deskripsi */}
+              <div className="space-y-3 sm:space-y-4">
+                <h4 className="text-[10px] sm:text-[11px] font-black uppercase tracking-[0.3em] text-[#A1887F] flex items-center gap-3 font-sans">
+                  <span className="w-8 sm:w-10 h-[2px] bg-[#8D6E63]/30"></span> Detail Layanan
+                </h4>
+                <p className="font-sans text-[#4E342E] leading-relaxed text-base sm:text-lg font-medium opacity-90">
+                  {treatment.description}
+                </p>
+              </div>
+
+              {/* Fasilitas */}
+              <div className="space-y-4 sm:space-y-5">
+                <h4 className="text-[10px] sm:text-[11px] font-black uppercase tracking-[0.3em] text-[#A1887F] flex items-center gap-3 font-sans">
+                  <span className="w-8 sm:w-10 h-[2px] bg-[#8D6E63]/30"></span> Fasilitas Premium
+                </h4>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-3">
+                  {treatment.facilities && treatment.facilities.length > 0 ? (
+                    treatment.facilities.map((item, index) => (
+                      <div 
+                        key={index} 
+                        className="flex items-center gap-2 sm:gap-3 px-3 sm:px-5 py-2 sm:py-3 bg-[#FDFBF7] border-l-4 border-[#8D6E63] rounded-r-xl sm:rounded-r-2xl text-[11px] sm:text-[12px] font-bold text-[#5D4037] font-sans shadow-sm"
+                      >
+                        <CircleDot size={12} className="text-[#8D6E63] flex-shrink-0" />
+                        <span>{item}</span>
+                      </div>
+                    ))
+                  ) : (
+                    <p className="text-xs text-gray-400 italic">Fasilitas informasi akan segera diperbarui.</p>
+                  )}
+                </div>
+              </div>
+
+              {/* ✨ DESKTOP Harga & Durasi */}
+              <div className="hidden md:flex pt-8 lg:pt-10 border-t border-gray-100 items-center justify-between">
+                <div>
+                  <p className="text-[11px] font-black text-[#A1887F] uppercase tracking-widest mb-1 font-sans">Harga</p>
+                  <p className="text-2xl lg:text-3xl font-display font-bold text-[#8D6E63]">
+                    Rp {formatPrice(treatment.price)}
+                  </p>
+                </div>
+                <div className="px-4 lg:px-6 py-2 lg:py-3 bg-[#5D4037] text-white rounded-xl lg:rounded-2xl flex items-center gap-3 shadow-lg">
+                  <Clock size={18} className="text-[#D7CCC8]" />
+                  <span className="text-[11px] lg:text-[12px] font-bold font-sans">
+                    {treatment.duration || '60 - 90 Menit'}
+                  </span>
+                </div>
+              </div>
+
+              {/* Bottom Spacing */}
+              <div className="h-8"></div>
+            </div>
+          </div>
+
+          {/* ✨ MOBILE CTA Button */}
+          <div className="md:hidden bg-white border-t border-gray-100 p-4 flex-shrink-0">
+            <button
+              onClick={onClose}
+              className="w-full py-3.5 bg-[#8D6E63] text-white rounded-2xl font-bold text-sm shadow-lg active:scale-95 transition-transform"
+            >
+              Tutup
+            </button>
+          </div>
+        </div>
+
+        {/* ✨ DESKTOP KOLOM KANAN: Foto Treatment */}
+        <div className="hidden md:block flex-1 relative overflow-hidden">
+          <img 
+            src={treatment.image} 
+            alt={treatment.name} 
+            className="absolute inset-0 w-full h-full object-cover" 
+          />
+          {/* Gradient Overlay */}
           <div className="absolute inset-0 bg-gradient-to-t from-[#3E2723]/40 to-transparent"></div>
-          <div className="absolute inset-0 border-l-[1px] border-white/10 hidden md:block"></div>
+          <div className="absolute inset-0 border-l-[1px] border-white/10"></div>
         </div>
 
       </div>

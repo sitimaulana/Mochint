@@ -61,7 +61,11 @@ const Dashboard = () => {
             if (backendUser) {
               // Merge backend data with localStorage (keep role from localStorage)
               const mergedUser = {
-                ...backendUser,
+                id: backendUser.id,
+                name: backendUser.name,
+                email: backendUser.email,
+                phone: backendUser.phone,
+                address: backendUser.address,
                 role: userData.role || 'member'
               };
               
@@ -70,25 +74,54 @@ const Dashboard = () => {
               // Update localStorage with fresh data
               localStorage.setItem('active_user', JSON.stringify(mergedUser));
               
+              // PENTING: Set user state dan formData dengan data lengkap
               setUser(mergedUser);
-              setFormData(mergedUser);
+              setFormData({
+                id: mergedUser.id,
+                name: mergedUser.name || '',
+                email: mergedUser.email || '',
+                phone: mergedUser.phone || '',
+                address: mergedUser.address || '',
+                role: mergedUser.role
+              });
             } else {
               // Backend data not found, use localStorage
               console.warn('⚠️ User not found in backend, using localStorage');
               setUser(userData);
-              setFormData(userData);
+              setFormData({
+                id: userData.id,
+                name: userData.name || '',
+                email: userData.email || '',
+                phone: userData.phone || '',
+                address: userData.address || '',
+                role: userData.role
+              });
             }
           } else {
             // Backend error, use localStorage
             console.warn('⚠️ Backend error, using localStorage');
             setUser(userData);
-            setFormData(userData);
+            setFormData({
+              id: userData.id,
+              name: userData.name || '',
+              email: userData.email || '',
+              phone: userData.phone || '',
+              address: userData.address || '',
+              role: userData.role
+            });
           }
         } catch (backendError) {
           // Backend unreachable, use localStorage
           console.warn('⚠️ Cannot connect to backend, using localStorage:', backendError.message);
           setUser(userData);
-          setFormData(userData);
+          setFormData({
+            id: userData.id,
+            name: userData.name || '',
+            email: userData.email || '',
+            phone: userData.phone || '',
+            address: userData.address || '',
+            role: userData.role
+          });
         }
         
       } catch (error) {
@@ -171,42 +204,71 @@ const Dashboard = () => {
       return;
     }
     
+    if (!formData.email?.trim()) {
+      alert('Email wajib diisi');
+      return;
+    }
+    
     console.log('📝 Saving profile update:', formData);
     
     try {
+      // Prepare update data
+      const updateData = {
+        name: formData.name.trim(),
+        email: formData.email.trim(),
+        phone: formData.phone?.trim() || '',
+        address: formData.address?.trim() || ''
+      };
+      
+      console.log('Update payload:', updateData);
+      
       // 1. Update to backend database
       try {
-        const response = await memberAPI.update(formData.id, {
-          name: formData.name,
-          email: formData.email,
-          phone: formData.phone,
-          address: formData.address
-        });
+        const response = await memberAPI.update(formData.id, updateData);
         
         if (response.data && response.data.success) {
-          console.log('✅ Profile updated in backend');
+          console.log('✅ Profile updated in backend:', response.data);
         }
       } catch (backendError) {
-        console.warn('⚠️ Backend update failed, continuing with localStorage:', backendError.message);
+        console.warn('⚠️ Backend update failed:', backendError.message);
+        // Lanjutkan dengan localStorage update
       }
       
-      // 2. Update active_user di localStorage
-      localStorage.setItem('active_user', JSON.stringify(formData));
+      // 2. Prepare updated user object
+      const updatedUser = {
+        id: formData.id,
+        name: updateData.name,
+        email: updateData.email,
+        phone: updateData.phone,
+        address: updateData.address,
+        role: formData.role || user.role || 'member'
+      };
       
-      // 3. Update user data juga (untuk konsistensi)
-      localStorage.setItem('user', JSON.stringify(formData));
+      console.log('Updated user object:', updatedUser);
       
-      // 4. Update database lokal (mochint_users) jika ada
-      const allUsers = JSON.parse(localStorage.getItem('mochint_users')) || [];
-      if (allUsers.length > 0) {
-        const updatedUsers = allUsers.map(u => 
-          u.id === formData.id ? formData : u
-        );
-        localStorage.setItem('mochint_users', JSON.stringify(updatedUsers));
+      // 3. Update active_user di localStorage
+      localStorage.setItem('active_user', JSON.stringify(updatedUser));
+      
+      // 4. Update user data juga (untuk konsistensi)
+      localStorage.setItem('user', JSON.stringify(updatedUser));
+      
+      // 5. Update database lokal (mochint_users) jika ada
+      try {
+        const allUsers = JSON.parse(localStorage.getItem('mochint_users')) || [];
+        if (allUsers.length > 0) {
+          const updatedUsers = allUsers.map(u => 
+            u.id === updatedUser.id ? updatedUser : u
+          );
+          localStorage.setItem('mochint_users', JSON.stringify(updatedUsers));
+          console.log('✅ Updated mochint_users localStorage');
+        }
+      } catch (e) {
+        console.warn('mochint_users update skipped');
       }
       
-      // 5. Update state
-      setUser(formData);
+      // 6. Update state
+      setUser(updatedUser);
+      setFormData(updatedUser);
       setIsEditModalOpen(false);
       
       alert('✅ Profil berhasil diperbarui!');
@@ -228,24 +290,20 @@ const Dashboard = () => {
     setIsSubmittingReview(true);
     
     try {
-      // Ambil data user terbaru dari localStorage
       const currentUser = JSON.parse(localStorage.getItem('active_user')) || user;
       
-      console.log('Submitting review with user:', currentUser.name);
+      console.log('Submitting review for user:', currentUser.name);
       
-      // Pastikan data yang dikirim sesuai dengan struktur yang diharapkan backend
+      // HANYA kirim userId, rating, comment
+      // Name dan location akan diambil dari table members via JOIN
       const reviewPayload = {
-        name: currentUser.name || 'Member Mochint',
-        location: currentUser.address || "Pelanggan Setia Mochint",
+        userId: currentUser.id,  // HANYA userId
         rating: reviewData.rating,
-        comment: reviewData.comment.trim(),
-        userId: currentUser.id,
-        email: currentUser.email
+        comment: reviewData.comment.trim()
       };
       
       console.log('Review payload:', reviewPayload);
       
-      // Gunakan reviewsAPI.create() dengan await
       const response = await reviewsAPI.create(reviewPayload);
       
       console.log('✅ Review submitted successfully:', response);
@@ -255,7 +313,7 @@ const Dashboard = () => {
       // Reset form
       setReviewData({ rating: 5, comment: '' });
       
-      // Optional: Refresh page setelah 1 detik untuk melihat review baru
+      // Refresh page setelah 1.5 detik
       setTimeout(() => {
         window.location.reload();
       }, 1500);
@@ -263,12 +321,10 @@ const Dashboard = () => {
     } catch (error) {
       console.error('❌ Error submitting review:', error);
       
-      // Tampilkan error yang lebih detail
       if (error.response) {
         console.error('Response error:', error.response);
         alert(`❌ Gagal mengirim ulasan: ${error.response.message || 'Server error'}`);
       } else if (error.message) {
-        console.error('Error message:', error.message);
         alert(`❌ Gagal mengirim ulasan: ${error.message}`);
       } else {
         alert("❌ Gagal mengirim ulasan. Silakan coba lagi.");

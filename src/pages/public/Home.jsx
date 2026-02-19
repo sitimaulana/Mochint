@@ -39,10 +39,21 @@ const Home = () => {
         
         // Set testimoni dari database - pastikan data valid
         const reviewsData = resReviews.data.data || resReviews.data || [];
-        console.log('Reviews data:', reviewsData);
-        console.log('Reviews count:', reviewsData.length);
+        console.log('Raw reviews data:', reviewsData);
         
-        // Filter dan sort reviews (terbaru dulu)
+        // Debug setiap review
+        reviewsData.forEach((review, index) => {
+          console.log(`Review ${index + 1}:`, {
+            name: review.name,
+            location: review.location,
+            member_address: review.member_address,
+            display_location: review.display_location,
+            comment: review.comment,
+            rating: review.rating
+          });
+        });
+        
+        // Filter dan sort reviews (terbaru dulu) - HILANGKAN FILTER LOKASI
         const validReviews = reviewsData
           .filter(review => {
             const isValid = review.name && review.comment && review.rating;
@@ -51,13 +62,18 @@ const Home = () => {
             }
             return isValid;
           })
+          .map(review => ({
+            ...review,
+            // Prioritas: location > member_address > display_location > default
+            location: review.location || review.member_address || review.display_location || 'Member Terverifikasi'
+          }))
           .sort((a, b) => {
             const dateA = new Date(b.createdAt || b.date || 0);
             const dateB = new Date(a.createdAt || a.date || 0);
             return dateA - dateB;
           });
         
-        console.log('Valid reviews after filter:', validReviews);
+        console.log('Valid reviews after processing:', validReviews);
         console.log('Valid reviews count:', validReviews.length);
         
         setTestimonials(validReviews);
@@ -218,44 +234,58 @@ const Home = () => {
                   <p className="text-gray-400">Memuat ulasan...</p>
                 </div>
               ) : testimonials.length > 0 ? (
-                testimonials.map((item, index) => (
-                  <div 
-                    key={item.id || item._id || index} 
-                    className="min-w-[300px] md:min-w-[350px] bg-[#FDFBF7] p-8 rounded-[40px] border border-gray-100 shadow-sm snap-center flex-shrink-0 text-left transition-all duration-300 hover:shadow-xl"
-                  >
-                    {/* Rating Stars */}
-                    <div className="flex gap-1 text-yellow-400 mb-4">
-                      {[...Array(5)].map((_, i) => (
-                        <Star 
-                          key={i} 
-                          size={16} 
-                          fill={i < Math.floor(item.rating) ? "currentColor" : "none"} 
-                          className={i < Math.floor(item.rating) ? "" : "text-gray-200"} 
-                        />
-                      ))}
-                    </div>
-                    
-                    {/* Review Comment */}
-                    <p className="font-sans text-[#4E342E] italic mb-6 leading-relaxed line-clamp-4 font-medium text-base">
-                      "{item.comment}"
-                    </p>
-                    
-                    {/* User Info */}
-                    <div className="flex items-center gap-4 mt-auto border-t border-gray-100 pt-6">
-                      <div className="w-10 h-10 bg-[#3E2723] rounded-2xl flex items-center justify-center text-white font-bold shrink-0 font-display">
-                        {(item.name || 'M').charAt(0).toUpperCase()}
+                testimonials.map((item, index) => {
+                  // Debug setiap item yang akan di-render
+                  console.log(`Rendering review ${index + 1}:`, {
+                    name: item.name,
+                    location: item.location,
+                    comment: item.comment
+                  });
+                  
+                  return (
+                    <div 
+                      key={item.id || item._id || index} 
+                      className="min-w-[300px] md:min-w-[350px] bg-[#FDFBF7] p-8 rounded-[40px] border border-gray-100 shadow-sm snap-center flex-shrink-0 text-left transition-all duration-300 hover:shadow-xl"
+                    >
+                      {/* Rating Stars */}
+                      <div className="flex gap-1 text-yellow-400 mb-4">
+                        {[...Array(5)].map((_, i) => (
+                          <Star 
+                            key={i} 
+                            size={16} 
+                            fill={i < Math.floor(item.rating) ? "currentColor" : "none"} 
+                            className={i < Math.floor(item.rating) ? "" : "text-gray-200"} 
+                          />
+                        ))}
                       </div>
-                      <div>
-                        <h4 className="font-display font-bold text-[#3E2723] text-sm">
-                          {item.name || 'Anonim'}
-                        </h4>
-                        <p className="font-sans text-[10px] text-[#A1887F] font-black uppercase tracking-widest">
-                          {item.location || 'Member Terverifikasi'}
-                        </p>
+                      
+                      {/* Review Comment */}
+                      <p className="font-sans text-[#4E342E] italic mb-6 leading-relaxed line-clamp-4 font-medium text-base">
+                        "{item.comment}"
+                      </p>
+                      
+                      {/* User Info */}
+                      <div className="flex items-center gap-4 mt-auto border-t border-gray-100 pt-6">
+                        <div className="w-10 h-10 bg-[#3E2723] rounded-2xl flex items-center justify-center text-white font-bold shrink-0 font-display">
+                          {(item.name || 'M').charAt(0).toUpperCase()}
+                        </div>
+                        <div>
+                          <h4 className="font-display font-bold text-[#3E2723] text-sm">
+                            {item.name || 'Anonim'}
+                          </h4>
+                          <p className="font-sans text-[10px] text-[#A1887F] font-black uppercase tracking-widest">
+                            {/* Debug inline */}
+                            {(() => {
+                              const loc = item.location || item.member_address || item.display_location || 'Member Terverifikasi';
+                              console.log('Final location rendered:', loc);
+                              return loc;
+                            })()}
+                          </p>
+                        </div>
                       </div>
                     </div>
-                  </div>
-                ))
+                  );
+                })
               ) : (
                 <div className="w-full text-center py-12">
                   <div className="bg-gray-100 w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-4">
