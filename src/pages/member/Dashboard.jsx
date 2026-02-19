@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { User, Calendar, MessageCircle, Clock, ChevronRight, LogOut, Award, X, Save, Settings, Star, Send, Loader2 } from 'lucide-react';
-import { reviewsAPI } from '../../api/client';
+import { reviewsAPI, membersAPI } from '../../api/client';
 import { memberAPI, appointmentAPI } from '../../services/api';
 
 const Dashboard = () => {
@@ -52,7 +52,7 @@ const Dashboard = () => {
         
         try {
           // Fetch fresh data from backend
-          const response = await memberAPI.getAll();
+          const response = await membersAPI.getAll();
           
           if (response.data && response.data.success) {
             // Find current user from backend data
@@ -233,22 +233,46 @@ const Dashboard = () => {
       
       console.log('Submitting review with user:', currentUser.name);
       
-      // Gunakan reviewsAPI.create() sesuai dengan client.js yang baru
-      await reviewsAPI.create({
-        name: currentUser.name || 'Anonim',
-        location: currentUser.address || "Member Terverifikasi",
+      // Pastikan data yang dikirim sesuai dengan struktur yang diharapkan backend
+      const reviewPayload = {
+        name: currentUser.name || 'Member Mochint',
+        location: currentUser.address || "Pelanggan Setia Mochint",
         rating: reviewData.rating,
-        comment: reviewData.comment,
+        comment: reviewData.comment.trim(),
         userId: currentUser.id,
         email: currentUser.email
-      });
+      };
       
-      alert("✅ Terima kasih atas ulasan Anda!");
+      console.log('Review payload:', reviewPayload);
+      
+      // Gunakan reviewsAPI.create() dengan await
+      const response = await reviewsAPI.create(reviewPayload);
+      
+      console.log('✅ Review submitted successfully:', response);
+      
+      alert("✅ Terima kasih atas ulasan Anda! Review Anda akan segera muncul di halaman utama.");
+      
+      // Reset form
       setReviewData({ rating: 5, comment: '' });
       
+      // Optional: Refresh page setelah 1 detik untuk melihat review baru
+      setTimeout(() => {
+        window.location.reload();
+      }, 1500);
+      
     } catch (error) {
-      console.error('Error submitting review:', error);
-      alert("❌ Gagal mengirim ulasan. Silakan coba lagi.");
+      console.error('❌ Error submitting review:', error);
+      
+      // Tampilkan error yang lebih detail
+      if (error.response) {
+        console.error('Response error:', error.response);
+        alert(`❌ Gagal mengirim ulasan: ${error.response.message || 'Server error'}`);
+      } else if (error.message) {
+        console.error('Error message:', error.message);
+        alert(`❌ Gagal mengirim ulasan: ${error.message}`);
+      } else {
+        alert("❌ Gagal mengirim ulasan. Silakan coba lagi.");
+      }
     } finally {
       setIsSubmittingReview(false);
     }
@@ -457,7 +481,7 @@ const Dashboard = () => {
 
             {/* KONSULTASI WHATSAPP */}
             <div 
-              onClick={() => window.open('https://wa.me/6281234567890', '_blank')} 
+              onClick={() => window.open('https://wa.me/+6281994204009', '_blank')} 
               className="group bg-white p-6 md:p-8 rounded-3xl md:rounded-[40px] shadow-sm border border-gray-100 hover:shadow-xl transition-all cursor-pointer"
             >
               <div className="flex items-center justify-between">

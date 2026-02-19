@@ -76,11 +76,9 @@ const Regist = ({ onSwitch, onRegisterSuccess, onBack }) => {
         <div className="p-8 md:p-12 bg-white rounded-[45px] shadow-2xl font-sans text-[#3E2723]">
           {/* Header Logo */}
           <div className="text-center mb-10">
-            <div className="w-14 h-14 bg-[#3E2723] rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-xl transform -rotate-3 hover:rotate-0 transition-transform duration-300">
-              <span className="text-white font-display font-bold text-3xl">M</span>
+            <div className="mx-auto mb-6">
+              <img src="/logomochint.svg" alt="Mochint Logo" className="w-32 h-32 mx-auto drop-shadow-2xl" />
             </div>
-            <h2 className="text-3xl font-display font-bold text-[#3E2723] tracking-tighter">MOCHINT</h2>
-            <p className="text-[10px] text-[#8D6E63] tracking-[0.4em] uppercase font-black mt-1">Beauty Care</p>
           </div>
 
       <div className="flex items-center justify-center gap-2 mb-8">

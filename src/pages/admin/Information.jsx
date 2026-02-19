@@ -498,48 +498,44 @@ const Information = () => {
 
       {/* Modal Notifikasi Status */}
       {notification.show && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className={`bg-white rounded-xl shadow-2xl max-w-md w-full p-6 transform transition-all ${
-            notification.show ? 'scale-100 opacity-100' : 'scale-95 opacity-0'
+        <div className="fixed top-4 right-4 z-50 animate-slide-in-right">
+          <div className={`rounded-lg shadow-lg p-4 max-w-md ${
+            notification.type === 'success' ? 'bg-green-50 border border-green-200' : 'bg-red-50 border border-red-200'
           }`}>
-            {/* Icon dan Header */}
-            <div className="flex flex-col items-center text-center mb-4">
-              {notification.type === 'success' ? (
-                <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mb-4">
-                  <svg className="w-10 h-10 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+            <div className="flex items-start">
+              <div className="flex-shrink-0">
+                {notification.type === 'success' ? (
+                  <svg className="h-6 w-6 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                   </svg>
-                </div>
-              ) : (
-                <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mb-4">
-                  <svg className="w-10 h-10 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                ) : (
+                  <svg className="h-6 w-6 text-red-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z" />
                   </svg>
-                </div>
-              )}
-              
-              <h3 className={`text-xl font-semibold mb-2 ${
-                notification.type === 'success' ? 'text-green-900' : 'text-red-900'
-              }`}>
-                {notification.type === 'success' ? 'Berhasil!' : 'Gagal!'}
-              </h3>
-              
-              <p className="text-gray-600">
-                {notification.message}
-              </p>
+                )}
+              </div>
+              <div className="ml-3 flex-1">
+                <h3 className={`text-sm font-medium ${
+                  notification.type === 'success' ? 'text-green-800' : 'text-red-800'
+                }`}>
+                  {notification.type === 'success' ? 'Berhasil!' : 'Gagal!'}
+                </h3>
+                <p className={`mt-1 text-sm ${
+                  notification.type === 'success' ? 'text-green-700' : 'text-red-700'
+                }`}>
+                  {notification.message}
+                </p>
+              </div>
+              <button
+                onClick={() => setNotification({ show: false, type: '', message: '' })}
+                className={`ml-4 flex-shrink-0 rounded-md inline-flex ${
+                  notification.type === 'success' ? 'text-green-500 hover:text-green-700' : 'text-red-500 hover:text-red-700'
+                }`}>
+                <svg className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                  <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
+                </svg>
+              </button>
             </div>
-
-            {/* Button Close */}
-            <button
-              onClick={() => setNotification({ show: false, type: '', message: '' })}
-              className={`w-full py-3 rounded-lg font-medium transition-colors ${
-                notification.type === 'success' 
-                  ? 'bg-green-600 hover:bg-green-700 text-white'
-                  : 'bg-red-600 hover:bg-red-700 text-white'
-              }`}
-            >
-              Tutup
-            </button>
           </div>
         </div>
       )}

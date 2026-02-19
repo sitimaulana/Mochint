@@ -22,21 +22,53 @@ const Home = () => {
       try {
         setIsLoading(true);
         
+        console.log('Loading data from API...');
+        
         // Mengambil data Produk dan Testimoni secara paralel
         const [resProducts, resReviews] = await Promise.all([
           axios.get(API_URL_PRODUCTS),
-          axios.get(API_URL_REVIEWS).catch(() => ({ data: [] })) 
+          axios.get(API_URL_REVIEWS)
         ]);
 
+        console.log('Products response:', resProducts.data);
+        console.log('Reviews response:', resReviews.data);
+
         // Ambil 4 produk terbaru untuk ditampilkan di Home
-        setProducts((resProducts.data.data || resProducts.data).slice(0, 4));
+        const productsData = resProducts.data.data || resProducts.data || [];
+        setProducts(productsData.slice(0, 4));
         
-        // Set testimoni dari database
-        setTestimonials(resReviews.data.data);
+        // Set testimoni dari database - pastikan data valid
+        const reviewsData = resReviews.data.data || resReviews.data || [];
+        console.log('Reviews data:', reviewsData);
+        console.log('Reviews count:', reviewsData.length);
         
-        console.log("Data loaded successfully from database");
+        // Filter dan sort reviews (terbaru dulu)
+        const validReviews = reviewsData
+          .filter(review => {
+            const isValid = review.name && review.comment && review.rating;
+            if (!isValid) {
+              console.log('Invalid review filtered out:', review);
+            }
+            return isValid;
+          })
+          .sort((a, b) => {
+            const dateA = new Date(b.createdAt || b.date || 0);
+            const dateB = new Date(a.createdAt || a.date || 0);
+            return dateA - dateB;
+          });
+        
+        console.log('Valid reviews after filter:', validReviews);
+        console.log('Valid reviews count:', validReviews.length);
+        
+        setTestimonials(validReviews);
+        
+        console.log("✅ Data loaded successfully from database");
       } catch (error) {
-        console.error("Gagal memuat data dari database:", error);
+        console.error("❌ Gagal memuat data dari database:", error);
+        console.error("Error details:", error.response?.data || error.message);
+        // Set empty array jika gagal
+        setTestimonials([]);
+        setProducts([]);
       } finally {
         setIsLoading(false);
       }
@@ -161,36 +193,85 @@ const Home = () => {
         <div className="container mx-auto px-6">
           <div className="text-center mb-10">
             <h2 className="text-3xl md:text-5xl font-display font-bold text-[#3E2723] tracking-tighter">Apa Kata Mereka?</h2>
-            <p className="font-sans text-[#8D6E63] mt-2 font-bold uppercase tracking-[0.2em] text-xs">Ribuan pelanggan puas dengan layanan kami</p>
+            <p className="font-sans text-[#8D6E63] mt-2 font-bold uppercase tracking-[0.2em] text-xs">
+              {testimonials.length > 0 
+                ? `${testimonials.length} Ulasan dari pelanggan kami` 
+                : 'Belum ada ulasan'}
+            </p>
           </div>
 
           <div className="relative max-w-6xl mx-auto">
-            <button onClick={() => scroll('left')} className="absolute left-0 top-1/2 -translate-y-1/2 -translate-x-4 md:-translate-x-12 z-10 bg-white border border-gray-200 p-3 rounded-full shadow-md text-[#5D4037] hover:bg-[#FDFBF7] transition hidden md:block">
+            <button 
+              onClick={() => scroll('left')} 
+              className="absolute left-0 top-1/2 -translate-y-1/2 -translate-x-4 md:-translate-x-12 z-10 bg-white border border-gray-200 p-3 rounded-full shadow-md text-[#5D4037] hover:bg-[#FDFBF7] transition hidden md:block"
+            >
               <ChevronLeft size={24} />
             </button>
-            <div ref={scrollRef} className="flex gap-6 overflow-x-auto pb-8 px-4 snap-x snap-mandatory no-scrollbar" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
-              {testimonials.map((item) => (
-                <div key={item._id || item.id} className="min-w-[300px] md:min-w-[350px] bg-[#FDFBF7] p-8 rounded-[40px] border border-gray-100 shadow-sm snap-center flex-shrink-0 text-left transition-all duration-300 hover:shadow-xl">
-                  <div className="flex gap-1 text-yellow-400 mb-4">
-                    {[...Array(5)].map((_, i) => (
-                      <Star key={i} size={16} fill={i < Math.floor(item.rating) ? "currentColor" : "none"} className={i < Math.floor(item.rating) ? "" : "text-gray-200"} />
-                    ))}
-                  </div>
-                  <p className="font-sans text-[#4E342E] italic mb-6 leading-relaxed line-clamp-4 font-medium text-base">"{item.comment}"</p>
-                  <div className="flex items-center gap-4 mt-auto border-t border-gray-100 pt-6">
-                    <div className="w-10 h-10 bg-[#3E2723] rounded-2xl flex items-center justify-center text-white font-bold shrink-0 font-display">{item.name?.charAt(0).toUpperCase() || "M"}</div>
-                    <div>
-                      <h4 className="font-display font-bold text-[#3E2723] text-sm">{item.name}</h4>
-                      <p className="font-sans text-[10px] text-[#A1887F] font-black uppercase tracking-widest">{item.location || 'Pelanggan Setia'}</p>
+            
+            <div 
+              ref={scrollRef} 
+              className="flex gap-6 overflow-x-auto pb-8 px-4 snap-x snap-mandatory no-scrollbar" 
+              style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
+            >
+              {isLoading ? (
+                <div className="w-full text-center py-12">
+                  <p className="text-gray-400">Memuat ulasan...</p>
+                </div>
+              ) : testimonials.length > 0 ? (
+                testimonials.map((item, index) => (
+                  <div 
+                    key={item.id || item._id || index} 
+                    className="min-w-[300px] md:min-w-[350px] bg-[#FDFBF7] p-8 rounded-[40px] border border-gray-100 shadow-sm snap-center flex-shrink-0 text-left transition-all duration-300 hover:shadow-xl"
+                  >
+                    {/* Rating Stars */}
+                    <div className="flex gap-1 text-yellow-400 mb-4">
+                      {[...Array(5)].map((_, i) => (
+                        <Star 
+                          key={i} 
+                          size={16} 
+                          fill={i < Math.floor(item.rating) ? "currentColor" : "none"} 
+                          className={i < Math.floor(item.rating) ? "" : "text-gray-200"} 
+                        />
+                      ))}
+                    </div>
+                    
+                    {/* Review Comment */}
+                    <p className="font-sans text-[#4E342E] italic mb-6 leading-relaxed line-clamp-4 font-medium text-base">
+                      "{item.comment}"
+                    </p>
+                    
+                    {/* User Info */}
+                    <div className="flex items-center gap-4 mt-auto border-t border-gray-100 pt-6">
+                      <div className="w-10 h-10 bg-[#3E2723] rounded-2xl flex items-center justify-center text-white font-bold shrink-0 font-display">
+                        {(item.name || 'M').charAt(0).toUpperCase()}
+                      </div>
+                      <div>
+                        <h4 className="font-display font-bold text-[#3E2723] text-sm">
+                          {item.name || 'Anonim'}
+                        </h4>
+                        <p className="font-sans text-[10px] text-[#A1887F] font-black uppercase tracking-widest">
+                          {item.location || 'Member Terverifikasi'}
+                        </p>
+                      </div>
                     </div>
                   </div>
+                ))
+              ) : (
+                <div className="w-full text-center py-12">
+                  <div className="bg-gray-100 w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <Star size={32} className="text-gray-300" />
+                  </div>
+                  <p className="text-gray-400 italic text-center font-sans">
+                    Belum ada ulasan saat ini. Jadilah yang pertama memberikan review!
+                  </p>
                 </div>
-              ))}
-              {testimonials.length === 0 && (
-                 <p className="text-center w-full text-gray-400 italic text-center">Belum ada ulasan saat ini.</p>
               )}
             </div>
-            <button onClick={() => scroll('right')} className="absolute right-0 top-1/2 -translate-y-1/2 translate-x-4 md:translate-x-12 z-10 bg-white border border-gray-200 p-3 rounded-full shadow-md text-[#5D4037] hover:bg-[#FDFBF7] transition hidden md:block">
+            
+            <button 
+              onClick={() => scroll('right')} 
+              className="absolute right-0 top-1/2 -translate-y-1/2 translate-x-4 md:translate-x-12 z-10 bg-white border border-gray-200 p-3 rounded-full shadow-md text-[#5D4037] hover:bg-[#FDFBF7] transition hidden md:block"
+            >
               <ChevronRight size={24} />
             </button>
           </div>
