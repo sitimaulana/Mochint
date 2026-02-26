@@ -53,7 +53,7 @@ exports.getProductById = async (req, res) => {
 // Create new product
 exports.createProduct = async (req, res) => {
     try {
-        const { name, category, price, weight, description, image, marketplaceLinks } = req.body;
+        const { name, category, price, weight, description, image, marketplaceLinks, discountPercentage, promoStartDate, promoEndDate } = req.body;
 
         // Validasi
         if (!name || !category || !price) {
@@ -69,7 +69,10 @@ exports.createProduct = async (req, res) => {
             weight: parseInt(weight) || 0,
             description: description?.trim() || '',
             image: image || '',
-            marketplaceLinks: marketplaceLinks || {}
+            marketplaceLinks: marketplaceLinks || {},
+            discountPercentage: parseInt(discountPercentage) || 0,
+            promoStartDate: promoStartDate || null,
+            promoEndDate: promoEndDate || null
         };
 
         const newProduct = await Products.create(productData);
@@ -93,7 +96,7 @@ exports.createProduct = async (req, res) => {
 exports.updateProduct = async (req, res) => {
     try {
         const { id } = req.params;
-        const { name, category, price, weight, description, image, marketplaceLinks } = req.body;
+        const { name, category, price, weight, description, image, marketplaceLinks, discountPercentage, promoStartDate, promoEndDate } = req.body;
 
         // Cek apakah produk ada
         const existingProduct = await Products.getById(id);
@@ -117,7 +120,10 @@ exports.updateProduct = async (req, res) => {
             weight: parseInt(weight) || 0,
             description: description?.trim() || '',
             image: image || '',
-            marketplaceLinks: marketplaceLinks || {}
+            marketplaceLinks: marketplaceLinks || {},
+            discountPercentage: parseInt(discountPercentage) || 0,
+            promoStartDate: promoStartDate || null,
+            promoEndDate: promoEndDate || null
         };
 
         const updatedProduct = await Products.update(id, productData);

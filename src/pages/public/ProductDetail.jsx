@@ -11,6 +11,24 @@ const ProductDetail = ({ isOpen, onClose, product }) => {
     }).format(price);
   };
 
+  // Fungsi untuk cek apakah promo aktif
+  const isPromoActive = (product) => {
+    if (!product.discount_percentage || product.discount_percentage <= 0) return false;
+    if (!product.promo_start_date || !product.promo_end_date) return false;
+    
+    const now = new Date();
+    const startDate = new Date(product.promo_start_date);
+    const endDate = new Date(product.promo_end_date);
+    
+    return now >= startDate && now <= endDate;
+  };
+
+  // Fungsi untuk hitung harga setelah diskon
+  const calculateDiscountedPrice = (price, discountPercentage) => {
+    const discount = (price * discountPercentage) / 100;
+    return price - discount;
+  };
+
   // Cek apakah ada setidaknya satu link marketplace
   const hasMarketplace = product.marketplaceLinks && 
     Object.values(product.marketplaceLinks).some(link => link !== '' && link !== null);
@@ -53,6 +71,13 @@ const ProductDetail = ({ isOpen, onClose, product }) => {
               className="max-h-full w-auto object-contain drop-shadow-[0_10px_30px_rgba(0,0,0,0.15)]" 
             />
           </div>
+          {isPromoActive(product) && (
+            <div className="absolute top-4 right-4 z-10 bg-red-500 px-3 py-1.5 rounded-full shadow-lg">
+              <p className="text-[10px] font-black uppercase text-white">
+                PROMO {product.discount_percentage}%
+              </p>
+            </div>
+          )}
         </div>
 
         {/* Kolom Kiri: Detail Informasi */}
@@ -121,11 +146,42 @@ const ProductDetail = ({ isOpen, onClose, product }) => {
                 </div>
                 <div className="space-y-1">
                   <p className="text-[9px] sm:text-[10px] font-black text-[#A1887F] uppercase tracking-widest">Harga</p>
-                  <p className="text-base sm:text-lg lg:text-xl font-display font-bold text-[#8D6E63]">
-                    Rp {formatPrice(product.price)}
-                  </p>
+                  {isPromoActive(product) ? (
+                    <div className="space-y-0.5">
+                      <p className="text-[10px] sm:text-xs font-bold text-gray-400 line-through">
+                        Rp {formatPrice(product.price)}
+                      </p>
+                      <p className="text-base sm:text-lg lg:text-xl font-display font-bold text-red-600">
+                        Rp {formatPrice(calculateDiscountedPrice(product.price, product.discount_percentage))}
+                      </p>
+                    </div>
+                  ) : (
+                    <p className="text-base sm:text-lg lg:text-xl font-display font-bold text-[#8D6E63]">
+                      Rp {formatPrice(product.price)}
+                    </p>
+                  )}
                 </div>
               </div>
+
+              {/* Promo Banner */}
+              {isPromoActive(product) && (
+                <div className="bg-gradient-to-r from-red-50 to-orange-50 border-2 border-red-200 rounded-2xl p-4 sm:p-5">
+                  <div className="flex items-center gap-3 mb-2">
+                    <div className="bg-red-500 p-2 rounded-full">
+                      <Tag size={16} className="text-white" />
+                    </div>
+                    <h4 className="text-sm sm:text-base font-black uppercase tracking-wider text-red-700">
+                      🎉 Promo Spesial Aktif!
+                    </h4>
+                  </div>
+                  <div className="space-y-1 text-xs sm:text-sm font-medium text-red-800">
+                    <p>Dapatkan diskon <span className="font-black text-red-600">{product.discount_percentage}%</span> untuk produk ini</p>
+                    <p className="text-[10px] sm:text-xs text-red-600">
+                      Berlaku: {new Date(product.promo_start_date).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })} - {new Date(product.promo_end_date).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })}
+                    </p>
+                  </div>
+                </div>
+              )}
 
               {/* Marketplace Links */}
               <div className="space-y-4">
@@ -213,6 +269,13 @@ const ProductDetail = ({ isOpen, onClose, product }) => {
               alt={product.name} 
               className="max-h-[300px] lg:max-h-[450px] w-auto object-contain drop-shadow-[0_20px_50px_rgba(0,0,0,0.15)] group-hover:scale-105 transition-transform duration-700 ease-out" 
             />
+            {isPromoActive(product) && (
+              <div className="absolute -top-4 -right-4 bg-red-500 px-4 py-2 rounded-full shadow-2xl animate-pulse">
+                <p className="text-sm font-black uppercase text-white">
+                  PROMO {product.discount_percentage}%
+                </p>
+              </div>
+            )}
           </div>
         </div>
       </div>

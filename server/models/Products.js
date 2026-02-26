@@ -28,13 +28,16 @@ class Products {
             weight, 
             description, 
             image, 
-            marketplaceLinks 
+            marketplaceLinks,
+            discountPercentage,
+            promoStartDate,
+            promoEndDate
         } = productData;
 
         const [result] = await promisePool.query(
             `INSERT INTO products 
-            (name, category, price, weight, description, image, marketplace_links, created_at, updated_at)
-            VALUES (?, ?, ?, ?, ?, ?, ?, NOW(), NOW())`,
+            (name, category, price, weight, description, image, marketplace_links, discount_percentage, promo_start_date, promo_end_date, created_at, updated_at)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())`,
             [
                 name, 
                 category, 
@@ -42,7 +45,10 @@ class Products {
                 weight || 0, 
                 description || '', 
                 image || '', 
-                JSON.stringify(marketplaceLinks || {})
+                JSON.stringify(marketplaceLinks || {}),
+                discountPercentage || 0,
+                promoStartDate || null,
+                promoEndDate || null
             ]
         );
         return this.getById(result.insertId);
@@ -57,13 +63,17 @@ class Products {
             weight, 
             description, 
             image, 
-            marketplaceLinks 
+            marketplaceLinks,
+            discountPercentage,
+            promoStartDate,
+            promoEndDate
         } = productData;
 
         await promisePool.query(
             `UPDATE products 
             SET name = ?, category = ?, price = ?, weight = ?, 
-                description = ?, image = ?, marketplace_links = ?, updated_at = NOW()
+                description = ?, image = ?, marketplace_links = ?, 
+                discount_percentage = ?, promo_start_date = ?, promo_end_date = ?, updated_at = NOW()
             WHERE id = ?`,
             [
                 name, 
@@ -73,6 +83,9 @@ class Products {
                 description || '', 
                 image || '', 
                 JSON.stringify(marketplaceLinks || {}),
+                discountPercentage || 0,
+                promoStartDate || null,
+                promoEndDate || null,
                 id
             ]
         );

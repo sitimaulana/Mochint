@@ -76,6 +76,24 @@ const Product = () => {
     }).format(price);
   };
 
+  // Fungsi untuk cek apakah promo aktif
+  const isPromoActive = (product) => {
+    if (!product.discount_percentage || product.discount_percentage <= 0) return false;
+    if (!product.promo_start_date || !product.promo_end_date) return false;
+    
+    const now = new Date();
+    const startDate = new Date(product.promo_start_date);
+    const endDate = new Date(product.promo_end_date);
+    
+    return now >= startDate && now <= endDate;
+  };
+
+  // Fungsi untuk hitung harga setelah diskon
+  const calculateDiscountedPrice = (price, discountPercentage) => {
+    const discount = (price * discountPercentage) / 100;
+    return price - discount;
+  };
+
   if (loading) return (
     <div className="min-h-screen bg-[#FDFBF7] flex items-center justify-center font-sans">
       <div className="text-center">
@@ -370,6 +388,13 @@ const Product = () => {
                       {product.category}
                     </p>
                   </div>
+                  {isPromoActive(product) && (
+                    <div className="absolute top-3 right-3 sm:top-4 sm:right-4 bg-red-500 px-2 sm:px-3 py-1 rounded-full shadow-lg">
+                      <p className="text-[8px] sm:text-[9px] font-black uppercase tracking-tighter text-white font-sans">
+                        PROMO {product.discount_percentage}%
+                      </p>
+                    </div>
+                  )}
                 </div>
 
                 <div className="p-4 sm:p-6 lg:p-7">
@@ -385,9 +410,20 @@ const Product = () => {
                       <span className="text-[9px] sm:text-[10px] font-black uppercase opacity-60 font-sans tracking-widest leading-none mb-1">
                         Harga
                       </span>
-                      <span className="text-xs sm:text-sm font-display font-bold">
-                        Rp {formatPrice(product.price)}
-                      </span>
+                      {isPromoActive(product) ? (
+                        <div className="flex flex-col items-start gap-0.5">
+                          <span className="text-[9px] sm:text-[10px] font-bold text-gray-400 line-through">
+                            Rp {formatPrice(product.price)}
+                          </span>
+                          <span className="text-xs sm:text-sm font-display font-bold text-red-600 group-hover/btn:text-white">
+                            Rp {formatPrice(calculateDiscountedPrice(product.price, product.discount_percentage))}
+                          </span>
+                        </div>
+                      ) : (
+                        <span className="text-xs sm:text-sm font-display font-bold">
+                          Rp {formatPrice(product.price)}
+                        </span>
+                      )}
                     </div>
                     <div className="bg-[#8D6E63] group-hover/btn:bg-white p-1.5 sm:p-2 rounded-lg sm:rounded-xl transition-colors">
                       <ArrowRight size={14} className="sm:w-[18px] sm:h-[18px] text-white group-hover/btn:text-[#8D6E63] transition-transform group-hover/btn:translate-x-1" />

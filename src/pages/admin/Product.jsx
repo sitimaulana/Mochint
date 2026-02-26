@@ -16,7 +16,10 @@ const Product = () => {
       tokopedia: '',
       lazada: '',
       other: ''
-    }
+    },
+    discountPercentage: 0,
+    promoStartDate: '',
+    promoEndDate: ''
   });
   const [isAdding, setIsAdding] = useState(false);
   const [previewImage, setPreviewImage] = useState(null);
@@ -73,6 +76,24 @@ const Product = () => {
     }).format(number);
   };
 
+  // Fungsi untuk cek apakah promo aktif
+  const isPromoActive = (product) => {
+    if (!product.discount_percentage || product.discount_percentage <= 0) return false;
+    if (!product.promo_start_date || !product.promo_end_date) return false;
+    
+    const now = new Date();
+    const startDate = new Date(product.promo_start_date);
+    const endDate = new Date(product.promo_end_date);
+    
+    return now >= startDate && now <= endDate;
+  };
+
+  // Fungsi untuk hitung harga setelah diskon
+  const calculateDiscountedPrice = (price, discountPercentage) => {
+    const discount = (price * discountPercentage) / 100;
+    return price - discount;
+  };
+
   const handleAdd = () => {
     setIsAdding(true);
     setEditingProduct(null);
@@ -88,7 +109,10 @@ const Product = () => {
         tokopedia: '',
         lazada: '',
         other: ''
-      }
+      },
+      discountPercentage: 0,
+      promoStartDate: '',
+      promoEndDate: ''
     });
     setPreviewImage(null);
   };
@@ -112,7 +136,10 @@ const Product = () => {
         tokopedia: '',
         lazada: '',
         other: ''
-      }
+      },
+      discountPercentage: product.discount_percentage || 0,
+      promoStartDate: product.promo_start_date || '',
+      promoEndDate: product.promo_end_date || ''
     });
     setPreviewImage(product.image);
   };
@@ -147,7 +174,10 @@ const Product = () => {
           tokopedia: '',
           lazada: '',
           other: ''
-        }
+        },
+        discountPercentage: parseInt(formData.discountPercentage) || 0,
+        promoStartDate: formData.promoStartDate || null,
+        promoEndDate: formData.promoEndDate || null
       };
 
       const token = localStorage.getItem('token');
@@ -208,7 +238,10 @@ const Product = () => {
         tokopedia: '',
         lazada: '',
         other: ''
-      }
+      },
+      discountPercentage: 0,
+      promoStartDate: '',
+      promoEndDate: ''
     });
     setPreviewImage(null);
   };
@@ -397,12 +430,17 @@ const Product = () => {
               )
               .map((product) => (
               <div key={product._id || product.id} className="bg-white rounded-lg border border-gray-200 overflow-hidden hover:shadow-md transition-all duration-200">
-                <div className="h-40 sm:h-48 overflow-hidden bg-gray-100">
+                <div className="h-40 sm:h-48 overflow-hidden bg-gray-100 relative">
                   <img 
                     src={product.image || 'https://via.placeholder.com/400x300?text=Tidak+Ada+Gambar'} 
                     alt={product.name} 
                     className="w-full h-full object-cover hover:scale-105 transition-transform duration-200" 
                   />
+                  {isPromoActive(product) && (
+                    <div className="absolute top-2 right-2 bg-red-500 text-white px-2 py-1 rounded-lg text-xs font-bold shadow-lg">
+                      PROMO {product.discount_percentage}%
+                    </div>
+                  )}
                 </div>
                 <div className="p-3 sm:p-4">
                   <div className="mb-2">
@@ -418,7 +456,16 @@ const Product = () => {
                           </span>
                         )}
                       </div>
-                      <div className="text-sm sm:text-lg font-bold text-brown-600">{formatRupiah(product.price)}</div>
+                      <div className="text-right">
+                        {isPromoActive(product) ? (
+                          <>
+                            <div className="text-[10px] sm:text-xs text-gray-400 line-through">{formatRupiah(product.price)}</div>
+                            <div className="text-sm sm:text-lg font-bold text-red-600">{formatRupiah(calculateDiscountedPrice(product.price, product.discount_percentage))}</div>
+                          </>
+                        ) : (
+                          <div className="text-sm sm:text-lg font-bold text-brown-600">{formatRupiah(product.price)}</div>
+                        )}
+                      </div>
                     </div>
                   </div>
                   <p className="text-xs sm:text-sm text-gray-600 mb-3 line-clamp-2 min-h-[32px] sm:min-h-[40px]">
@@ -617,6 +664,73 @@ const Product = () => {
                   /> 
                 </div>
               </div>
+
+              {/* Promo Section */}
+              <div className="border-t pt-3 sm:pt-4">
+                <h4 className="text-sm sm:text-base font-semibold text-gray-800 mb-2 sm:mb-3">Pengaturan Promo</h4>
+                <div className="space-y-3 sm:space-y-4">
+                  <div>
+                    <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1">
+                      Diskon (%)
+                    </label>
+                    <input 
+                      type="number" 
+                      name="discountPercentage"
+                      min="0"
+                      max="100"
+                      value={formData.discountPercentage || 0} 
+                      onChange={handleChange} 
+                      placeholder="0" 
+                      className="w-full border border-gray-300 rounded-md px-2 sm:px-3 py-1.5 sm:py-2 text-sm sm:text-base" 
+                    />
+                    <p className="text-[10px] sm:text-xs text-gray-500 mt-1">
+                      Masukkan persentase diskon (0-100). Contoh: 20 untuk diskon 20%
+                    </p>
+                  </div>
+                  
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4">
+                    <div>
+                      <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1">
+                        Tanggal Mulai Promo
+                      </label>
+                      <input 
+                        type="date" 
+                        name="promoStartDate"
+                        value={formData.promoStartDate || ''} 
+                        onChange={handleChange} 
+                        className="w-full border border-gray-300 rounded-md px-2 sm:px-3 py-1.5 sm:py-2 text-sm sm:text-base" 
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1">
+                        Tanggal Berakhir Promo
+                      </label>
+                      <input 
+                        type="date" 
+                        name="promoEndDate"
+                        value={formData.promoEndDate || ''} 
+                        onChange={handleChange} 
+                        className="w-full border border-gray-300 rounded-md px-2 sm:px-3 py-1.5 sm:py-2 text-sm sm:text-base" 
+                      />
+                    </div>
+                  </div>
+
+                  {formData.discountPercentage > 0 && formData.price && (
+                    <div className="bg-green-50 border border-green-200 rounded-lg p-3">
+                      <p className="text-xs sm:text-sm font-medium text-green-800 mb-1">Preview Harga Promo:</p>
+                      <div className="flex items-center gap-2">
+                        <span className="text-xs sm:text-sm text-gray-500 line-through">{formatRupiah(formData.price)}</span>
+                        <span className="text-base sm:text-lg font-bold text-green-600">
+                          {formatRupiah(calculateDiscountedPrice(parseInt(formData.price), formData.discountPercentage))}
+                        </span>
+                        <span className="text-xs bg-green-600 text-white px-2 py-0.5 rounded-full font-bold">
+                          Hemat {formData.discountPercentage}%
+                        </span>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
             </div>
 
             <div className="flex flex-col sm:flex-row justify-end gap-2 mt-4 sm:mt-6">
@@ -711,8 +825,34 @@ const Product = () => {
               <div className="space-y-3 sm:space-y-4">
                 <div>
                   <label className="text-xs sm:text-sm font-medium text-gray-700">Harga</label>
-                  <div className="text-xl sm:text-2xl font-bold text-brown-600 mt-1">{formatRupiah(viewingProduct.price)}</div>
+                  {isPromoActive(viewingProduct) ? (
+                    <div className="mt-1">
+                      <div className="flex items-center gap-2">
+                        <span className="text-sm sm:text-base text-gray-400 line-through">{formatRupiah(viewingProduct.price)}</span>
+                        <span className="inline-block px-2 py-0.5 bg-red-500 text-white text-xs rounded-full font-bold">
+                          -{viewingProduct.discount_percentage}%
+                        </span>
+                      </div>
+                      <div className="text-xl sm:text-2xl font-bold text-red-600">
+                        {formatRupiah(calculateDiscountedPrice(viewingProduct.price, viewingProduct.discount_percentage))}
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="text-xl sm:text-2xl font-bold text-brown-600 mt-1">{formatRupiah(viewingProduct.price)}</div>
+                  )}
                 </div>
+
+                {/* Info Promo */}
+                {isPromoActive(viewingProduct) && (
+                  <div className="bg-red-50 border border-red-200 rounded-lg p-3">
+                    <p className="text-xs sm:text-sm font-bold text-red-800 mb-2">🎉 Promo Aktif!</p>
+                    <div className="text-xs sm:text-sm text-red-700">
+                      <p>Diskon: <span className="font-bold">{viewingProduct.discount_percentage}%</span></p>
+                      <p>Periode: {new Date(viewingProduct.promo_start_date).toLocaleDateString('id-ID')} - {new Date(viewingProduct.promo_end_date).toLocaleDateString('id-ID')}</p>
+                    </div>
+                  </div>
+                )}
+
                 <div>
                   <label className="text-xs sm:text-sm font-medium text-gray-700">Deskripsi</label>
                   <p className="text-sm sm:text-base text-gray-600 mt-1">{viewingProduct.description || 'Tidak ada deskripsi'}</p>
