@@ -74,7 +74,7 @@ const SetPassword = () => {
 
     setLoading(true);
     try {
-      const response = await axios.post('http://localhost:3000/api/auth/set-password', {
+      const response = await axios.post('http://localhost:5000/api/auth/set-password', {
         email: userData.email,
         password: password,
         userId: userData.id

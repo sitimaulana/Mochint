@@ -19,12 +19,15 @@ const EmailVerification = () => {
   useEffect(() => {
     // If no user data, redirect back to login
     if (!userData || !userData.email) {
+      console.log('⚠️ No user data, redirecting to login');
       navigate('/auth/login', { replace: true });
       return;
     }
 
+    console.log('✅ User data received:', userData);
     // Auto-send OTP on mount
     handleSendOtp();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   useEffect(() => {
@@ -36,14 +39,20 @@ const EmailVerification = () => {
   }, [countdown]);
 
   const handleSendOtp = async () => {
-    if (!userData?.email) return;
+    if (!userData?.email) {
+      console.log('⚠️ No email found in userData');
+      return;
+    }
     
+    console.log('📤 Sending OTP to:', userData.email);
     setSendingOtp(true);
     try {
-      const response = await axios.post('http://localhost:3000/api/auth/send-otp', {
+      const response = await axios.post('http://localhost:5000/api/auth/send-otp', {
         email: userData.email,
         name: userData.name
       });
+
+      console.log('✅ OTP Response:', response.data);
 
       if (response.data.success) {
         setNotification({
@@ -52,9 +61,15 @@ const EmailVerification = () => {
           message: `Kode OTP telah dikirim ke ${userData.email}`
         });
         setCountdown(60); // 60 seconds countdown
+        
+        // Show OTP in console for development
+        if (response.data.devOTP) {
+          console.log('🔑 OTP Code (DEV):', response.data.devOTP);
+        }
       }
     } catch (error) {
-      console.error('Error sending OTP:', error);
+      console.error('❌ Error sending OTP:', error);
+      console.error('Error details:', error.response?.data);
       setNotification({
         show: true,
         type: 'error',
@@ -118,7 +133,7 @@ const EmailVerification = () => {
 
     setLoading(true);
     try {
-      const response = await axios.post('http://localhost:3000/api/auth/verify-otp', {
+      const response = await axios.post('http://localhost:5000/api/auth/verify-otp', {
         email: userData.email,
         otp: otpCode
       });
