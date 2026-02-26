@@ -133,4 +133,36 @@ const register = async (req, res) => {
   }
 };
 
-module.exports = { login, register };
+// Google OAuth callback handler
+const googleCallback = async (req, res) => {
+  try {
+    const user = req.user;
+    
+    if (!user) {
+      return res.redirect('http://localhost:5173/login?error=google_auth_failed');
+    }
+
+    const token = jwt.sign(
+      { id: user.id, email: user.email, user_type: 'member' },
+      process.env.JWT_SECRET || 'mochint_secret_key',
+      { expiresIn: '24h' }
+    );
+
+    const userData = {
+      id: user.id,
+      name: user.name || user.email,
+      email: user.email,
+      user_type: 'member',
+      google_id: user.google_id || null,
+      profile_picture: user.profile_picture || null
+    };
+
+    // Redirect ke frontend dengan token di URL
+    res.redirect(`http://localhost:5173/auth/google/callback?token=${token}&user=${encodeURIComponent(JSON.stringify(userData))}`);
+  } catch (error) {
+    console.error('Google callback error:', error);
+    res.redirect('http://localhost:5173/auth/login?error=server_error');
+  }
+};
+
+module.exports = { login, register, googleCallback };

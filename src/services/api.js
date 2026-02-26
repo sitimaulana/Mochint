@@ -27,12 +27,22 @@ api.interceptors.request.use(
 api.interceptors.response.use(
   (response) => response,
   (error) => {
-    if (error.response?.status === 401) {
-      console.error('Unauthorized access - token might be invalid or expired');
-      // Optional: redirect to login if token is invalid
-      // localStorage.removeItem('token');
-      // window.location.href = '/login';
+    // Only redirect to login if:
+    // 1. User has a token (meaning they are logged in)
+    // 2. Token is invalid (403/401 error)
+    // 3. NOT from public pages
+    const token = localStorage.getItem('token');
+    const isAuthError = error.response?.status === 401 || error.response?.status === 403;
+    const isProtectedEndpoint = error.config?.url?.includes('/members') || 
+                                  error.config?.url?.includes('/appointments');
+    
+    if (token && isAuthError && isProtectedEndpoint) {
+      console.error('Unauthorized access - token invalid or expired');
+      // Clear invalid token and redirect to login
+      localStorage.clear();
+      window.location.href = '/login';
     }
+    
     return Promise.reject(error);
   }
 );

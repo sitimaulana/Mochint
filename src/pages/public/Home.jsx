@@ -133,10 +133,10 @@ const Home = () => {
   return (
     <div className="min-h-screen font-sans text-gray-700 bg-white">
       
-      {/* Hero Section */}
+      {/* Hero Section - ✨ MARGIN ADDED */}
       <section className="relative py-24 md:py-32 bg-[#FDFBF7]">
         <div className="absolute inset-0 opacity-10 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')]"></div>
-        <div className="container mx-auto px-4 relative z-10 text-center">
+        <div className="container mx-auto px-6 sm:px-8 lg:px-12 xl:px-16 relative z-10 text-center max-w-[1400px]">
           <h1 className="text-5xl md:text-7xl font-display font-bold text-[#5D4037] mb-6 tracking-tight">
             Mochint Beauty Care
           </h1>
@@ -149,9 +149,9 @@ const Home = () => {
         </div>
       </section>
 
-      {/* About Section */}
+      {/* About Section - ✨ MARGIN ADDED */}
       <section className="py-24 bg-white text-left">
-        <div className="container mx-auto px-6 flex flex-col lg:flex-row items-center gap-16">
+        <div className="container mx-auto px-6 sm:px-8 lg:px-12 xl:px-16 max-w-[1400px] flex flex-col lg:flex-row items-center gap-16">
           <div className="w-full lg:w-1/2 relative">
             <div className="absolute top-4 left-4 w-full h-full border-2 border-[#8D6E63] rounded-[30px] -z-10"></div>
             <div className="bg-gray-100 rounded-[30px] h-96 flex items-center justify-center border border-gray-200 overflow-hidden">
@@ -167,9 +167,9 @@ const Home = () => {
         </div>
       </section>
 
-      {/* ✨ Rekomendasi Produk - FIXED PRICE FORMAT */}
+      {/* ✨ Rekomendasi Produk - MARGIN ADDED */}
       <section className="py-24 bg-[#FAFAFA]">
-        <div className="container mx-auto px-6 text-center">
+        <div className="container mx-auto px-6 sm:px-8 lg:px-12 xl:px-16 max-w-[1400px] text-center">
           <div className="mb-16">
             <h2 className="text-4xl font-display font-bold text-[#5D4037] tracking-tight text-center">Rekomendasi Produk</h2>
             <p className="font-sans text-[#8D6E63] text-sm mt-3 tracking-widest uppercase font-bold text-center">Terbaik Untuk Anda</p>
@@ -180,7 +180,6 @@ const Home = () => {
                 <div className="w-full aspect-[4/5] bg-white mb-6 overflow-hidden rounded-2xl shadow-sm relative" onClick={() => navigate(`/product`)}>
                   <img src={product.image} alt={product.name} className="w-full h-full object-cover group-hover:scale-105 transition duration-700 ease-in-out" />
                   <div className="absolute bottom-4 left-0 right-0 text-center opacity-0 group-hover:opacity-100 transition duration-300">
-                    {/* ✨ FIXED: Gunakan formatPrice yang konsisten */}
                     <span className="bg-white/90 text-[#5D4037] px-4 py-2 rounded-full text-xs font-bold font-sans">
                       Rp {formatPrice(product.price)}
                     </span>
@@ -199,9 +198,9 @@ const Home = () => {
         </div>
       </section>
 
-      {/* Promo Banner */}
+      {/* Promo Banner - ✨ MARGIN ADDED */}
       <section className="py-20">
-        <div className="container mx-auto px-6 text-left">
+        <div className="container mx-auto px-6 sm:px-8 lg:px-12 xl:px-16 max-w-[1400px] text-left">
           <div className="relative rounded-[30px] overflow-hidden bg-[#5D4037] text-white py-16 px-10 md:px-20 flex flex-col md:flex-row items-center justify-between shadow-2xl">
             <div className="absolute top-0 right-0 w-64 h-64 bg-[#8D6E63] rounded-full blur-3xl opacity-20 transform translate-x-1/2 -translate-y-1/2"></div>
             <div className="relative z-10 max-w-xl">
@@ -213,9 +212,9 @@ const Home = () => {
         </div>
       </section>
 
-      {/* Testimonials Section */}
+      {/* Testimonials Section - ✨ MARGIN ADDED */}
       <section className="py-20 bg-white overflow-hidden relative text-center">
-        <div className="container mx-auto px-6">
+        <div className="container mx-auto px-6 sm:px-8 lg:px-12 xl:px-16 max-w-[1400px]">
           <div className="text-center mb-10">
             <h2 className="text-3xl md:text-5xl font-display font-bold text-[#3E2723] tracking-tighter">Apa Kata Mereka?</h2>
             <p className="font-sans text-[#8D6E63] mt-2 font-bold uppercase tracking-[0.2em] text-xs">
@@ -311,9 +310,9 @@ const Home = () => {
         </div>
       </section>
 
-      {/* Footer Section dengan Real-Time Interactive Map */}
+      {/* Footer Section - ✨ MARGIN ADDED */}
       <footer className="py-20 bg-[#3E2723] text-white rounded-t-[50px] mt-10 text-left">
-        <div className="container mx-auto px-6">
+        <div className="container mx-auto px-6 sm:px-8 lg:px-12 xl:px-16 max-w-[1400px]">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-12 items-center">
             
             <div className="bg-white/5 p-4 rounded-3xl">

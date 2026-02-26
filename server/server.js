@@ -1,5 +1,6 @@
 const express = require('express');
 const cors = require('cors');
+const session = require('express-session');
 require('dotenv').config();
 
 const swaggerUi = require('swagger-ui-express');
@@ -29,6 +30,27 @@ app.use(cors({
 }));
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ extended: true, limit: '50mb' }));
+
+// Session configuration for passport
+app.use(session({
+  secret: process.env.SESSION_SECRET || 'mochint_session_secret',
+  resave: false,
+  saveUninitialized: false,
+  cookie: { 
+    secure: process.env.NODE_ENV === 'production',
+    maxAge: 24 * 60 * 60 * 1000 // 24 hours
+  }
+}));
+
+// Initialize passport (lazy loaded when needed for Google OAuth)
+try {
+  const passport = require('./config/passport');
+  app.use(passport.initialize());
+  app.use(passport.session());
+  console.log('✅ Passport initialized for Google OAuth');
+} catch (error) {
+  console.log('⚠️  Passport not initialized (Google OAuth will not work):', error.message);
+}
 
 app.use((req, res, next) => {
   console.log(`${new Date().toISOString()} - ${req.method} ${req.originalUrl}`);

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { User, Calendar, MessageCircle, Clock, ChevronRight, LogOut, Award, X, Save, Settings, Star, Send, Loader2 } from 'lucide-react';
+import { User, Calendar, MessageCircle, Clock, ChevronRight, Award, X, Save, Settings, Star, Send, Loader2 } from 'lucide-react';
 import { reviewsAPI } from '../../api/client';
 import { memberAPI, appointmentAPI } from '../../services/api';
 
@@ -22,6 +22,14 @@ const Dashboard = () => {
   
   // Loading state
   const [loading, setLoading] = useState(true);
+
+  // State untuk Notification
+  const [notification, setNotification] = useState({ 
+    show: false, 
+    type: '', 
+    title: '', 
+    message: '' 
+  });
 
   useEffect(() => {
     const loadUserData = async () => {
@@ -72,23 +80,77 @@ const Dashboard = () => {
               
               setUser(mergedUser);
               setFormData(mergedUser);
+              
+              // Check if profile is incomplete (phone or address missing)
+              if (!mergedUser.phone || !mergedUser.address || mergedUser.phone.trim() === '' || mergedUser.address.trim() === '') {
+                console.log('⚠️ Profile incomplete, opening edit modal');
+                // Open modal after a short delay
+                setTimeout(() => {
+                  setIsEditModalOpen(true);
+                  setNotification({
+                    show: true,
+                    type: 'error',
+                    title: 'Profil Belum Lengkap',
+                    message: 'Silakan lengkapi nomor telepon dan alamat Anda'
+                  });
+                }, 500);
+              }
             } else {
               // Backend data not found, use localStorage
               console.warn('⚠️ User not found in backend, using localStorage');
               setUser(userData);
               setFormData(userData);
+              
+              // Check if profile is incomplete
+              if (!userData.phone || !userData.address || userData.phone.trim() === '' || userData.address.trim() === '') {
+                setTimeout(() => {
+                  setIsEditModalOpen(true);
+                  setNotification({
+                    show: true,
+                    type: 'error',
+                    title: 'Profil Belum Lengkap',
+                    message: 'Silakan lengkapi nomor telepon dan alamat Anda'
+                  });
+                }, 500);
+              }
             }
           } else {
             // Backend error, use localStorage
             console.warn('⚠️ Backend error, using localStorage');
             setUser(userData);
             setFormData(userData);
+            
+            // Check if profile is incomplete
+            if (!userData.phone || !userData.address || userData.phone.trim() === '' || userData.address.trim() === '') {
+              setTimeout(() => {
+                setIsEditModalOpen(true);
+                setNotification({
+                  show: true,
+                  type: 'error',
+                  title: 'Profil Belum Lengkap',
+                  message: 'Silakan lengkapi nomor telepon dan alamat Anda'
+                });
+              }, 500);
+            }
           }
         } catch (backendError) {
           // Backend unreachable, use localStorage
           console.warn('⚠️ Cannot connect to backend, using localStorage:', backendError.message);
           setUser(userData);
           setFormData(userData);
+          
+          // Check if profile is incomplete
+          if (!userData.phone || !userData.address || userData.phone.trim() === '' || userData.address.trim() === '') {
+            setTimeout(() => {
+              setIsEditModalOpen(true);
+              setNotification({
+                show: true,
+                type: 'error',
+                title: 'Profil Belum Lengkap',
+                message: 'Silakan lengkapi nomor telepon dan alamat Anda'
+              });
+            }, 500);
+          }
         }
         
       } catch (error) {
@@ -147,27 +209,45 @@ const Dashboard = () => {
     loadAppointments();
   }, [user]);
 
-  const handleLogout = () => {
-    console.log('Logging out user:', user?.email);
-    
-    // Clear semua auth data
-    localStorage.removeItem('token');
-    localStorage.removeItem('user');
-    localStorage.removeItem('active_user');
-    localStorage.removeItem('isAdmin');
-    
-    // Navigate ke home
-    navigate('/');
-    
-    // Optional: reload untuk reset state aplikasi
-    setTimeout(() => {
-      window.location.reload();
-    }, 100);
-  };
+  // Auto-hide notification after 3 seconds
+  useEffect(() => {
+    if (notification.show) {
+      const timer = setTimeout(() => {
+        setNotification({ ...notification, show: false });
+      }, 3000);
+      return () => clearTimeout(timer);
+    }
+  }, [notification.show]);
 
   const handleSave = async () => {
+    // Validation
     if (!formData.name?.trim()) {
-      alert('Nama wajib diisi');
+      setNotification({
+        show: true,
+        type: 'error',
+        title: 'Validasi Gagal',
+        message: 'Nama wajib diisi'
+      });
+      return;
+    }
+    
+    if (!formData.phone?.trim()) {
+      setNotification({
+        show: true,
+        type: 'error',
+        title: 'Validasi Gagal',
+        message: 'Nomor telepon wajib diisi'
+      });
+      return;
+    }
+    
+    if (!formData.address?.trim()) {
+      setNotification({
+        show: true,
+        type: 'error',
+        title: 'Validasi Gagal',
+        message: 'Alamat wajib diisi'
+      });
       return;
     }
     
@@ -175,45 +255,80 @@ const Dashboard = () => {
     
     try {
       // 1. Update to backend database
+      let backendSuccess = false;
       try {
+        console.log('📤 Sending update to backend for member ID:', formData.id);
         const response = await memberAPI.update(formData.id, {
-          name: formData.name,
-          email: formData.email,
-          phone: formData.phone,
-          address: formData.address
+          name: formData.name.trim(),
+          email: formData.email.trim(),
+          phone: formData.phone.trim(),
+          address: formData.address.trim()
         });
         
+        console.log('📥 Backend response:', response.data);
+        
         if (response.data && response.data.success) {
-          console.log('✅ Profile updated in backend');
+          console.log('✅ Profile updated in backend database');
+          backendSuccess = true;
+        } else {
+          console.warn('⚠️ Backend returned non-success:', response.data);
         }
       } catch (backendError) {
-        console.warn('⚠️ Backend update failed, continuing with localStorage:', backendError.message);
+        console.error('❌ Backend update failed:', backendError);
+        console.error('Error details:', backendError.response?.data || backendError.message);
       }
       
-      // 2. Update active_user di localStorage
-      localStorage.setItem('active_user', JSON.stringify(formData));
+      // 2. Update localStorage (always update, even if backend fails)
+      const updatedUser = {
+        ...formData,
+        name: formData.name.trim(),
+        email: formData.email.trim(),
+        phone: formData.phone.trim(),
+        address: formData.address.trim()
+      };
       
-      // 3. Update user data juga (untuk konsistensi)
-      localStorage.setItem('user', JSON.stringify(formData));
+      localStorage.setItem('active_user', JSON.stringify(updatedUser));
+      localStorage.setItem('user', JSON.stringify(updatedUser));
       
-      // 4. Update database lokal (mochint_users) jika ada
+      // 3. Update database lokal (mochint_users) jika ada
       const allUsers = JSON.parse(localStorage.getItem('mochint_users')) || [];
       if (allUsers.length > 0) {
         const updatedUsers = allUsers.map(u => 
-          u.id === formData.id ? formData : u
+          u.id === updatedUser.id ? updatedUser : u
         );
         localStorage.setItem('mochint_users', JSON.stringify(updatedUsers));
       }
       
-      // 5. Update state
-      setUser(formData);
+      // 4. Update state
+      setUser(updatedUser);
+      setFormData(updatedUser);
       setIsEditModalOpen(false);
       
-      alert('✅ Profil berhasil diperbarui!');
+      // Show appropriate notification
+      if (backendSuccess) {
+        setNotification({
+          show: true,
+          type: 'success',
+          title: 'Berhasil!',
+          message: 'Profil berhasil diperbarui dan tersinkronisasi dengan database'
+        });
+      } else {
+        setNotification({
+          show: true,
+          type: 'success',
+          title: 'Tersimpan Lokal',
+          message: 'Profil tersimpan. Koneksi database mungkin terputus.'
+        });
+      }
       
     } catch (error) {
       console.error('❌ Error saving profile:', error);
-      alert('❌ Gagal menyimpan profil. Silakan coba lagi.');
+      setNotification({
+        show: true,
+        type: 'error',
+        title: 'Gagal Menyimpan',
+        message: 'Gagal menyimpan profil. Silakan coba lagi.'
+      });
     }
   };
 
@@ -221,7 +336,12 @@ const Dashboard = () => {
     e.preventDefault();
     
     if (!reviewData.comment.trim()) {
-      alert("Silakan tulis pesan Anda terlebih dahulu");
+      setNotification({
+        show: true,
+        type: 'error',
+        title: 'Validasi Gagal',
+        message: 'Silakan tulis pesan Anda terlebih dahulu'
+      });
       return;
     }
     
@@ -245,35 +365,45 @@ const Dashboard = () => {
       
       console.log('Review payload:', reviewPayload);
       
-      // Gunakan reviewsAPI.create() - INI PERBAIKAN UTAMA
+      // Gunakan reviewsAPI.create()
       const response = await reviewsAPI.create(reviewPayload);
       
       console.log('Review submitted successfully:', response.data);
       
-      alert("✅ Terima kasih atas ulasan Anda! Review Anda akan segera muncul di halaman utama.");
+      setNotification({
+        show: true,
+        type: 'success',
+        title: 'Terima Kasih!',
+        message: 'Ulasan Anda berhasil dikirim dan akan segera muncul di halaman utama'
+      });
       
       // Reset form
       setReviewData({ rating: 5, comment: '' });
       
-      // Optional: Refresh page setelah 1 detik untuk melihat review baru
+      // Optional: Refresh page setelah 2 detik
       setTimeout(() => {
         window.location.reload();
-      }, 1500);
+      }, 2000);
       
     } catch (error) {
       console.error('Error submitting review:', error);
       
-      // Tampilkan error yang lebih detail
+      let errorMessage = 'Gagal mengirim ulasan. Silakan coba lagi.';
+      
       if (error.response) {
         console.error('Response error:', error.response.data);
-        alert(`❌ Gagal mengirim ulasan: ${error.response.data.message || 'Server error'}`);
+        errorMessage = error.response.data.message || 'Server error';
       } else if (error.request) {
         console.error('Request error:', error.request);
-        alert("❌ Tidak dapat terhubung ke server. Periksa koneksi internet Anda.");
-      } else {
-        console.error('Error:', error.message);
-        alert("❌ Gagal mengirim ulasan. Silakan coba lagi.");
+        errorMessage = 'Tidak dapat terhubung ke server. Periksa koneksi internet Anda.';
       }
+      
+      setNotification({
+        show: true,
+        type: 'error',
+        title: 'Gagal Mengirim',
+        message: errorMessage
+      });
     } finally {
       setIsSubmittingReview(false);
     }
@@ -437,13 +567,6 @@ const Dashboard = () => {
                 </div>
               )}
             </div>
-
-            <button 
-              onClick={handleLogout}
-              className="w-full flex items-center justify-center gap-2 py-4 text-red-400 font-display font-bold text-[11px] uppercase tracking-widest hover:bg-red-50 rounded-2xl transition-all border border-dashed border-red-100"
-            >
-              <LogOut size={18} /> Keluar Akun
-            </button>
           </div>
 
           {/* KOLOM KANAN */}
@@ -562,17 +685,87 @@ const Dashboard = () => {
         </div>
       </div>
 
+      {/* NOTIFICATION POPUP */}
+      {notification.show && (
+        <div className="fixed top-4 right-4 left-4 sm:left-auto z-50 animate-slide-in-right">
+          <div className={`rounded-lg shadow-lg p-3 sm:p-4 w-full sm:min-w-[320px] sm:max-w-md ${
+            notification.type === 'success' ? 'bg-green-50 border border-green-200' : 'bg-red-50 border border-red-200'
+          }`}>
+            <div className="flex items-start">
+              <div className="flex-shrink-0">
+                {notification.type === 'success' ? (
+                  <svg className="h-5 w-5 sm:h-6 sm:w-6 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                ) : (
+                  <svg className="h-5 w-5 sm:h-6 sm:w-6 text-red-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                )}
+              </div>
+              <div className="ml-2 sm:ml-3 flex-1 min-w-0">
+                <h3 className={`text-xs sm:text-sm font-medium ${
+                  notification.type === 'success' ? 'text-green-800' : 'text-red-800'
+                }`}>
+                  {notification.title}
+                </h3>
+                <p className={`mt-0.5 sm:mt-1 text-xs sm:text-sm ${
+                  notification.type === 'success' ? 'text-green-700' : 'text-red-700'
+                }`}>
+                  {notification.message}
+                </p>
+              </div>
+              <button
+                onClick={() => setNotification({ ...notification, show: false })}
+                className={`ml-2 sm:ml-4 flex-shrink-0 rounded-md inline-flex ${
+                  notification.type === 'success' ? 'text-green-500 hover:text-green-700' : 'text-red-500 hover:text-red-700'
+                }`}>
+                <svg className="h-4 w-4 sm:h-5 sm:w-5" viewBox="0 0 20 20" fill="currentColor">
+                  <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
+                </svg>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* POPUP: PERBARUI INFORMASI SAYA */}
       {isEditModalOpen && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
           <div 
             className="fixed inset-0 bg-black/40 backdrop-blur-md animate-in fade-in" 
-            onClick={() => setIsEditModalOpen(false)}
+            onClick={() => {
+              // Prevent close if profile is incomplete
+              const isIncomplete = !formData.phone?.trim() || !formData.address?.trim();
+              if (isIncomplete) {
+                setNotification({
+                  show: true,
+                  type: 'error',
+                  title: 'Profil Belum Lengkap',
+                  message: 'Silakan lengkapi nomor telepon dan alamat terlebih dahulu'
+                });
+              } else {
+                setIsEditModalOpen(false);
+              }
+            }}
           ></div>
           <div className="relative w-full max-w-lg bg-white rounded-3xl md:rounded-[40px] shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200">
             <div className="bg-[#8D6E63] p-8 md:p-10 text-white text-center relative">
               <button 
-                onClick={() => setIsEditModalOpen(false)} 
+                onClick={() => {
+                  // Prevent close if profile is incomplete
+                  const isIncomplete = !formData.phone?.trim() || !formData.address?.trim();
+                  if (isIncomplete) {
+                    setNotification({
+                      show: true,
+                      type: 'error',
+                      title: 'Profil Belum Lengkap',
+                      message: 'Silakan lengkapi nomor telepon dan alamat terlebih dahulu'
+                    });
+                  } else {
+                    setIsEditModalOpen(false);
+                  }
+                }} 
                 className="absolute right-6 top-6 md:right-8 md:top-8 opacity-50 hover:opacity-100 transition-opacity"
               >
                 <X size={20}/>
@@ -581,66 +774,112 @@ const Dashboard = () => {
                 <Settings size={24} />
               </div>
               <h3 className="text-xl md:text-2xl font-display font-bold italic tracking-tight">
-                Perbarui Profil
+                Lengkapi Profil Anda
               </h3>
+              <p className="text-xs text-white/70 mt-2 font-sans">
+                Informasi ini diperlukan untuk layanan kami
+              </p>
             </div>
             <div className="p-6 md:p-10 space-y-5 text-left font-sans text-[#3E2723]">
               <div>
                 <label className="text-[10px] font-black text-[#A1887F] uppercase tracking-widest block mb-1">
-                  Nama Lengkap
+                  Nama Lengkap <span className="text-red-500">*</span>
                 </label>
                 <input 
                   type="text" 
                   value={formData.name || ''} 
                   onChange={(e) => setFormData({...formData, name: e.target.value})} 
-                  className="w-full bg-[#FDFBF7] px-6 py-3 rounded-2xl outline-none border border-transparent focus:border-[#8D6E63] text-sm font-bold" 
+                  placeholder="Masukkan nama lengkap Anda"
+                  className="w-full bg-[#FDFBF7] px-6 py-3 rounded-2xl outline-none border-2 border-transparent focus:border-[#8D6E63] text-sm font-bold placeholder:text-gray-400 placeholder:font-normal" 
                   required
                 />
               </div>
               <div>
                 <label className="text-[10px] font-black text-[#A1887F] uppercase tracking-widest block mb-1">
-                  Nomor Telepon
+                  Nomor Telepon <span className="text-red-500">*</span>
                 </label>
                 <input 
                   type="tel" 
                   value={formData.phone || ''} 
                   onChange={(e) => setFormData({...formData, phone: e.target.value})} 
-                  className="w-full bg-[#FDFBF7] px-6 py-3 rounded-2xl outline-none border border-transparent focus:border-[#8D6E63] text-sm font-bold" 
+                  placeholder="Contoh: 08123456789"
+                  className="w-full bg-[#FDFBF7] px-6 py-3 rounded-2xl outline-none border-2 border-transparent focus:border-[#8D6E63] text-sm font-bold placeholder:text-gray-400 placeholder:font-normal" 
+                  required
                 />
+                {!formData.phone?.trim() && (
+                  <p className="text-xs text-red-500 mt-1 ml-1">
+                    ⚠️ Nomor telepon wajib diisi untuk konfirmasi appointment
+                  </p>
+                )}
               </div>
               <div>
                 <label className="text-[10px] font-black text-[#A1887F] uppercase tracking-widest block mb-1">
-                  Alamat Email
+                  Alamat Email <span className="text-red-500">*</span>
                 </label>
                 <input 
                   type="email" 
                   value={formData.email || ''} 
                   onChange={(e) => setFormData({...formData, email: e.target.value})} 
-                  className="w-full bg-[#FDFBF7] px-6 py-3 rounded-2xl outline-none border border-transparent focus:border-[#8D6E63] text-sm font-bold" 
+                  placeholder="nama@email.com"
+                  className="w-full bg-[#FDFBF7] px-6 py-3 rounded-2xl outline-none border-2 border-transparent focus:border-[#8D6E63] text-sm font-bold placeholder:text-gray-400 placeholder:font-normal" 
                   required
                 />
               </div>
               <div>
                 <label className="text-[10px] font-black text-[#A1887F] uppercase tracking-widest block mb-1">
-                  Alamat
+                  Alamat Lengkap <span className="text-red-500">*</span>
                 </label>
                 <textarea 
                   value={formData.address || ''} 
                   onChange={(e) => setFormData({...formData, address: e.target.value})} 
-                  className="w-full bg-[#FDFBF7] px-6 py-3 rounded-2xl outline-none border border-transparent focus:border-[#8D6E63] text-sm font-bold resize-none" 
-                  rows="2" 
+                  placeholder="Contoh: Jl. Merdeka No. 123, Kota Malang, Jawa Timur"
+                  className="w-full bg-[#FDFBF7] px-6 py-3 rounded-2xl outline-none border-2 border-transparent focus:border-[#8D6E63] text-sm font-bold resize-none placeholder:text-gray-400 placeholder:font-normal" 
+                  rows="3" 
+                  required
                 />
+                {!formData.address?.trim() && (
+                  <p className="text-xs text-red-500 mt-1 ml-1">
+                    ⚠️ Alamat wajib diisi untuk keperluan administrasi
+                  </p>
+                )}
               </div>
+              
+              {/* Info text */}
+              <div className="bg-amber-50 border border-amber-200 rounded-2xl p-4 flex items-start gap-3">
+                <div className="text-amber-600 shrink-0 mt-0.5">
+                  <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
+                  </svg>
+                </div>
+                <div className="flex-1">
+                  <p className="text-xs text-amber-800 font-medium">
+                    Data ini diperlukan untuk konfirmasi appointment dan komunikasi layanan.
+                  </p>
+                </div>
+              </div>
+              
               <div className="flex gap-4 pt-4">
                 <button 
-                  onClick={() => setIsEditModalOpen(false)} 
-                  className="flex-1 py-4 bg-gray-50 rounded-2xl font-display font-bold text-[10px] uppercase tracking-widest text-[#A1887F]"
+                  onClick={() => {
+                    const isIncomplete = !formData.phone?.trim() || !formData.address?.trim();
+                    if (isIncomplete) {
+                      setNotification({
+                        show: true,
+                        type: 'error',
+                        title: 'Profil Belum Lengkap',
+                        message: 'Silakan lengkapi nomor telepon dan alamat terlebih dahulu'
+                      });
+                    } else {
+                      setIsEditModalOpen(false);
+                    }
+                  }} 
+                  className="flex-1 py-4 bg-gray-50 rounded-2xl font-display font-bold text-[10px] uppercase tracking-widest text-[#A1887F] hover:bg-gray-100 transition-all"
                 >
                   Batal
                 </button>
                 <button 
                   onClick={handleSave} 
-                  className="flex-1 py-4 bg-[#8D6E63] text-white rounded-2xl font-display font-bold text-[10px] uppercase tracking-widest shadow-xl shadow-[#8D6E63]/20 hover:bg-[#5D4037] transition-all flex items-center justify-center"
+                  className="flex-1 py-4 bg-[#8D6E63] text-white rounded-2xl font-display font-bold text-[10px] uppercase tracking-widest shadow-xl shadow-[#8D6E63]/20 hover:bg-[#5D4037] transition-all flex items-center justify-center active:scale-95"
                 >
                   <Save size={16} className="mr-2"/> Simpan Profil
                 </button>

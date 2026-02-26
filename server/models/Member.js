@@ -47,7 +47,7 @@ class Member {
   static async findByEmail(email) {
     try {
       const [rows] = await promisePool.query(
-        'SELECT id, name, email, password, phone, address, join_date FROM members WHERE email = ? LIMIT 1',
+        'SELECT id, name, email, password, phone, address, join_date, google_id, profile_picture FROM members WHERE email = ? LIMIT 1',
         [email]
       );
       return rows[0] || null;
@@ -57,23 +57,41 @@ class Member {
     }
   }
 
-  static async create({ name, email, phone, address, password }) {
+  static async findById(id) {
     try {
-      const hashedPassword = await bcrypt.hash(password, 10);
+      const [rows] = await promisePool.query(
+        'SELECT id, name, email, phone, address, join_date, google_id, profile_picture FROM members WHERE id = ? LIMIT 1',
+        [id]
+      );
+      return rows[0] || null;
+    } catch (error) {
+      console.error('Error in Member.findById:', error);
+      throw error;
+    }
+  }
+
+  static async create({ name, email, phone, address, password, google_id = null, profile_picture = null }) {
+    try {
+      let hashedPassword = null;
+      if (password) {
+        hashedPassword = await bcrypt.hash(password, 10);
+      }
       const joinDate = new Date().toISOString().split('T')[0];
 
       const [result] = await promisePool.query(
-        'INSERT INTO members (name, email, phone, address, password, join_date) VALUES (?, ?, ?, ?, ?, ?)',
-        [name, email, phone, address, hashedPassword, joinDate]
+        'INSERT INTO members (name, email, phone, address, password, join_date, google_id, profile_picture) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
+        [name, email, phone || '', address || '', hashedPassword, joinDate, google_id, profile_picture]
       );
 
       return {
         id: result.insertId,
         name,
         email,
-        phone,
-        address,
-        join_date: joinDate
+        phone: phone || '',
+        address: address || '',
+        join_date: joinDate,
+        google_id,
+        profile_picture
       };
     } catch (error) {
       console.error('Error in Member.create:', error);
@@ -96,16 +114,24 @@ class Member {
         params.push(hashed);
       }
 
-      if (fields.length === 0) return { affectedRows: 0 };
+      if (fields.length === 0) {
+        console.warn('⚠️ No fields to update for member:', id);
+        return { affectedRows: 0 };
+      }
 
       params.push(id);
-      const [result] = await promisePool.query(
-        `UPDATE members SET ${fields.join(', ')} WHERE id = ?`,
-        params
-      );
+      const query = `UPDATE members SET ${fields.join(', ')} WHERE id = ?`;
+      
+      console.log('🔍 SQL Query:', query);
+      console.log('🔍 Parameters:', params);
+      
+      const [result] = await promisePool.query(query, params);
+      
+      console.log('✅ Update executed, affected rows:', result.affectedRows);
+      
       return { affectedRows: result.affectedRows };
     } catch (error) {
-      console.error('Error in Member.update:', error);
+      console.error('❌ Error in Member.update:', error);
       throw error;
     }
   }

@@ -140,8 +140,9 @@ const Sidebar = () => {
       <aside className="w-72 bg-white border-r border-gray-100 h-screen hidden lg:flex flex-col sticky top-0 font-sans">
         {/* Logo */}
         <div className="p-10 border-b border-gray-50">
-          <h2 className="text-3xl font-display font-bold text-[#3E2723] tracking-tighter">Mochint</h2>
-          <p className="text-[10px] font-black text-[#8D6E63] uppercase tracking-[0.3em] mt-1.5">Layanan Member</p>
+          <div className="flex items-center gap-3">
+            <img src="/logomochint.svg" alt="Mochint Logo" className="w-38 h-38 drop-shadow-lg" />
+          </div>
         </div>
 
         {/* User Info */}
@@ -218,11 +219,7 @@ const Sidebar = () => {
             aria-label="Buka menu"
           >
             <Menu size={24} className="text-[#3E2723]" />
-          </button>
-          <div>
-            <h2 className="text-xl font-display font-bold text-[#3E2723] tracking-tighter">Mochint</h2>
-            <p className="text-[8px] font-black text-[#8D6E63] uppercase tracking-[0.3em]">Member</p>
-          </div>
+          </button>    
         </div>
         <div className="w-8 h-8 bg-[#3E2723] rounded-lg flex items-center justify-center text-white font-bold text-sm shadow-md">
           {userInitial}
@@ -256,7 +253,9 @@ const Sidebar = () => {
         ))}
       </nav>
 
+
       {/* Mobile Drawer */}
+    
       <div className={`lg:hidden fixed inset-0 z-50 transition-all duration-300 ${
         isMobileMenuOpen ? 'visible' : 'invisible'
       }`}>
@@ -273,9 +272,8 @@ const Sidebar = () => {
           <div className="flex flex-col h-full">
             {/* Drawer Header */}
             <div className="p-6 border-b border-gray-100 flex items-center justify-between">
-              <div>
-                <h2 className="text-2xl font-display font-bold text-[#3E2723] tracking-tighter">Mochint</h2>
-                <p className="text-[8px] font-black text-[#8D6E63] uppercase tracking-[0.3em] mt-1">Layanan Member</p>
+              <div className="flex items-center gap-3">
+                <img src="/logomochint.svg" alt="Mochint Logo" className="w-38 h-38 drop-shadow-lg" />
               </div>
               <button
                 type="button"

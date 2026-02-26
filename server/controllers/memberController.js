@@ -112,9 +112,15 @@ exports.updateMember = async (req, res) => {
     const { id } = req.params;
     const memberData = req.body;
     
+    console.log('📝 Updating member:', id);
+    console.log('📦 Data to update:', memberData);
+    
     const result = await Member.update(id, memberData);
     
+    console.log('✅ Update result:', result);
+    
     if (result.affectedRows === 0) {
+      console.warn('⚠️ Member not found with ID:', id);
       return res.status(404).json({ 
         success: false, 
         error: 'Member not found' 
@@ -124,13 +130,15 @@ exports.updateMember = async (req, res) => {
     // Return updated member data
     const updatedMember = await Member.getById(id);
     
+    console.log('✅ Member updated successfully:', updatedMember);
+    
     res.json({ 
       success: true, 
       message: 'Member updated successfully',
       data: updatedMember 
     });
   } catch (error) {
-    console.error('Error updating member:', error);
+    console.error('❌ Error updating member:', error);
     res.status(500).json({ 
       success: false, 
       error: 'Failed to update member',

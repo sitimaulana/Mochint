@@ -9,17 +9,22 @@ const MemberLayout = () => {
     console.log('=== MemberLayout Mounted ===');
     console.log('Token:', localStorage.getItem('token'));
     console.log('User:', localStorage.getItem('user'));
+    console.log('Active User:', localStorage.getItem('active_user'));
     
-    const userStr = localStorage.getItem('user');
+    const userStr = localStorage.getItem('user') || localStorage.getItem('active_user');
     if (userStr) {
-      const user = JSON.parse(userStr);
-      console.log('User role:', user.role);
+      try {
+        const user = JSON.parse(userStr);
+        console.log('User role:', user.role || user.user_type);
+      } catch (e) {
+        console.error('Failed to parse user:', e);
+      }
     }
   }, []);
   
-  // Check authentication
+  // Check authentication (check both 'user' and 'active_user' for backward compatibility)
   const token = localStorage.getItem('token');
-  const user = localStorage.getItem('user');
+  const user = localStorage.getItem('user') || localStorage.getItem('active_user');
   
   console.log('Auth check - Token exists:', !!token);
   console.log('Auth check - User exists:', !!user);

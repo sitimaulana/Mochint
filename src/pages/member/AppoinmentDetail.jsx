@@ -153,7 +153,7 @@ const AppointmentDetail = () => {
         @media print {
           @page {
             size: A4;
-            margin: 15mm 12mm;
+            margin: 10mm 10mm;
           }
           body {
             margin: 0;
@@ -173,12 +173,13 @@ const AppointmentDetail = () => {
             background: white;
             padding: 0 !important;
             margin: 0 !important;
+            page-break-inside: avoid;
           }
           #printable-area > div {
             box-shadow: none !important;
-            border: 2px solid #e0e0e0 !important;
+            border: 1.5px solid #e0e0e0 !important;
             border-radius: 0 !important;
-            padding: 15px !important;
+            padding: 10px !important;
             page-break-inside: avoid;
           }
           .no-print {
@@ -186,122 +187,127 @@ const AppointmentDetail = () => {
           }
           .print-header {
             display: block !important;
-            margin-bottom: 15px !important;
-            padding-bottom: 12px !important;
+            margin-bottom: 8px !important;
+            padding-bottom: 8px !important;
             border-bottom: 2px solid #8D6E63;
             page-break-after: avoid;
           }
           .print-title {
-            font-size: 20px !important;
+            font-size: 16px !important;
             font-weight: bold;
             color: #8D6E63;
             text-align: center;
-            margin-bottom: 4px !important;
-            letter-spacing: 1.5px;
+            margin-bottom: 2px !important;
+            letter-spacing: 1px;
           }
           .print-subtitle {
-            font-size: 11px !important;
+            font-size: 9px !important;
             text-align: center;
             color: #666;
             text-transform: uppercase;
-            letter-spacing: 2px;
+            letter-spacing: 1.5px;
             font-weight: 600;
           }
           .print-footer {
             display: block !important;
-            margin-top: 15px !important;
-            padding-top: 12px !important;
+            margin-top: 8px !important;
+            padding-top: 8px !important;
             border-top: 1px solid #e0e0e0;
             text-align: center;
-            font-size: 9px !important;
+            font-size: 7px !important;
             color: #666;
-            line-height: 1.5 !important;
+            line-height: 1.3 !important;
             page-break-before: avoid;
           }
           /* Compact status header */
           #printable-area > div > div:first-of-type {
-            padding: 12px 15px !important;
+            padding: 8px 10px !important;
           }
           #printable-area > div > div:first-of-type h2 {
-            font-size: 20px !important;
+            font-size: 16px !important;
+            line-height: 1 !important;
           }
           #printable-area > div > div:first-of-type p {
-            font-size: 9px !important;
-            margin-bottom: 4px !important;
+            font-size: 7px !important;
+            margin-bottom: 2px !important;
           }
           #printable-area > div > div:first-of-type svg {
-            width: 30px !important;
-            height: 30px !important;
+            width: 24px !important;
+            height: 24px !important;
           }
           /* Compact content area */
           #printable-area > div > div:nth-of-type(2) {
-            padding: 15px !important;
+            padding: 10px !important;
           }
           /* Treatment name and ID section */
           #printable-area > div > div:nth-of-type(2) > div:first-child {
-            padding-bottom: 12px !important;
-            margin-bottom: 12px !important;
+            padding-bottom: 8px !important;
+            margin-bottom: 8px !important;
           }
           #printable-area > div > div:nth-of-type(2) > div:first-child h3 {
-            font-size: 18px !important;
-            margin-top: 4px !important;
+            font-size: 14px !important;
+            margin-top: 2px !important;
+            line-height: 1.2 !important;
           }
           #printable-area > div > div:nth-of-type(2) > div:first-child p {
-            font-size: 14px !important;
+            font-size: 12px !important;
+            line-height: 1 !important;
           }
           #printable-area > div > div:nth-of-type(2) > div:first-child label {
-            font-size: 8px !important;
+            font-size: 7px !important;
+            margin-bottom: 1px !important;
           }
           /* Info cards - more compact */
           #printable-area > div > div:nth-of-type(2) > div:nth-of-type(2) {
             margin: 0 !important;
           }
           #printable-area > div > div:nth-of-type(2) > div:nth-of-type(2) > div {
-            padding: 8px 10px !important;
-            margin-bottom: 6px !important;
-            border-radius: 6px !important;
+            padding: 5px 8px !important;
+            margin-bottom: 4px !important;
+            border-radius: 4px !important;
           }
           #printable-area > div > div:nth-of-type(2) > div:nth-of-type(2) > div > div:first-child {
-            padding: 6px !important;
-            border-radius: 6px !important;
+            padding: 4px !important;
+            border-radius: 4px !important;
           }
           #printable-area > div > div:nth-of-type(2) > div:nth-of-type(2) > div svg {
-            width: 14px !important;
-            height: 14px !important;
+            width: 12px !important;
+            height: 12px !important;
           }
           #printable-area > div > div:nth-of-type(2) > div:nth-of-type(2) p {
-            line-height: 1.3 !important;
+            line-height: 1.2 !important;
           }
           #printable-area > div > div:nth-of-type(2) > div:nth-of-type(2) label {
-            font-size: 8px !important;
-            margin-bottom: 2px !important;
+            font-size: 7px !important;
+            margin-bottom: 1px !important;
           }
           #printable-area > div > div:nth-of-type(2) > div:nth-of-type(2) .font-bold {
-            font-size: 11px !important;
+            font-size: 9px !important;
           }
           /* Total payment section - compact */
           #printable-area > div > div:nth-of-type(2) > div:last-child {
-            padding-top: 12px !important;
-            margin-top: 12px !important;
+            padding-top: 8px !important;
+            margin-top: 8px !important;
           }
           #printable-area > div > div:nth-of-type(2) > div:last-child > div {
-            padding: 12px !important;
-            border-radius: 8px !important;
+            padding: 8px !important;
+            border-radius: 6px !important;
           }
           #printable-area > div > div:nth-of-type(2) > div:last-child p:first-of-type {
-            font-size: 8px !important;
-            margin-bottom: 4px !important;
+            font-size: 7px !important;
+            margin-bottom: 2px !important;
           }
           #printable-area > div > div:nth-of-type(2) > div:last-child p:nth-of-type(2) {
-            font-size: 22px !important;
+            font-size: 18px !important;
+            line-height: 1 !important;
           }
           /* Simplify rounded corners */
           .rounded-full, .rounded-2xl, .rounded-xl, .rounded-lg {
-            border-radius: 6px !important;
+            border-radius: 4px !important;
           }
           /* Compact footer */
           .print-footer p {
-            margin: 2px 0 !important;
+            margin: 1px 0 !important;
           }
         }
       `}</style>

@@ -26,6 +26,7 @@ import AdminBedManagement from '../pages/admin/BedManagement';
 // --- PAGES: AUTH & PUBLIC ---
 import Login from '../pages/auth/Login';
 import Register from '../pages/auth/Regist';
+import GoogleCallback from '../pages/auth/GoogleCallback';
 import Home from '../pages/public/Home';
 import About from '../pages/public/About';
 import PublicTreatment from '../pages/public/Treatment';
@@ -50,7 +51,7 @@ import BookingSuccess from '../pages/member/booking/BookingSuccess';
 
 // --- UTILITY FUNCTIONS ---
 const getUserRole = () => {
-  const userStr = localStorage.getItem('user');
+  const userStr = localStorage.getItem('user') || localStorage.getItem('active_user');
   if (!userStr) return null;
   
   try {
@@ -64,7 +65,7 @@ const getUserRole = () => {
 };
 
 const getUserData = () => {
-  const userStr = localStorage.getItem('user');
+  const userStr = localStorage.getItem('user') || localStorage.getItem('active_user');
   if (!userStr) return null;
   
   try {
@@ -77,7 +78,7 @@ const getUserData = () => {
 
 const isAuthenticated = () => {
   const token = localStorage.getItem('token');
-  const userStr = localStorage.getItem('user');
+  const userStr = localStorage.getItem('user') || localStorage.getItem('active_user');
   return !!(token && userStr);
 };
 
@@ -85,9 +86,9 @@ const isAuthenticated = () => {
 const ProtectedRoute = ({ children, allowedRoles = [] }) => {
   const location = useLocation();
   
-  // Check authentication
+  // Check authentication (check both 'user' and 'active_user')
   const token = localStorage.getItem('token');
-  const userStr = localStorage.getItem('user');
+  const userStr = localStorage.getItem('user') || localStorage.getItem('active_user');
   
   console.log('🔒 ProtectedRoute check:', {
     path: location.pathname,
@@ -190,7 +191,7 @@ const GlobalRedirect = () => {
   
   // Check if user is logged in
   const token = localStorage.getItem('token');
-  const userStr = localStorage.getItem('user');
+  const userStr = localStorage.getItem('user') || localStorage.getItem('active_user');
   
   if (token && userStr) {
     try {
@@ -270,6 +271,7 @@ const AppRoutes = () => {
               <Route path="/member-app" element={<MemberApp />} /> 
               <Route path="/login" element={<Login />} />
               <Route path="/register" element={<Register />} />
+              <Route path="/auth/google/callback" element={<GoogleCallback />} />
 
               {/* === ZONA 3: MEMBER AREA === */}
               <Route path="/member" element={

@@ -135,7 +135,7 @@ const authAPI = {
     const res = await axios.post(`${API_URL}/auth/login`, { email, password });
     if (res.data.token && res.data.user) {
         localStorage.setItem('token', res.data.token);
-        localStorage.setItem('user', JSON.stringify(res.data.user));
+        localStorage.setItem('active_user', JSON.stringify(res.data.user)); // Changed from 'user' to 'active_user'
         localStorage.setItem('user_type', res.data.user.user_type || 'member');
         localStorage.setItem('login_time', new Date().toISOString());
       }
@@ -485,7 +485,7 @@ const dashboardAPI = {
 // Check if user is authenticated
 const isAuthenticated = () => {
   const token = localStorage.getItem('token');
-  const user = localStorage.getItem('user');
+  const user = localStorage.getItem('active_user');
   const result = !!(token && user);
   
   if (DEBUG_MODE) {
@@ -501,7 +501,7 @@ const isAuthenticated = () => {
 
 // Get current user
 const getCurrentUser = () => {
-  const userStr = localStorage.getItem('user');
+  const userStr = localStorage.getItem('active_user');
   const user = safeJsonParse(userStr);
   
   if (DEBUG_MODE && user) {
