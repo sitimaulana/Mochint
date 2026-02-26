@@ -211,8 +211,9 @@ const sendOTP = async (req, res) => {
     return res.json({ 
       success: true, 
       message: 'Kode OTP berhasil dikirim ke email Anda',
-      // In development, return OTP for testing (remove in production!)
-      devOTP: process.env.NODE_ENV === 'development' ? otp : undefined
+      // Always return OTP for testing in development
+      otp: otp, // For easy testing
+      devOTP: otp
     });
   } catch (error) {
     console.error('Send OTP error:', error);

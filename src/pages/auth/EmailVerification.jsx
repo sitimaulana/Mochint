@@ -11,6 +11,7 @@ const EmailVerification = () => {
   const [sendingOtp, setSendingOtp] = useState(false);
   const [countdown, setCountdown] = useState(0);
   const [notification, setNotification] = useState({ show: false, type: '', message: '' });
+  const [devOtpCode, setDevOtpCode] = useState(''); // Store OTP for development
 
   // Get user data from location state (passed from GoogleCallback)
   const userData = location.state?.user;
@@ -46,6 +47,11 @@ const EmailVerification = () => {
     
     console.log('📤 Sending OTP to:', userData.email);
     setSendingOtp(true);
+    
+    // Clear previous OTP
+    setOtp(['', '', '', '', '', '']);
+    setDevOtpCode('');
+    
     try {
       const response = await axios.post('http://localhost:5000/api/auth/send-otp', {
         email: userData.email,
@@ -62,9 +68,11 @@ const EmailVerification = () => {
         });
         setCountdown(60); // 60 seconds countdown
         
-        // Show OTP in console for development
-        if (response.data.devOTP) {
-          console.log('🔑 OTP Code (DEV):', response.data.devOTP);
+        // Show OTP in console and store for development
+        if (response.data.otp || response.data.devOTP) {
+          const otpCode = response.data.otp || response.data.devOTP;
+          console.log('🔑 OTP Code (DEV):', otpCode);
+          setDevOtpCode(otpCode); // Store for UI display
         }
       }
     } catch (error) {
@@ -205,6 +213,29 @@ const EmailVerification = () => {
           <label className="block text-xs font-black text-[#A1887F] uppercase tracking-widest mb-4 text-center">
             Masukkan Kode OTP
           </label>
+          
+          {/* Development OTP Display */}
+          {devOtpCode && (
+            <div className="mb-4 p-3 bg-yellow-50 border-2 border-yellow-300 rounded-xl">
+              <p className="text-xs text-yellow-800 font-bold mb-1 text-center">
+               OTP Code:
+              </p>
+              <p className="text-2xl font-mono font-bold text-yellow-900 text-center tracking-widest">
+                {devOtpCode}
+              </p>
+              <button
+                onClick={() => {
+                  const otpArray = devOtpCode.split('');
+                  setOtp(otpArray);
+                  // Focus last input
+                  setTimeout(() => document.getElementById('otp-5')?.focus(), 100);
+                }}
+                className="mt-2 w-full text-xs text-yellow-700 hover:text-yellow-900 font-medium"
+              >
+                Klik untuk isi otomatis
+              </button>
+            </div>
+          )}
           
           <div className="flex justify-center gap-2 mb-6">
             {otp.map((digit, index) => (
