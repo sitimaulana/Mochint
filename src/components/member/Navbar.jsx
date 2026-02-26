@@ -131,7 +131,7 @@ const Navbar = () => {
                       }`}
                   >
                     <User size={16} className="mr-2" />
-                    {user ? `Hi, ${user.name.split(' ')[0]}` : admin ? 'Administrator' : 'Masuk'}
+                    {user ? `Hi, ${user.name?.split(' ')[0] || 'Member'}` : admin ? 'Administrator' : 'Masuk'}
                     {(user || admin) && <ChevronDown size={14} className="ml-1" />}
                   </button>
 
@@ -173,8 +173,8 @@ const Navbar = () => {
                   {user && isMemberMenuOpen && (
                     <div className="absolute right-0 mt-4 w-64 bg-white rounded-2xl shadow-[0_20px_50px_rgba(0,0,0,0.15)] border border-gray-50 py-2 z-50 overflow-hidden animate-in slide-in-from-top-2 duration-200">
                       <div className="px-6 py-4 border-b border-gray-50 bg-[#FDFBF7]">
-                        <p className="font-display font-bold text-[#3E2723] truncate text-sm">{user.name}</p>
-                        <p className="text-[10px] text-[#8D6E63] font-black uppercase tracking-widest mt-0.5">{user.id}</p>
+                        <p className="font-display font-bold text-[#3E2723] truncate text-sm">{user.name || 'Member'}</p>
+                        <p className="text-[10px] text-[#8D6E63] font-black uppercase tracking-widest mt-0.5">{user.id || ''}</p>
                       </div>
 
                       <div className="p-2">
@@ -243,7 +243,7 @@ const Navbar = () => {
                 className="flex items-center px-4 py-2 bg-[#3E2723] text-white font-bold text-xs uppercase tracking-wider rounded-lg shadow-md"
               >
                 <User size={14} className="mr-1.5" />
-                {user ? user.name.split(' ')[0] : admin ? 'Admin' : 'Member'}
+                {user ? user.name?.split(' ')[0] || 'Member' : admin ? 'Admin' : 'Member'}
               </button>
 
               {/* Dropdown Menu Admin - Mobile */}
@@ -284,8 +284,8 @@ const Navbar = () => {
               {user && isMemberMenuOpen && (
                 <div className="absolute right-0 mt-2 w-56 bg-white rounded-2xl shadow-2xl border border-gray-50 py-2 z-[60] overflow-hidden">
                   <div className="px-4 py-3 border-b border-gray-50 bg-[#FDFBF7]">
-                    <p className="font-bold text-[#3E2723] text-xs truncate">{user.name}</p>
-                    <p className="text-[9px] text-[#8D6E63] font-black uppercase tracking-widest mt-0.5">{user.id}</p>
+                    <p className="font-bold text-[#3E2723] text-xs truncate">{user.name || 'Member'}</p>
+                    <p className="text-[9px] text-[#8D6E63] font-black uppercase tracking-widest mt-0.5">{user.id || ''}</p>
                   </div>
 
                   <div className="p-2">
