@@ -151,14 +151,20 @@ const googleCallback = async (req, res) => {
       { expiresIn: '24h' }
     );
 
+    // Check if user needs to set password (password is null)
+    const needsPassword = !user.password || user.password === null;
+
     const userData = {
       id: user.id,
       name: user.name || user.email,
       email: user.email,
       user_type: 'member',
       google_id: user.google_id || null,
-      profile_picture: user.profile_picture || null
+      profile_picture: user.profile_picture || null,
+      needsPassword: needsPassword // Flag untuk frontend
     };
+
+    console.log(`🔐 Google OAuth - User ${user.email}, needsPassword: ${needsPassword}`);
 
     // Redirect ke frontend dengan token di URL
     res.redirect(`http://localhost:5173/auth/google/callback?token=${token}&user=${encodeURIComponent(JSON.stringify(userData))}`);

@@ -13,16 +13,33 @@ const GoogleCallback = () => {
       try {
         const user = JSON.parse(decodeURIComponent(userString));
         
-        console.log('✅ Google login success, redirecting to email verification');
+        console.log('✅ Google login success');
         console.log('Token:', token);
         console.log('User:', user);
+        console.log('Needs password:', user.needsPassword);
         
-        // Redirect to email verification page first
-        // User needs to verify email and set password before accessing dashboard
-        navigate('/auth/verify-email', {
-          state: { user, token },
-          replace: true
-        });
+        // Check if user needs to set password (first time login)
+        if (user.needsPassword) {
+          // User belum punya password, redirect ke email verification & set password
+          console.log('🔐 User needs to set password, redirecting to email verification');
+          navigate('/auth/verify-email', {
+            state: { user, token },
+            replace: true
+          });
+        } else {
+          // User sudah punya password, langsung login
+          console.log('✅ User already has password, logging in directly');
+          
+          // Store authentication data
+          localStorage.setItem('token', token);
+          localStorage.setItem('user', JSON.stringify(user));
+          localStorage.setItem('active_user', JSON.stringify(user));
+          localStorage.setItem('user_type', 'member');
+          localStorage.setItem('login_time', new Date().toISOString());
+          
+          // Redirect to member dashboard
+          navigate('/member', { replace: true });
+        }
       } catch (error) {
         console.error('Error parsing user data:', error);
         navigate('/auth/login?error=invalid_callback');

@@ -21,11 +21,18 @@ const Header = ({ onToggleSidebar }) => {
   }, []);
 
   const handleLogout = () => {
-    // Clear localStorage
+    // Close dropdown first
+    setIsDropdownOpen(false);
+    
+    // Clear all localStorage items
+    localStorage.removeItem('active_user');
     localStorage.removeItem('token');
     localStorage.removeItem('user');
+    
     // Redirect to login page
-    navigate('/admin/login');
+    setTimeout(() => {
+      navigate('/admin/login');
+    }, 0);
   };
 
   return (

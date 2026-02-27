@@ -92,22 +92,35 @@ const Navbar = () => {
 
   const handleLogout = () => {
     console.log('Logout');
-    localStorage.removeItem('active_user');
-    localStorage.removeItem('token');
-    localStorage.removeItem('user');
-    setUser(null);
-    setUserType(null);
+    
+    // Reset state terlebih dahulu
     setIsMemberMenuOpen(false);
     setIsAdminMenuOpen(false);
     setIsMenuOpen(false);
-    navigate('/');
+    setUser(null);
+    setUserType(null);
+    
+    // Clear localStorage
+    localStorage.removeItem('active_user');
+    localStorage.removeItem('token');
+    localStorage.removeItem('user');
+    
+    // Navigate setelah cleanup
+    setTimeout(() => {
+      navigate('/');
+    }, 0);
   };
 
   // Fungsi untuk mendapatkan nama depan user
   const getUserFirstName = () => {
     if (!user) return '';
     
-    // Coba ambil dari full_name dulu
+    // Coba ambil dari name dulu (untuk Google OAuth)
+    if (user.name) {
+      return user.name.split(' ')[0];
+    }
+    
+    // Coba ambil dari full_name
     if (user.full_name) {
       return user.full_name.split(' ')[0];
     }
@@ -117,7 +130,7 @@ const Navbar = () => {
       return user.username.split(' ')[0];
     }
     
-    // Kalau tidak ada keduanya, return 'Member'
+    // Kalau tidak ada ketiganya, return 'Member'
     return 'Member';
   };
 
@@ -231,7 +244,7 @@ const Navbar = () => {
                           onClick={handleLogout}
                           className="flex items-center w-full px-4 py-3 text-[13px] font-bold text-red-500 hover:bg-red-50 rounded-xl transition-colors font-sans"
                         >
-                          <LogOut size={18} className="mr-3" /> Logout
+                          <LogOut size={18} className="mr-3" /> Keluar
                         </button>
                       </div>
                     </div>
@@ -242,7 +255,7 @@ const Navbar = () => {
                     <div className="absolute right-0 mt-4 w-64 bg-white rounded-2xl shadow-[0_20px_50px_rgba(0,0,0,0.15)] border border-gray-50 py-2 z-50 overflow-hidden animate-in slide-in-from-top-2 duration-200">
                       <div className="px-6 py-4 border-b border-gray-50 bg-[#FDFBF7]">
                         <p className="font-display font-bold text-[#3E2723] truncate text-sm">
-                          {user?.full_name || user?.username || 'Member'}
+                          {user?.name || user?.full_name || user?.username || 'Member'}
                         </p>
                         <p className="text-[10px] text-[#8D6E63] font-black uppercase tracking-widest mt-0.5">
                           ID: {user?.id || ''}
@@ -288,7 +301,7 @@ const Navbar = () => {
                           onClick={handleLogout} 
                           className="flex items-center w-full px-4 py-3 text-[13px] font-bold text-red-500 hover:bg-red-50 rounded-xl transition-colors font-sans"
                         >
-                          <LogOut size={18} className="mr-3" /> Logout
+                          <LogOut size={18} className="mr-3" /> Keluar
                         </button>
                       </div>
                     </div>
@@ -389,7 +402,7 @@ const Navbar = () => {
                 <div className="absolute right-0 mt-2 w-56 bg-white rounded-2xl shadow-2xl border border-gray-50 py-2 z-[60] overflow-hidden">
                   <div className="px-4 py-3 border-b border-gray-50 bg-[#FDFBF7]">
                     <p className="font-bold text-[#3E2723] text-xs truncate">
-                      {user?.full_name || user?.username || 'Member'}
+                      {user?.name || user?.full_name || user?.username || 'Member'}
                     </p>
                     <p className="text-[9px] text-[#8D6E63] font-black uppercase tracking-widest mt-0.5">
                       ID: {user?.id || ''}
