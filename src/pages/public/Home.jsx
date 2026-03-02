@@ -134,8 +134,21 @@ const Home = () => {
     <div className="min-h-screen font-sans text-gray-700 bg-white">
       
       {/* Hero Section - ✨ MARGIN ADDED */}
-      <section className="relative py-24 md:py-32 bg-[#FDFBF7]">
-        <div className="absolute inset-0 opacity-10 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')]"></div>
+      <section className="relative py-24 md:py-32 bg-[#FDFBF7] overflow-hidden">
+        {/* Background Image */}
+        <div 
+          className="absolute inset-0 bg-cover bg-center bg-no-repeat"
+          style={{
+            backgroundImage: "url('https://images.unsplash.com/photo-1560750588-73207b1ef5b8?auto=format&fit=crop&w=2000&q=80')"
+          }}
+        ></div>
+        
+        {/* Overlay Gradient */}
+        <div className="absolute inset-0 bg-gradient-to-r from-[#FDFBF7]/95 via-[#FDFBF7]/90 to-[#FDFBF7]/85"></div>
+        
+        {/* Decorative Pattern */}
+        <div className="absolute inset-0 opacity-5 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')]"></div>
+        
         <div className="container mx-auto px-6 sm:px-8 lg:px-12 xl:px-16 relative z-10 text-center max-w-[1400px]">
           <h1 className="text-5xl md:text-7xl font-display font-bold text-[#5D4037] mb-6 tracking-tight">
             Mochint Beauty Care
