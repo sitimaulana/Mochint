@@ -124,6 +124,16 @@ const Product = () => {
     // Ambil price langsung sebagai integer, bukan float
     const priceValue = parseInt(product.price) || 0;
     
+    // Format tanggal untuk input type="date" (YYYY-MM-DD)
+    const formatDateForInput = (dateString) => {
+      if (!dateString) return '';
+      const date = new Date(dateString);
+      const year = date.getFullYear();
+      const month = String(date.getMonth() + 1).padStart(2, '0');
+      const day = String(date.getDate()).padStart(2, '0');
+      return `${year}-${month}-${day}`;
+    };
+    
     setFormData({
       name: product.name || '',
       category: product.category || 'Semua Produk',
@@ -138,8 +148,8 @@ const Product = () => {
         other: ''
       },
       discountPercentage: product.discount_percentage || 0,
-      promoStartDate: product.promo_start_date || '',
-      promoEndDate: product.promo_end_date || ''
+      promoStartDate: formatDateForInput(product.promo_start_date),
+      promoEndDate: formatDateForInput(product.promo_end_date)
     });
     setPreviewImage(product.image);
   };
@@ -200,7 +210,7 @@ const Product = () => {
       } else {
         const response = await axios.put(`${API_URL}/${editingProduct}`, productData, config);
         setProducts(products.map(product => 
-          product.id === editingProduct ? response.data : product
+          (product.id || product._id) === editingProduct ? response.data : product
         ));
         setNotification({
           show: true,
@@ -259,7 +269,7 @@ const Product = () => {
         }
       });
       
-      setProducts(products.filter(product => product.id !== id));
+      setProducts(products.filter(product => (product.id || product._id) !== id));
       setNotification({
         show: true,
         type: 'success',
@@ -289,6 +299,11 @@ const Product = () => {
       // Untuk weight juga sama, hanya angka
       const digitsOnly = value.replace(/\D/g, '');
       setFormData(prev => ({ ...prev, [name]: digitsOnly }));
+    } else if (name === 'discountPercentage') {
+      // Validasi diskon antara 0-100
+      const numValue = parseInt(value) || 0;
+      const validValue = Math.max(0, Math.min(100, numValue));
+      setFormData(prev => ({ ...prev, [name]: validValue }));
     } else {
       setFormData(prev => ({ ...prev, [name]: value }));
     }

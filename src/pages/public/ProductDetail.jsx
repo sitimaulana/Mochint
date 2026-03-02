@@ -171,7 +171,7 @@ const ProductDetail = ({ isOpen, onClose, product }) => {
                       <Tag size={16} className="text-white" />
                     </div>
                     <h4 className="text-sm sm:text-base font-black uppercase tracking-wider text-red-700">
-                      🎉 Promo Spesial Aktif!
+                      Promo Spesial Aktif!
                     </h4>
                   </div>
                   <div className="space-y-1 text-xs sm:text-sm font-medium text-red-800">
