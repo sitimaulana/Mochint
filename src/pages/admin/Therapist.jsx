@@ -370,7 +370,7 @@ const Therapist = () => {
           <button
             onClick={handleAdd}
             disabled={loading}
-            className="w-full sm:w-auto px-3 sm:px-4 py-2 bg-brown-600 text-white text-sm sm:text-base rounded-lg hover:bg-brown-700 flex items-center justify-center transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+            className="w-full sm:w-auto px-3 sm:px-4 py-2 bg-gray-600 text-white text-sm sm:text-base rounded-lg hover:bg-gray-700 flex items-center justify-center transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
           >
             <svg className="w-4 h-4 sm:w-5 sm:h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
@@ -525,7 +525,7 @@ const Therapist = () => {
                         <div className="flex space-x-2">
                           <button
                             onClick={() => handleView(therapist)}
-                            className="px-3 py-1 bg-brown-500 text-white text-xs rounded hover:bg-brown-600 transition-colors duration-200"
+                            className="px-3 py-1 bg-gray-500 text-white text-xs rounded hover:bg-gray-600 transition-colors duration-200"
                           >
                             Lihat
                           </button>
@@ -560,7 +560,7 @@ const Therapist = () => {
             <p className="text-gray-500 mb-6">Coba sesuaikan pencarian atau kriteria filter Anda.</p>
             <button
               onClick={handleAdd}
-              className="px-4 py-2 bg-brown-600 text-white rounded-lg hover:bg-brown-700 transition-colors duration-200"
+              className="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors duration-200"
             >
               Tambah Terapis Baru
             </button>
@@ -684,7 +684,11 @@ const Therapist = () => {
               <button
                 onClick={handleSave}
                 disabled={saveLoading}
-                className="w-full sm:w-auto px-4 py-2 text-sm sm:text-base bg-brown-600 text-white rounded-lg hover:bg-brown-700 transition-colors duration-200 disabled:opacity-50 flex items-center justify-center"
+                className={`w-full sm:w-auto px-4 py-2 text-sm sm:text-base text-white rounded-lg transition-colors duration-200 disabled:opacity-50 flex items-center justify-center ${
+                  isAdding
+                    ? 'bg-gray-600 hover:bg-gray-700'
+                    : 'bg-blue-600 hover:bg-blue-700'
+                }`}
               >
                 {saveLoading ? (
                   <>
@@ -897,7 +901,7 @@ const Therapist = () => {
             <div className="flex justify-end mt-6">
               <button
                 onClick={() => setViewingDetails(null)}
-                className="px-4 py-2 bg-brown-600 text-white rounded-lg hover:bg-brown-700 transition-colors duration-200"
+                className="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors duration-200"
               >
                 Tutup
               </button>

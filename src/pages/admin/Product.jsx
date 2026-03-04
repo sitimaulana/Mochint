@@ -396,7 +396,7 @@ const Product = () => {
           <h1 className="text-xl sm:text-2xl font-bold text-gray-800">Katalog Produk</h1>
           <p className="text-sm sm:text-base text-gray-600">Kelola produk kecantikan dan tautan marketplace.</p>
         </div>
-        <button onClick={handleAdd} className="w-full sm:w-auto px-3 sm:px-4 py-2 bg-brown-600 text-white text-sm sm:text-base rounded-lg hover:bg-brown-700 flex items-center justify-center transition-colors duration-200">
+        <button onClick={handleAdd} className="w-full sm:w-auto px-3 sm:px-4 py-2 bg-gray-600 text-white text-sm sm:text-base rounded-lg hover:bg-gray-700 flex items-center justify-center transition-colors duration-200">
           <svg className="w-4 h-4 sm:w-5 sm:h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
           </svg>
@@ -513,7 +513,7 @@ const Product = () => {
             </svg>
             <h3 className="text-base sm:text-lg font-medium text-gray-900 mb-2">Tidak ada produk ditemukan</h3>
             <p className="text-sm sm:text-base text-gray-500 mb-4">Mulai tambahkan produk pertama Anda</p>
-            <button onClick={handleAdd} className="px-4 py-2 bg-brown-600 text-white text-sm sm:text-base rounded-lg hover:bg-brown-700 transition-colors duration-200">
+            <button onClick={handleAdd} className="px-4 py-2 bg-gray-600 text-white text-sm sm:text-base rounded-lg hover:bg-gray-700 transition-colors duration-200">
               Tambah Produk
             </button>
           </div>
@@ -754,7 +754,11 @@ const Product = () => {
               <button onClick={handleCancel} className="w-full sm:w-auto px-4 py-2 text-sm sm:text-base bg-gray-300 text-gray-700 rounded-lg hover:bg-gray-400">
                 Batal
               </button>
-              <button onClick={handleSave} className="w-full sm:w-auto px-4 py-2 text-sm sm:text-base bg-brown-600 text-white rounded-lg hover:bg-brown-700">
+              <button onClick={handleSave} className={`w-full sm:w-auto px-4 py-2 text-sm sm:text-base text-white rounded-lg transition-colors ${
+                isAdding
+                  ? 'bg-gray-600 hover:bg-gray-700'
+                  : 'bg-blue-600 hover:bg-blue-700'
+              }`}>
                 {isAdding ? 'Tambah Produk' : 'Simpan Perubahan'}
               </button>
             </div>
@@ -918,7 +922,7 @@ const Product = () => {
               </div>
             </div>
             <div className="flex justify-end mt-4 sm:mt-6">
-              <button onClick={() => setViewingProduct(null)} className="w-full sm:w-auto px-4 py-2 text-sm sm:text-base bg-brown-600 text-white rounded-lg hover:bg-brown-700">
+              <button onClick={() => setViewingProduct(null)} className="w-full sm:w-auto px-4 py-2 text-sm sm:text-base bg-gray-600 text-white rounded-lg hover:bg-gray-700">
                 Tutup
               </button>
             </div>

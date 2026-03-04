@@ -50,30 +50,14 @@ const Treatment = () => {
     'Foot Spa'
   ];
   
-  // Load dari localStorage atau gunakan default
-  const [availableCategories, setAvailableCategories] = useState(() => {
-    const saved = localStorage.getItem('availableCategories');
-    return saved ? JSON.parse(saved) : defaultCategories;
-  });
-  
-  const [availableFacilities, setAvailableFacilities] = useState(() => {
-    const saved = localStorage.getItem('availableFacilities');
-    return saved ? JSON.parse(saved) : defaultFacilities;
-  });
-  
-  // Track deleted items agar tidak muncul lagi setelah refresh
-  const [deletedCategories, setDeletedCategories] = useState(() => {
-    const saved = localStorage.getItem('deletedCategories');
-    return saved ? JSON.parse(saved) : [];
-  });
-  
-  const [deletedFacilities, setDeletedFacilities] = useState(() => {
-    const saved = localStorage.getItem('deletedFacilities');
-    return saved ? JSON.parse(saved) : [];
-  });
+  // State untuk kategori dan fasilitas (akan diload dari database)
+  const [availableCategories, setAvailableCategories] = useState([]);
+  const [availableFacilities, setAvailableFacilities] = useState([]);
+  const [loadingOptions, setLoadingOptions] = useState(true);
 
   // API base URL
   const API_URL = 'http://localhost:5000/api/treatments';
+  const OPTIONS_API_URL = 'http://localhost:5000/api/treatment-options';
 
   // Auto-hide notification after 3 seconds
   useEffect(() => {
@@ -85,73 +69,42 @@ const Treatment = () => {
     }
   }, [notification.show]);
 
-  // Ambil data treatments dari API
+  // Ambil data treatments dan options dari API
   useEffect(() => {
     fetchTreatments();
+    fetchCategories();
+    fetchFacilities();
   }, []);
 
-  // Sinkronisasi availableCategories dengan localStorage setiap kali berubah
-  useEffect(() => {
-    localStorage.setItem('availableCategories', JSON.stringify(availableCategories));
-  }, [availableCategories]);
-
-  // Sinkronisasi availableFacilities dengan localStorage setiap kali berubah
-  useEffect(() => {
-    localStorage.setItem('availableFacilities', JSON.stringify(availableFacilities));
-  }, [availableFacilities]);
-  
-  // Sinkronisasi deletedCategories dengan localStorage
-  useEffect(() => {
-    localStorage.setItem('deletedCategories', JSON.stringify(deletedCategories));
-  }, [deletedCategories]);
-  
-  // Sinkronisasi deletedFacilities dengan localStorage
-  useEffect(() => {
-    localStorage.setItem('deletedFacilities', JSON.stringify(deletedFacilities));
-  }, [deletedFacilities]);
-
-  // Sync categories dan facilities dari treatments yang ada (hanya sekali saat load pertama)
-  useEffect(() => {
-    if (treatments.length > 0) {
-      const allCategories = new Set(availableCategories);
-      const allFacilities = new Set(availableFacilities);
-      
-      treatments.forEach(treatment => {
-        // Tambahkan kategori dari treatment (kecuali yang sudah dihapus)
-        const categories = Array.isArray(treatment.category) 
-          ? treatment.category 
-          : (treatment.category ? [treatment.category] : []);
-        
-        categories.forEach(cat => {
-          if (cat && cat.trim() && !deletedCategories.includes(cat)) {
-            allCategories.add(cat);
-          }
-        });
-        
-        // Tambahkan fasilitas dari treatment (kecuali yang sudah dihapus)
-        const facilities = Array.isArray(treatment.facilities) 
-          ? treatment.facilities 
-          : [];
-        
-        facilities.forEach(facility => {
-          if (facility && facility.trim() && !deletedFacilities.includes(facility)) {
-            allFacilities.add(facility);
-          }
-        });
+  // Fetch categories dari database
+  const fetchCategories = async () => {
+    try {
+      const Token = localStorage.getItem('token');
+      const response = await axios.get(`${OPTIONS_API_URL}/categories`, {
+        headers: { Authorization: `Bearer ${Token}` }
       });
-      
-      const newCategories = Array.from(allCategories);
-      const newFacilities = Array.from(allFacilities);
-      
-      // Update hanya jika ada perubahan
-      if (JSON.stringify(newCategories) !== JSON.stringify(availableCategories)) {
-        setAvailableCategories(newCategories);
-      }
-      if (JSON.stringify(newFacilities) !== JSON.stringify(availableFacilities)) {
-        setAvailableFacilities(newFacilities);
-      }
+      setAvailableCategories(response.data.data || []);
+    } catch (error) {
+      console.error('Error fetching categories:', error);
+      setAvailableCategories(defaultCategories); // Fallback to default
     }
-  }, [treatments]);
+  };
+
+  // Fetch facilities dari database
+  const fetchFacilities = async () => {
+    try {
+      const Token = localStorage.getItem('token');
+      const response = await axios.get(`${OPTIONS_API_URL}/facilities`, {
+        headers: { Authorization: `Bearer ${Token}` }
+      });
+      setAvailableFacilities(response.data.data || []);
+      setLoadingOptions(false);
+    } catch (error) {
+      console.error('Error fetching facilities:', error);
+      setAvailableFacilities(defaultFacilities); // Fallback to default
+      setLoadingOptions(false);
+    }
+  };
 
   const fetchTreatments = async () => {
     try {
@@ -249,7 +202,7 @@ const Treatment = () => {
   };
 
   // Handle Tambah Kategori Baru
-  const handleAddCategory = () => {
+  const handleAddCategory = async () => {
     if (!newCategory.trim()) {
       setNotification({
         show: true,
@@ -273,56 +226,79 @@ const Treatment = () => {
 
     const newCategoryValue = newCategory.trim();
     
-    // Tambahkan ke daftar kategori yang tersedia
-    const updatedCategories = [...availableCategories, newCategoryValue];
-    setAvailableCategories(updatedCategories);
+    try {
+      const Token = localStorage.getItem('token');
+      await axios.post(`${OPTIONS_API_URL}/categories`, 
+        { value: newCategoryValue },
+        { headers: { Authorization: `Bearer ${Token}` } }
+      );
 
-    // Tambahkan ke kategori yang dipilih
-    const currentCategories = formData.category || [];
-    setFormData({
-      ...formData,
-      category: [...currentCategories, newCategoryValue]
-    });
+      // Refresh categories dari database
+      await fetchCategories();
 
-    setNewCategory('');
-    setNotification({
-      show: true,
-      type: 'success',
-      title: 'Kategori Ditambahkan',
-      message: `Kategori "${newCategoryValue}" berhasil ditambahkan dan akan tersimpan`
-    });
+      // Tambahkan ke kategori yang dipilih
+      const currentCategories = formData.category || [];
+      setFormData({
+        ...formData,
+        category: [...currentCategories, newCategoryValue]
+      });
+
+      setNewCategory('');
+      setNotification({
+        show: true,
+        type: 'success',
+        title: 'Kategori Ditambahkan',
+        message: `Kategori "${newCategoryValue}" berhasil ditambahkan ke database`
+      });
+    } catch (error) {
+      setNotification({
+        show: true,
+        type: 'error',
+        title: 'Gagal Menambahkan Kategori',
+        message: error.response?.data?.message || 'Terjadi kesalahan saat menyimpan kategori'
+      });
+    }
   };
 
   // Handle Hapus Kategori Custom
-  const handleRemoveCategory = (category) => {
-    // Hapus dari availableCategories
-    const updatedCategories = availableCategories.filter(cat => cat !== category);
-    setAvailableCategories(updatedCategories);
-    
-    // Tambahkan ke daftar deleted agar tidak muncul lagi
-    if (!deletedCategories.includes(category)) {
-      setDeletedCategories([...deletedCategories, category]);
-    }
-    
-    // Hapus dari kategori yang dipilih jika ada
-    const currentCategories = formData.category || [];
-    if (currentCategories.includes(category)) {
-      setFormData({
-        ...formData,
-        category: currentCategories.filter(cat => cat !== category)
+  const handleRemoveCategory = async (category) => {
+    try {
+      const Token = localStorage.getItem('token');
+      await axios.delete(`${OPTIONS_API_URL}/categories`, {
+        data: { value: category },
+        headers: { Authorization: `Bearer ${Token}` }
+      });
+
+      // Refresh categories dari database
+      await fetchCategories();
+      
+      // Hapus dari kategori yang dipilih jika ada
+      const currentCategories = formData.category || [];
+      if (currentCategories.includes(category)) {
+        setFormData({
+          ...formData,
+          category: currentCategories.filter(cat => cat !== category)
+        });
+      }
+      
+      setNotification({
+        show: true,
+        type: 'success',
+        title: 'Kategori Dihapus',
+        message: `Kategori "${category}" berhasil dihapus dari database`
+      });
+    } catch (error) {
+      setNotification({
+        show: true,
+        type: 'error',
+        title: 'Gagal Menghapus Kategori',
+        message: error.response?.data?.message || 'Terjadi kesalahan saat menghapus kategori'
       });
     }
-    
-    setNotification({
-      show: true,
-      type: 'success',
-      title: 'Kategori Dihapus',
-      message: `Kategori "${category}" berhasil dihapus permanen dari daftar`
-    });
   };
 
   // Handle Tambah Fasilitas Baru ke Daftar
-  const handleAddFacility = () => {
+  const handleAddFacility = async () => {
     if (!newFacility.trim()) {
       setNotification({
         show: true,
@@ -346,52 +322,75 @@ const Treatment = () => {
       return;
     }
 
-    // Tambahkan ke daftar fasilitas yang tersedia
-    const updatedFacilities = [...availableFacilities, newFacilityValue];
-    setAvailableFacilities(updatedFacilities);
+    try {
+      const Token = localStorage.getItem('token');
+      await axios.post(`${OPTIONS_API_URL}/facilities`, 
+        { value: newFacilityValue },
+        { headers: { Authorization: `Bearer ${Token}` } }
+      );
 
-    // Tambahkan ke fasilitas yang dipilih
-    const currentFacilities = formData.facilities || [];
-    setFormData({
-      ...formData,
-      facilities: [...currentFacilities, newFacilityValue]
-    });
+      // Refresh facilities dari database
+      await fetchFacilities();
 
-    setNewFacility('');
-    setNotification({
-      show: true,
-      type: 'success',
-      title: 'Fasilitas Ditambahkan',
-      message: `Fasilitas "${newFacilityValue}" berhasil ditambahkan dan akan tersimpan`
-    });
+      // Tambahkan ke fasilitas yang dipilih
+      const currentFacilities = formData.facilities || [];
+      setFormData({
+        ...formData,
+        facilities: [...currentFacilities, newFacilityValue]
+      });
+
+      setNewFacility('');
+      setNotification({
+        show: true,
+        type: 'success',
+        title: 'Fasilitas Ditambahkan',
+        message: `Fasilitas "${newFacilityValue}" berhasil ditambahkan ke database`
+      });
+    } catch (error) {
+      setNotification({
+        show: true,
+        type: 'error',
+        title: 'Gagal Menambahkan Fasilitas',
+        message: error.response?.data?.message || 'Terjadi kesalahan saat menyimpan fasilitas'
+      });
+    }
   };
 
   // Handle Hapus Fasilitas dari Daftar
-  const handleRemoveFacilityFromList = (facility) => {
-    // Hapus dari availableFacilities
-    const updatedFacilities = availableFacilities.filter(f => f !== facility);
-    setAvailableFacilities(updatedFacilities);
-    
-    // Tambahkan ke daftar deleted agar tidak muncul lagi
-    if (!deletedFacilities.includes(facility)) {
-      setDeletedFacilities([...deletedFacilities, facility]);
-    }
-    
-    // Hapus dari fasilitas yang dipilih jika ada
-    const currentFacilities = formData.facilities || [];
-    if (currentFacilities.includes(facility)) {
-      setFormData({
-        ...formData,
-        facilities: currentFacilities.filter(f => f !== facility)
+  const handleRemoveFacilityFromList = async (facility) => {
+    try {
+      const Token = localStorage.getItem('token');
+      await axios.delete(`${OPTIONS_API_URL}/facilities`, {
+        data: { value: facility },
+        headers: { Authorization: `Bearer ${Token}` }
+      });
+
+      // Refresh facilities dari database
+      await fetchFacilities();
+      
+      // Hapus dari fasilitas yang dipilih jika ada
+      const currentFacilities = formData.facilities || [];
+      if (currentFacilities.includes(facility)) {
+        setFormData({
+          ...formData,
+          facilities: currentFacilities.filter(f => f !== facility)
+        });
+      }
+      
+      setNotification({
+        show: true,
+        type: 'success',
+        title: 'Fasilitas Dihapus',
+        message: `Fasilitas "${facility}" berhasil dihapus dari database`
+      });
+    } catch (error) {
+      setNotification({
+        show: true,
+        type: 'error',
+        title: 'Gagal Menghapus Fasilitas',
+        message: error.response?.data?.message || 'Terjadi kesalahan saat menghapus fasilitas'
       });
     }
-    
-    setNotification({
-      show: true,
-      type: 'success',
-      title: 'Fasilitas Dihapus',
-      message: `Fasilitas "${facility}" berhasil dihapus permanen dari daftar`
-    });
   };
 
   // Handle Toggle Fasilitas
@@ -657,7 +656,7 @@ const Treatment = () => {
         </div>
         <button
           onClick={handleAdd}
-          className="w-full sm:w-auto px-3 sm:px-4 py-2 bg-brown-600 text-white text-sm sm:text-base rounded-lg hover:bg-brown-700 flex items-center justify-center"
+          className="w-full sm:w-auto px-3 sm:px-4 py-2 bg-gray-600 text-white text-sm sm:text-base rounded-lg hover:bg-gray-700 flex items-center justify-center"
         >
           <svg className="w-4 h-4 sm:w-5 sm:h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
@@ -1311,7 +1310,11 @@ const Treatment = () => {
                     </button>
                     <button
                       onClick={handleSave}
-                      className="w-full sm:w-auto px-4 py-2 text-sm sm:text-base bg-brown-600 text-white rounded-lg hover:bg-brown-700 order-1 sm:order-3"
+                      className={`w-full sm:w-auto px-4 py-2 text-sm sm:text-base text-white rounded-lg transition-colors order-1 sm:order-3 ${
+                        isAdding
+                          ? 'bg-gray-600 hover:bg-gray-700'
+                          : 'bg-blue-600 hover:bg-blue-700'
+                      }`}
                     >
                       {isAdding ? 'Tambah Perawatan' : 'Simpan Perubahan'}
                     </button>
@@ -1333,7 +1336,7 @@ const Treatment = () => {
           <p className="text-gray-500 mb-6">Mulai dengan menambahkan perawatan pertama Anda ke klinik.</p>
           <button
             onClick={handleAdd}
-            className="px-4 py-2 bg-brown-600 text-white rounded-lg hover:bg-brown-700"
+            className="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700"
           >
             Tambah Perawatan
           </button>

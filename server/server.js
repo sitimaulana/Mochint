@@ -13,6 +13,7 @@ const authenticateToken = require('./middleware/auth');
 const authRoutes = require('./routes/authRoutes');
 const appointmentRoutes = require('./routes/appointmentRoutes');
 const treatmentRoutes = require('./routes/treatmentRoutes');
+const treatmentOptionsRoutes = require('./routes/treatmentOptionsRoutes');
 const therapistRoutes = require('./routes/therapistRoutes');
 const memberRoutes = require('./routes/memberRoutes');
 const productRoutes = require('./routes/productsRoute');
@@ -89,6 +90,7 @@ app.use('/api/page-info', pageInfoRoutes); // Dynamic page content management
 app.use('/api/appointments', authenticateToken, appointmentRoutes);
 app.use('/api/members', authenticateToken, memberRoutes);
 app.use('/api/timeslots', authenticateToken, timeslotRoutes);
+app.use('/api/treatment-options', treatmentOptionsRoutes); // Categories and facilities management
 
 app.get('/', (req, res) => {
   res.json({ message: 'Mochint Beauty Clinic API', version: '1.0' });

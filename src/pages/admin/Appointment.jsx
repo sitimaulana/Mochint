@@ -634,7 +634,7 @@ const Appointment = () => {
         </div>
         <button 
           onClick={handleAdd} 
-          className="bg-brown-600 text-white text-sm sm:text-base px-3 sm:px-4 py-2 rounded-lg font-bold hover:bg-brown-700 transition-colors duration-200 w-full sm:w-auto"
+          className="bg-gray-600 text-white text-sm sm:text-base px-3 sm:px-4 py-2 rounded-lg font-bold hover:bg-gray-700 transition-colors duration-200 w-full sm:w-auto"
         >
           + Tambah Janji Temu
         </button>
@@ -1209,7 +1209,11 @@ const Appointment = () => {
               </button>
               <button 
                 onClick={handleSave} 
-                className="flex-1 py-2 bg-brown-600 text-white rounded-md font-bold hover:bg-brown-700 transition-colors"
+                className={`flex-1 py-2 text-white rounded-md font-bold transition-colors ${
+                  isAdding 
+                    ? 'bg-gray-600 hover:bg-gray-700' 
+                    : 'bg-blue-600 hover:bg-blue-700'
+                }`}
               >
                 {isAdding ? 'Buat Janji Temu' : 'Perbarui Janji Temu'}
               </button>

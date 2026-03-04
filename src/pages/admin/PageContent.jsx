@@ -389,6 +389,30 @@ const PageContent = () => {
           background: linear-gradient(135deg, #3E2723 0%, #6D4C41 100%);
         }
 
+        .gradient-gray-bg {
+          background: linear-gradient(135deg, #4B5563 0%, #6B7280 100%);
+        }
+
+        .gradient-gray-hover {
+          transition: all 0.3s ease;
+        }
+
+        .gradient-gray-hover:hover {
+          background: linear-gradient(135deg, #374151 0%, #4B5563 100%);
+        }
+
+        .gradient-blue-bg {
+          background: linear-gradient(135deg, #2563EB 0%, #3B82F6 100%);
+        }
+
+        .gradient-blue-hover {
+          transition: all 0.3s ease;
+        }
+
+        .gradient-blue-hover:hover {
+          background: linear-gradient(135deg, #1D4ED8 0%, #2563EB 100%);
+        }
+
         .scroll-smooth {
           scroll-behavior: smooth;
         }
@@ -486,7 +510,7 @@ const PageContent = () => {
         {/* Add Button */}
         <button
           onClick={openAddForm}
-          className="gradient-brown-bg gradient-brown-hover text-white px-6 py-3 rounded-lg font-medium shadow-lg hover:shadow-xl transition-all flex items-center gap-2 group"
+          className="gradient-gray-bg gradient-gray-hover text-white px-6 py-3 rounded-lg font-medium shadow-lg hover:shadow-xl transition-all flex items-center gap-2 group"
         >
           <Plus className="w-5 h-5 group-hover:rotate-90 transition-transform duration-300" />
           Tambah Konten
@@ -505,7 +529,7 @@ const PageContent = () => {
           </p>
           <button
             onClick={openAddForm}
-            className="gradient-brown-bg text-white px-6 py-3 rounded-lg font-medium shadow-lg hover:shadow-xl transition-all inline-flex items-center gap-2"
+            className="gradient-gray-bg text-white px-6 py-3 rounded-lg font-medium shadow-lg hover:shadow-xl transition-all inline-flex items-center gap-2"
           >
             <Plus className="w-5 h-5" />
             Tambah Konten Pertama
@@ -594,7 +618,7 @@ const PageContent = () => {
                 <div className="flex gap-3">
                   <button
                     onClick={() => openEditForm(info)}
-                    className="flex-1 bg-[#8D6E63] hover:bg-[#6D4C41] text-white px-4 py-2 rounded-lg font-medium transition-all flex items-center justify-center gap-2 group"
+                    className="flex-1 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium transition-all flex items-center justify-center gap-2 group"
                   >
                     <Edit2 className="w-4 h-4 group-hover:rotate-12 transition-transform" />
                     Edit
@@ -947,7 +971,11 @@ const PageContent = () => {
               <button
                 type="submit"
                 onClick={handleSubmit}
-                className="gradient-brown-bg gradient-brown-hover text-white px-6 py-3 rounded-lg font-medium shadow-lg hover:shadow-xl transition-all flex items-center gap-2"
+                className={`text-white px-6 py-3 rounded-lg font-medium shadow-lg hover:shadow-xl transition-all flex items-center gap-2 ${
+                  editingInfo
+                    ? 'gradient-blue-bg gradient-blue-hover'
+                    : 'gradient-gray-bg gradient-gray-hover'
+                }`}
               >
                 <Save className="w-5 h-5" />
                 {editingInfo ? 'Perbarui' : 'Simpan'}
