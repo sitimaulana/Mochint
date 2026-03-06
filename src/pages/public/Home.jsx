@@ -13,8 +13,10 @@ const Home = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [pageContent, setPageContent] = useState({
     hero: null,
+    about: null,
     services: null,
-    why_choose: null
+    promo_banner: null,
+    footer_contact: null
   });
 
   // --- API URL ---
@@ -57,8 +59,10 @@ const Home = () => {
         const pageInfoData = resPageInfo.data.data || [];
         const contentMap = {
           hero: pageInfoData.find(item => item.section_key === 'hero'),
+          about: pageInfoData.find(item => item.section_key === 'about'),
           services: pageInfoData.find(item => item.section_key === 'services'),
-          why_choose: pageInfoData.find(item => item.section_key === 'why_choose')
+          promo_banner: pageInfoData.find(item => item.section_key === 'promo_banner'),
+          footer_contact: pageInfoData.find(item => item.section_key === 'footer_contact')
         };
         setPageContent(contentMap);
         
@@ -150,7 +154,7 @@ const Home = () => {
   return (
     <div className="min-h-screen font-sans text-gray-700 bg-white">
       
-      {/* Hero Section - ✨ MARGIN ADDED */}
+      {/* Hero Section -  MARGIN ADDED */}
       <section className="relative py-24 md:py-32 bg-[#FDFBF7] overflow-hidden">
         {/* Background Image */}
         <div 
@@ -179,29 +183,35 @@ const Home = () => {
         </div>
       </section>
 
-      {/* About Section - ✨ MARGIN ADDED */}
+      {/* About Section - MARGIN ADDED */}
       <section className="py-24 bg-white text-left">
         <div className="container mx-auto px-6 sm:px-8 lg:px-12 xl:px-16 max-w-[1400px] flex flex-col lg:flex-row items-center gap-16">
           <div className="w-full lg:w-1/2 relative">
             <div className="absolute top-4 left-4 w-full h-full border-2 border-[#8D6E63] rounded-[30px] -z-10"></div>
             <div className="bg-gray-100 rounded-[30px] h-96 flex items-center justify-center border border-gray-200 overflow-hidden">
-              <img src="https://images.unsplash.com/photo-1612817288484-6f916006741a?auto=format&fit=crop&w=1200&q=80" alt="Clinic" className="w-full h-full object-cover" />
+              <img 
+                src={pageContent.about?.image_url || 'https://images.unsplash.com/photo-1612817288484-6f916006741a?auto=format&fit=crop&w=1200&q=80'} 
+                alt={pageContent.about?.title || 'Clinic'} 
+                className="w-full h-full object-cover" 
+              />
             </div>
           </div>
           <div className="w-full lg:w-1/2">
-            <div className="font-display inline-block px-3 py-1 bg-[#FDFBF7] text-[#8D6E63] text-xs font-bold tracking-widest uppercase mb-4 rounded-md">Kenali Mochint Lebih Dekat</div>
+            <div className="font-display inline-block px-3 py-1 bg-[#FDFBF7] text-[#8D6E63] text-xs font-bold tracking-widest uppercase mb-4 rounded-md">
+              {pageContent.about?.subtitle || 'Kenali Mochint Lebih Dekat'}
+            </div>
             <h2 className="text-4xl md:text-5xl font-display font-bold text-[#3E2723] mb-6 tracking-tight leading-tight">
-              {pageContent.services?.title || 'Rumah Cantik Mochint Beauty Care'}
+              {pageContent.about?.title || 'Rumah Cantik Mochint Beauty Care'}
             </h2>
             <p className="font-sans text-gray-500 mb-8 leading-relaxed text-lg font-normal">
-              {pageContent.services?.content || 'Selamat datang di Mochint Beauty Care, salon kecantikan yang berlokasi di Pandaan Pasuruan Jawa Timur. Kami hadir sebagai solusi bagi Anda yang ingin merawat kulit dengan teknologi terkini dan bahan premium.'}
+              {pageContent.about?.content || 'Selamat datang di Mochint Beauty Care, salon kecantikan yang berlokasi di Pandaan Pasuruan Jawa Timur. Kami hadir sebagai solusi bagi Anda yang ingin merawat kulit dengan teknologi terkini dan bahan premium.'}
             </p>
             <button onClick={handleAboutClick} className="font-display px-8 py-3 border-2 border-[#8D6E63] text-[#8D6E63] font-bold rounded-full hover:bg-[#8D6E63] hover:text-white transition-all">Tentang Kami</button>
           </div>
         </div>
       </section>
 
-      {/* ✨ Rekomendasi Produk - MARGIN ADDED */}
+      {/* Rekomendasi Produk - MARGIN ADDED */}
       <section className="py-24 bg-[#FAFAFA]">
         <div className="container mx-auto px-6 sm:px-8 lg:px-12 xl:px-16 max-w-[1400px] text-center">
           <div className="mb-16">
@@ -232,21 +242,35 @@ const Home = () => {
         </div>
       </section>
 
-      {/* Promo Banner - ✨ MARGIN ADDED */}
+      {/* Promo Banner -  MARGIN ADDED */}
       <section className="py-20">
         <div className="container mx-auto px-6 sm:px-8 lg:px-12 xl:px-16 max-w-[1400px] text-left">
           <div className="relative rounded-[30px] overflow-hidden bg-[#5D4037] text-white py-16 px-10 md:px-20 flex flex-col md:flex-row items-center justify-between shadow-2xl">
+            {/* Background Image jika ada */}
+            {pageContent.promo_banner?.image_url && (
+              <div 
+                className="absolute inset-0 bg-cover bg-center bg-no-repeat opacity-20"
+                style={{ backgroundImage: `url('${pageContent.promo_banner.image_url}')` }}
+              ></div>
+            )}
             <div className="absolute top-0 right-0 w-64 h-64 bg-[#8D6E63] rounded-full blur-3xl opacity-20 transform translate-x-1/2 -translate-y-1/2"></div>
             <div className="relative z-10 max-w-xl">
-              <h2 className="text-3xl md:text-5xl font-display font-bold mb-6 leading-tight tracking-tight text-white">Buka Peluang Bisnis <br/> <span className="text-[#D7CCC8]">Bersama Mochint!</span></h2>
-              <p className="font-sans text-[#D7CCC8]/80 text-lg mb-8 font-normal">Buka peluang penghasilan tambahan dengan menjadi Reseller resmi Mochint Beauty Care. Modal ringan, keuntungan pasti.</p>
-              <button onClick={handlePromoClick} className="font-display px-8 py-3 bg-white text-[#5D4037] font-bold rounded-full hover:bg-gray-100 transition shadow-lg">Gabung Mitra</button>
+              <h2 className="text-3xl md:text-5xl font-display font-bold mb-6 leading-tight tracking-tight text-white">
+                {pageContent.promo_banner?.title || 'Buka Peluang Bisnis'} <br/> 
+                <span className="text-[#D7CCC8]">{pageContent.promo_banner?.subtitle || 'Bersama Mochint!'}</span>
+              </h2>
+              <p className="font-sans text-[#D7CCC8]/80 text-lg mb-8 font-normal">
+                {pageContent.promo_banner?.content || 'Buka peluang penghasilan tambahan dengan menjadi Reseller resmi Mochint Beauty Care. Modal ringan, keuntungan pasti.'}
+              </p>
+              <button onClick={handlePromoClick} className="font-display px-8 py-3 bg-white text-[#5D4037] font-bold rounded-full hover:bg-gray-100 transition shadow-lg">
+                {pageContent.promo_banner?.additional_data?.button_text || 'Gabung Mitra'}
+              </button>
             </div>
           </div>
         </div>
       </section>
 
-      {/* Testimonials Section - ✨ MARGIN ADDED */}
+      {/* Testimonials Section -  MARGIN ADDED */}
       <section className="py-20 bg-white overflow-hidden relative text-center">
         <div className="container mx-auto px-6 sm:px-8 lg:px-12 xl:px-16 max-w-[1400px]">
           <div className="text-center mb-10">
@@ -344,17 +368,17 @@ const Home = () => {
         </div>
       </section>
 
-      {/* Footer Section - ✨ MARGIN ADDED */}
+      {/* Footer Section - MARGIN ADDED */}
       <footer className="py-20 bg-[#3E2723] text-white rounded-t-[50px] mt-10 text-left">
         <div className="container mx-auto px-6 sm:px-8 lg:px-12 xl:px-16 max-w-[1400px]">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-12 items-center">
             
             <div className="bg-white/5 p-4 rounded-3xl">
-              {/* Real-Time Interactive Map - Pandaan */}
+              {/* Real-Time Interactive Map */}
               <div className="w-full h-80 bg-gray-300 rounded-2xl overflow-hidden relative shadow-2xl">
                 <iframe
-                  title="Mochint Beauty Care Pandaan"
-                  src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3954.269438012674!2d112.69176317586522!3d-7.653118975718693!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x2dd7d91f72a480ad%3A0xe42c73733290811b!2sMOCHINT%20BEAUTY%20CARE%20Salon%20Kecantikan%20Di%20Pandaan%20Pasuruan%20Jawa%20Timur%20Mochint%20Beauty%20Skin%20Care!5e0!3m2!1sid!2sid!4v1706436000000!5m2!1sid!2sid"
+                  title={pageContent.footer_contact?.title || 'Mochint Beauty Care Pandaan'}
+                  src={pageContent.footer_contact?.additional_data?.map_embed_url || 'https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3954.269438012674!2d112.69176317586522!3d-7.653118975718693!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x2dd7d91f72a480ad%3A0xe42c73733290811b!2sMOCHINT%20BEAUTY%20CARE%20Salon%20Kecantikan%20Di%20Pandaan%20Pasuruan%20Jawa%20Timur%20Mochint%20Beauty%20Skin%20Care!5e0!3m2!1sid!2sid!4v1706436000000!5m2!1sid!2sid'}
                   width="100%"
                   height="100%"
                   style={{ border: 0 }}
@@ -368,22 +392,31 @@ const Home = () => {
             
             <div className="space-y-8 flex flex-col justify-center">
               <div className="space-y-2">
-                <h2 className="text-3xl font-display font-bold tracking-tight text-white">Kunjungi Kami</h2>
+                <h2 className="text-3xl font-display font-bold tracking-tight text-white">
+                  {pageContent.footer_contact?.title || 'Kunjungi Kami'}
+                </h2>
                 <div className="flex items-start gap-3">
                   <MapPin className="text-[#8D6E63] shrink-0 mt-1" size={30} />
                   <p className="font-sans text-[#D7CCC8] font-medium opacity-80">
-                    Jl. Sidomukti No.13 RT03, RW.04, Pesantren, Pandaan,<br/> Kec. Pandaan, Pasuruan, Jawa Timur 67156
+                    {pageContent.footer_contact?.content || 'Jl. Sidomukti No.13 RT03, RW.04, Pesantren, Pandaan, Kec. Pandaan, Pasuruan, Jawa Timur 67156'}
                   </p>
                 </div>
               </div>
               
-              <div className="flex items-center gap-5 group cursor-pointer" onClick={() => window.open('https://wa.me/6281994204009')}>
+              <div 
+                className="flex items-center gap-5 group cursor-pointer" 
+                onClick={() => window.open(pageContent.footer_contact?.additional_data?.whatsapp_url || 'https://wa.me/6281994204009')}
+              >
                 <div className="bg-[#8D6E63] p-4 rounded-2xl shadow-lg group-hover:bg-[#6D4C41] transition-colors">
                   <Phone size={24} className="text-white" />
                 </div>
                 <div className="font-sans">
-                  <h4 className="font-black text-[10px] uppercase tracking-widest text-[#D7CCC8]">WhatsApp</h4>
-                  <p className="text-lg font-display font-bold text-white">+62 819-9420-4009</p>
+                  <h4 className="font-black text-[10px] uppercase tracking-widest text-[#D7CCC8]">
+                    {pageContent.footer_contact?.subtitle || 'WhatsApp'}
+                  </h4>
+                  <p className="text-lg font-display font-bold text-white">
+                    {pageContent.footer_contact?.additional_data?.phone_display || '+62 819-9420-4009'}
+                  </p>
                 </div>
               </div>
             </div>
