@@ -391,12 +391,17 @@ const Home = () => {
             </div>
             
             <div className="space-y-8 flex flex-col justify-center">
-              <div className="space-y-2">
+              <div 
+                className="space-y-2 group cursor-pointer"
+                onClick={() => window.open(pageContent.footer_contact?.additional_data?.maps_url || 'https://maps.app.goo.gl/your-maps-link', '_blank')}
+              >
                 <h2 className="text-3xl font-display font-bold tracking-tight text-white">
                   {pageContent.footer_contact?.title || 'Kunjungi Kami'}
                 </h2>
-                <div className="flex items-start gap-3">
-                  <MapPin className="text-[#8D6E63] shrink-0 mt-1" size={30} />
+                <div className="flex items-start gap-5">
+                  <div className="bg-[#8D6E63] p-4 rounded-2xl shadow-lg shrink-0 group-hover:bg-[#6D4C41] transition-colors">
+                    <MapPin size={24} className="text-white" />
+                  </div>
                   <p className="font-sans text-[#D7CCC8] font-medium opacity-80">
                     {pageContent.footer_contact?.content || 'Jl. Sidomukti No.13 RT03, RW.04, Pesantren, Pandaan, Kec. Pandaan, Pasuruan, Jawa Timur 67156'}
                   </p>

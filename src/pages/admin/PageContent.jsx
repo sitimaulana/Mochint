@@ -39,6 +39,7 @@ const PageContent = () => {
     phone_display: '',
     whatsapp_url: '',
     map_embed_url: '',
+    maps_url: '',
     awards: [{ id: Date.now(), title: '', image: '' }],
     facilities: [{ id: Date.now(), name: '', description: '', image: '' }]
   });
@@ -302,7 +303,8 @@ const PageContent = () => {
       return {
         phone_display: additionalFields.phone_display,
         whatsapp_url: additionalFields.whatsapp_url,
-        map_embed_url: additionalFields.map_embed_url
+        map_embed_url: additionalFields.map_embed_url,
+        maps_url: additionalFields.maps_url
       };
     }
     return {};
@@ -385,6 +387,7 @@ const PageContent = () => {
       phone_display: '',
       whatsapp_url: '',
       map_embed_url: '',
+      maps_url: '',
       awards: [{ id: Date.now(), title: '', image: '' }],
       facilities: [{ id: Date.now(), name: '', description: '', image: '' }]
     });
@@ -425,6 +428,7 @@ const PageContent = () => {
       phone_display: additionalData.phone_display || '',
       whatsapp_url: additionalData.whatsapp_url || '',
       map_embed_url: additionalData.map_embed_url || '',
+      maps_url: additionalData.maps_url || '',
       awards: additionalData.items && info.section_key === 'awards' ? additionalData.items : [{ id: Date.now(), title: '', image: '' }],
       facilities: additionalData.items && info.section_key === 'facilities' ? additionalData.items : [{ id: Date.now(), name: '', description: '', image: '' }]
     });
@@ -589,40 +593,34 @@ const PageContent = () => {
         
         {/* Info Banner for Home Page Sections */}
         {selectedPageType === 'home' && (
-          <div className="bg-gradient-to-r from-blue-50 to-indigo-50 border-l-4 border-blue-500 p-4 rounded-lg shadow-sm">
+          <div className="bg-gradient-to-r from-brown-50 border-l-4 border-brown-500 p-4 rounded-lg shadow-sm">
             <div className="flex items-start gap-3">
-              <div className="bg-blue-500 p-2 rounded-lg flex-shrink-0">
+              <div className="bg-brown-500 p-2 rounded-lg flex-shrink-0">
                 <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>
               </div>
               <div className="flex-1">
-                <h3 className="text-sm font-bold text-blue-900 mb-2">
-                  🏠 Panduan Konten Halaman Home
+                <h3 className="text-sm font-bold text-brown-900 mb-2">
+                    Panduan Konten Halaman Home
                 </h3>
-                <p className="text-xs text-blue-800 mb-2">
+                <p className="text-xs text-brown-800 mb-2">
                   Untuk konten yang muncul di halaman Home, pastikan menggunakan <strong>Page Type: Home</strong> dengan section_key berikut:
                 </p>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
                   <div className="bg-white p-2 rounded shadow-sm">
-                    <code className="text-blue-600 font-bold">hero</code> - Banner utama
+                    <code className="text-brown-600 font-bold">hero</code> - Banner utama
                   </div>
                   <div className="bg-white p-2 rounded shadow-sm">
-                    <code className="text-blue-600 font-bold">about</code> - Bagian About di Home
+                    <code className="text-brown-600 font-bold">about</code> - Bagian About di Home
                   </div>
                   <div className="bg-white p-2 rounded shadow-sm">
-                    <code className="text-blue-600 font-bold">services</code> - Layanan
+                    <code className="text-brown-600 font-bold">promo_banner</code> - Banner promo
                   </div>
                   <div className="bg-white p-2 rounded shadow-sm">
-                    <code className="text-blue-600 font-bold">promo_banner</code> - Banner promo
-                  </div>
-                  <div className="bg-white p-2 rounded shadow-sm col-span-1 sm:col-span-2">
-                    <code className="text-blue-600 font-bold">footer_contact</code> - Kontak di footer
+                    <code className="text-brown-600 font-bold">footer_contact</code> - Kontak di footer
                   </div>
                 </div>
-                <p className="text-xs text-blue-700 mt-3 font-medium">
-                  💡 <strong>Tip:</strong> Untuk mengubah gambar section About di Home, edit konten dengan Section Key: <code className="bg-blue-100 px-1.5 py-0.5 rounded">about</code>
-                </p>
               </div>
             </div>
           </div>
@@ -630,37 +628,34 @@ const PageContent = () => {
         
         {/* Info Banner for About Page Sections */}
         {selectedPageType === 'about' && (
-          <div className="bg-gradient-to-r from-green-50 to-emerald-50 border-l-4 border-green-500 p-4 rounded-lg shadow-sm">
+          <div className="bg-gradient-to-r from-brown-50 border-l-4 border-brown-500 p-4 rounded-lg shadow-sm">
             <div className="flex items-start gap-3">
-              <div className="bg-green-500 p-2 rounded-lg flex-shrink-0">
+              <div className="bg-brown-500 p-2 rounded-lg flex-shrink-0">
                 <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>
               </div>
               <div className="flex-1">
-                <h3 className="text-sm font-bold text-green-900 mb-2">
-                  📖 Panduan Konten Halaman About
+                <h3 className="text-sm font-bold text-brown-900 mb-2">
+                    Panduan Konten Halaman About
                 </h3>
-                <p className="text-xs text-green-800 mb-2">
+                <p className="text-xs text-brown-800 mb-2">
                   Untuk konten yang muncul di halaman About, pastikan menggunakan <strong>Page Type: About</strong> dengan section_key berikut:
                 </p>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
                   <div className="bg-white p-2 rounded shadow-sm">
-                    <code className="text-green-600 font-bold">story</code> - Cerita/Banner utama
+                    <code className="text-brown-600 font-bold">story</code> - Cerita/Banner utama
                   </div>
                   <div className="bg-white p-2 rounded shadow-sm">
-                    <code className="text-green-600 font-bold">vision</code> - Visi & Misi
+                    <code className="text-brown-600 font-bold">vision</code> - Visi & Misi
                   </div>
                   <div className="bg-white p-2 rounded shadow-sm">
-                    <code className="text-green-600 font-bold">awards</code> - Penghargaan (slider)
+                    <code className="text-brown-600 font-bold">awards</code> - Penghargaan (slider)
                   </div>
                   <div className="bg-white p-2 rounded shadow-sm">
-                    <code className="text-green-600 font-bold">facilities</code> - Fasilitas (grid)
+                    <code className="text-brown-600 font-bold">facilities</code> - Fasilitas (grid)
                   </div>
                 </div>
-                <p className="text-xs text-green-700 mt-3 font-medium">
-                  💡 <strong>Tip:</strong> Gunakan <code className="bg-green-100 px-1.5 py-0.5 rounded">awards</code> untuk penghargaan dan <code className="bg-green-100 px-1.5 py-0.5 rounded">facilities</code> untuk fasilitas. Data items dikelola di additional data.
-                </p>
               </div>
             </div>
           </div>
@@ -1060,12 +1055,12 @@ const PageContent = () => {
                   />
                   <p className="text-xs text-gray-500 mt-1">
                     {formData.page_type === 'home' ? (
-                      <span className="text-blue-600 font-medium">
-                        🏠 <strong>Untuk Halaman Home</strong>, gunakan section_key: <code className="bg-blue-50 px-1.5 py-0.5 rounded">hero</code>, <code className="bg-blue-50 px-1.5 py-0.5 rounded">about</code>, <code className="bg-blue-50 px-1.5 py-0.5 rounded">services</code>, <code className="bg-blue-50 px-1.5 py-0.5 rounded">promo_banner</code>, atau <code className="bg-blue-50 px-1.5 py-0.5 rounded">footer_contact</code>
+                      <span className="text-brown-600 font-medium">
+                        <strong>Untuk Halaman Home</strong>, gunakan section_key: <code className="bg-brown-50 px-1.5 py-0.5 rounded">hero</code>, <code className="bg-brown-50 px-1.5 py-0.5 rounded">about</code>, <code className="bg-brown-50 px-1.5 py-0.5 rounded">services</code>, <code className="bg-brown-50 px-1.5 py-0.5 rounded">promo_banner</code>, atau <code className="bg-brown-50 px-1.5 py-0.5 rounded">footer_contact</code>
                       </span>
                     ) : formData.page_type === 'about' ? (
-                      <span className="text-green-600 font-medium">
-                        📖 <strong>Untuk Halaman About</strong>, gunakan section_key: <code className="bg-green-50 px-1.5 py-0.5 rounded">story</code>, <code className="bg-green-50 px-1.5 py-0.5 rounded">vision</code>, <code className="bg-green-50 px-1.5 py-0.5 rounded">awards</code>, atau <code className="bg-green-50 px-1.5 py-0.5 rounded">facilities</code>
+                      <span className="text-brown-600 font-medium">
+                        <strong>Untuk Halaman About</strong>, gunakan section_key: <code className="bg-green-50 px-1.5 py-0.5 rounded">story</code>, <code className="bg-green-50 px-1.5 py-0.5 rounded">vision</code>, <code className="bg-green-50 px-1.5 py-0.5 rounded">awards</code>, atau <code className="bg-green-50 px-1.5 py-0.5 rounded">facilities</code>
                       </span>
                     ) : (
                       'Identifier unik untuk section (opsional)'
@@ -1119,9 +1114,9 @@ const PageContent = () => {
                 </div>
 
                 {/* Image Upload/URL */}
-                <div className="bg-gradient-to-br from-purple-50 to-blue-50 p-4 rounded-lg border-2 border-purple-200">
+                <div className="bg-gradient-to-br from-purple-50 to-blue-50 p-4 rounded-lg border-2 border-brown-200">
                   <label className="flex items-center gap-2 text-sm font-bold text-gray-800 mb-2">
-                    <svg className="w-5 h-5 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <svg className="w-5 h-5 text-brown-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
                     </svg>
                     Gambar Konten
@@ -1130,7 +1125,7 @@ const PageContent = () => {
                   {/* Method 1: Image Upload Button */}
                   <div className="mb-3 bg-white p-3 rounded-lg border border-gray-200">
                     <label className="block text-xs font-semibold text-gray-700 mb-1.5">
-                      📤 Upload dari Perangkat (Maksimal 2MB)
+                      Upload (Maks 2MB)
                     </label>
                     <input
                       type="file"
@@ -1635,7 +1630,7 @@ const PageContent = () => {
                         <h4 className="font-semibold text-gray-900">Step 2: Google Maps Lokasi</h4>
                       </div>
 
-                      <div>
+                      <div className="mb-3">
                         <label className="block text-sm font-medium text-gray-700 mb-1.5">
                           🗺️ Link Embed Google Maps
                         </label>
@@ -1646,6 +1641,21 @@ const PageContent = () => {
                           placeholder="https://www.google.com/maps/embed?pb=!1m18!1m12..."
                           className="w-full px-3 py-2.5 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all font-mono text-xs resize-none"
                         />
+                        <p className="mt-1 text-xs text-gray-500">Link untuk menampilkan peta di website</p>
+                      </div>
+
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1.5">
+                          📍 Link Google Maps (Klik Lokasi)
+                        </label>
+                        <input
+                          type="text"
+                          value={additionalFields.maps_url}
+                          onChange={(e) => handleAdditionalFieldChange('maps_url', e.target.value)}
+                          placeholder="https://maps.app.goo.gl/xxxxxx"
+                          className="w-full px-3 py-2.5 text-sm border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all font-mono"
+                        />
+                        <p className="mt-1 text-xs text-gray-500">Link untuk membuka Google Maps saat icon lokasi diklik</p>
                       </div>
 
                       {/* Info Box */}
