@@ -45,7 +45,7 @@ import MemberDashboard from '../pages/member/Dashboard';
 import MemberProfile from '../pages/member/Profile'; 
 import MemberHistory from '../pages/member/History';
 import MemberAppointment from '../pages/member/Appointment';
-import MemberAppointmentDetail from '../pages/member/Appoinmentdetail';
+import MemberAppointmentDetail from '../pages/member/AppoinmentDetail';
 
 // --- PAGES: BOOKING STEPS ---
 import BookingStep1 from '../pages/member/booking/BookingStep1';
