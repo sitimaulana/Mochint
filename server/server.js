@@ -81,9 +81,6 @@ app.use(express.static(path.join(__dirname, '../public_html')));
 //   createAllTables(promisePool).catch(err => console.error('Init tables error:', err));
 // }
 
-app.get('*', (req, res) => {
-  res.sendFile(path.join(__dirname, '../public_html', 'index.html'));
-});
 
 // Public routes (no token required)
 app.use('/api/auth', authRoutes);
@@ -118,3 +115,7 @@ app.get('/health', async (req, res) => {
 app.use('/api/docs', swaggerUi.serve, swaggerUi.setup(swaggerDocument));
 
 app.listen(PORT, () => console.log(`Server running on http://localhost:${PORT}`));
+
+app.get('*', (req, res) => {
+  res.sendFile(path.join(__dirname, '../public_html', 'index.html'));
+});
