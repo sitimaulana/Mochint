@@ -10,6 +10,15 @@ const Information = () => {
 
   const API_URL = 'http://localhost:5000/api/articles/user';
 
+  // Fungsi untuk memotong text ke N kalimat pertama
+  const truncateToSentences = (text, numSentences = 2) => {
+    if (!text) return '';
+    // Split by sentence-ending punctuation (.!?)
+    const sentences = text.match(/[^.!?]+[.!?]+/g) || [];
+    const truncated = sentences.slice(0, numSentences).join('').trim();
+    return truncated || text.substring(0, 150) + '...';
+  };
+
   useEffect(() => {
     const fetchArticles = async () => {
       try {
@@ -83,8 +92,8 @@ const Information = () => {
                   <h2 className="text-white text-xl sm:text-2xl md:text-4xl lg:text-5xl font-display font-bold leading-tight tracking-tight">
                     {headline.title}
                   </h2>
-                  <p className="text-gray-200 text-sm sm:text-base font-sans line-clamp-2 max-w-2xl opacity-90 leading-relaxed hidden sm:block">
-                    {headline.content}
+                  <p className="text-gray-200 text-sm sm:text-base font-sans max-w-2xl opacity-90 leading-relaxed hidden sm:block">
+                    {truncateToSentences(headline.content, 2)}
                   </p>
                 </div>
               </div>
