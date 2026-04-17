@@ -21,6 +21,7 @@ const articleRoutes = require('./routes/articelsRoutes');
 
 const app = express();
 const PORT = process.env.PORT || 5000;
+const path = require('path');
 
 app.use(cors({
   origin: '*',
@@ -36,10 +37,16 @@ app.use((req, res, next) => {
   next();
 });
 
+app.use(express.static(path.join(__dirname, '../public_html')));
+
 // optional DB init (if file exists) - COMMENTED OUT UNTUK PRODUCTION
 // if (createAllTables && typeof createAllTables === 'function') {
 //   createAllTables(promisePool).catch(err => console.error('Init tables error:', err));
 // }
+
+app.get('*', (req, res) => {
+  res.sendFile(path.join(__dirname, '../public_html', 'index.html'));
+});
 
 // Public routes (no token required)
 app.use('/api/auth', authRoutes);
