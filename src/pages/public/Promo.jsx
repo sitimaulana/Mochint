@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+﻿import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Home, MessageCircle, ChevronRight, CheckCircle2, Percent, Loader } from 'lucide-react';
 import axios from 'axios';
@@ -8,7 +8,7 @@ const Promo = () => {
   const [pageContent, setPageContent] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
 
-  const API_URL_PAGE_INFO = 'http://localhost:5000/api/page-info/public';
+  const API_URL_PAGE_INFO = '/api/page-info/public';
 
   useEffect(() => {
     const loadPageContent = async () => {

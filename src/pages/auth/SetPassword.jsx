@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+﻿import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { Lock, Eye, EyeOff, CheckCircle, AlertCircle, ArrowRight, Loader2 } from 'lucide-react';
 import axios from 'axios';
@@ -23,7 +23,7 @@ const SetPassword = () => {
     if (!userData || !userData.email) {
       navigate('/auth/login', { replace: true });
     }
-    console.log('🔐 SetPassword - Flow type:', isForgotPassword ? 'Forgot Password' : 'Google OAuth');
+    console.log('ðŸ” SetPassword - Flow type:', isForgotPassword ? 'Forgot Password' : 'Google OAuth');
   }, [userData, navigate, isForgotPassword]);
 
   useEffect(() => {
@@ -74,16 +74,16 @@ const SetPassword = () => {
   const handleSetPassword = async () => {
     if (!validatePassword()) return;
 
-    console.log('🔐 Setting password for:', userData.email);
+    console.log('ðŸ” Setting password for:', userData.email);
     setLoading(true);
     try {
-      const response = await axios.post('http://localhost:5000/api/auth/set-password', {
+      const response = await axios.post('/api/auth/set-password', {
         email: userData.email,
         password: password,
         userId: userData.id
       });
 
-      console.log('✅ Password set response:', response.data);
+      console.log('âœ… Password set response:', response.data);
 
       if (response.data.success) {
         if (isForgotPassword) {
@@ -94,7 +94,7 @@ const SetPassword = () => {
             message: 'Password berhasil diubah! Silakan login dengan password baru...'
           });
 
-          console.log('✅ Password reset successful, redirecting to login...');
+          console.log('âœ… Password reset successful, redirecting to login...');
 
           // Redirect to login after 2 seconds
           setTimeout(() => {
@@ -118,7 +118,7 @@ const SetPassword = () => {
           localStorage.setItem('user_type', 'member');
           localStorage.setItem('login_time', new Date().toISOString());
 
-          console.log('✅ Redirecting to member dashboard...');
+          console.log('âœ… Redirecting to member dashboard...');
 
           // Redirect to member dashboard after 1.5 seconds
           setTimeout(() => {
@@ -127,7 +127,7 @@ const SetPassword = () => {
         }
       }
     } catch (error) {
-      console.error('❌ Error setting password:', error);
+      console.error('âŒ Error setting password:', error);
       console.error('Error details:', error.response?.data);
       setNotification({
         show: true,
@@ -345,3 +345,4 @@ const SetPassword = () => {
 };
 
 export default SetPassword;
+

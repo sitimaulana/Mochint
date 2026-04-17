@@ -1,12 +1,12 @@
-# Implementasi Database untuk Kategori & Fasilitas Treatment
+﻿# Implementasi Database untuk Kategori & Fasilitas Treatment
 
-## 📋 Ringkasan Perubahan
+## ðŸ“‹ Ringkasan Perubahan
 
 Data kategori dan fasilitas perawatan sekarang disimpan di **database MySQL**, bukan lagi di localStorage. Ini memastikan data tetap konsisten dan tersimpan permanen meskipun admin logout atau browser dibersihkan.
 
 ---
 
-## 🗄️ Database Schema
+## ðŸ—„ï¸ Database Schema
 
 ### Tabel Baru: `treatment_options`
 
@@ -56,9 +56,9 @@ CREATE TABLE treatment_options (
 
 ---
 
-## 🔌 API Endpoints Baru
+## ðŸ”Œ API Endpoints Baru
 
-Base URL: `http://localhost:5000/api/treatment-options`
+Base URL: `/api/treatment-options`
 
 ### 1. Get Categories
 ```
@@ -180,7 +180,7 @@ Content-Type: application/json
 
 ---
 
-## 📁 File-File yang Dibuat/Diubah
+## ðŸ“ File-File yang Dibuat/Diubah
 
 ### File Baru di Server:
 
@@ -215,7 +215,7 @@ Content-Type: application/json
 
 ---
 
-## 🔄 Cara Kerja Baru
+## ðŸ”„ Cara Kerja Baru
 
 ### Sebelum (localStorage):
 ```javascript
@@ -263,7 +263,7 @@ const handleRemoveCategory = async (category) => {
 
 ---
 
-## ✅ Keuntungan Implementasi Database
+## âœ… Keuntungan Implementasi Database
 
 1. **Data Persisten**: Data tidak hilang meskipun browser dibersihkan atau logout
 2. **Multi-Device Sync**: Perubahan langsung terlihat di semua device
@@ -276,17 +276,17 @@ const handleRemoveCategory = async (category) => {
 
 ---
 
-## 🧪 Cara Testing
+## ðŸ§ª Cara Testing
 
 ### 1. Test Get Categories
 ```bash
-curl -X GET http://localhost:5000/api/treatment-options/categories \
+curl -X GET /api/treatment-options/categories \
   -H "Authorization: Bearer YOUR_TOKEN"
 ```
 
 ### 2. Test Add Category
 ```bash
-curl -X POST http://localhost:5000/api/treatment-options/categories \
+curl -X POST /api/treatment-options/categories \
   -H "Authorization: Bearer YOUR_TOKEN" \
   -H "Content-Type: application/json" \
   -d '{"value": "Perawatan Anti-Aging"}'
@@ -294,7 +294,7 @@ curl -X POST http://localhost:5000/api/treatment-options/categories \
 
 ### 3. Test Delete Category
 ```bash
-curl -X DELETE http://localhost:5000/api/treatment-options/categories \
+curl -X DELETE /api/treatment-options/categories \
   -H "Authorization: Bearer YOUR_TOKEN" \
   -H "Content-Type: application/json" \
   -d '{"value": "Perawatan Anti-Aging"}'
@@ -312,7 +312,7 @@ curl -X DELETE http://localhost:5000/api/treatment-options/categories \
 
 ---
 
-## 🔧 Maintenance
+## ðŸ”§ Maintenance
 
 ### Melihat Data di Database
 ```sql
@@ -344,7 +344,7 @@ DELETE FROM treatment_options WHERE is_active = FALSE;
 
 ---
 
-## 🚀 Migration Guide (Jika Ada Data di localStorage)
+## ðŸš€ Migration Guide (Jika Ada Data di localStorage)
 
 Jika sebelumnya sudah ada custom kategori/fasilitas di localStorage dan ingin migrasi ke database:
 
@@ -375,7 +375,7 @@ localStorage.removeItem('deletedFacilities');
 
 ---
 
-## 📝 Notes
+## ðŸ“ Notes
 
 1. **Soft Delete**: Data yang dihapus tidak benar-benar dihapus dari database, hanya flag `is_active` diset ke `FALSE`
 2. **Unique Constraint**: Tidak bisa menambahkan kategori/fasilitas yang sudah ada (case-sensitive)
@@ -384,7 +384,7 @@ localStorage.removeItem('deletedFacilities');
 
 ---
 
-## ⚠️ Troubleshooting
+## âš ï¸ Troubleshooting
 
 ### Error: "Failed to fetch categories"
 - Pastikan server berjalan di port 5000
@@ -403,7 +403,7 @@ localStorage.removeItem('deletedFacilities');
 
 ---
 
-## 📞 Support
+## ðŸ“ž Support
 
 Jika ada masalah atau pertanyaan, silakan check:
 1. Browser console untuk error frontend
@@ -412,5 +412,6 @@ Jika ada masalah atau pertanyaan, silakan check:
 
 ---
 
-✅ **Implementasi Selesai!**
+âœ… **Implementasi Selesai!**
 Data kategori dan fasilitas sekarang tersimpan permanen di database MySQL.
+

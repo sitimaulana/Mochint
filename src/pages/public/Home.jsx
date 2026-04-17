@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+﻿import React, { useState, useEffect, useRef } from 'react';
 import { ArrowRight, MapPin, Phone, Star, ChevronLeft, ChevronRight, Loader, MessageCircle } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
@@ -20,9 +20,9 @@ const Home = () => {
   });
 
   // --- API URL ---
-  const API_URL_PRODUCTS = 'http://localhost:5000/api/products';
-  const API_URL_REVIEWS = 'http://localhost:5000/api/reviews';
-  const API_URL_PAGE_INFO = 'http://localhost:5000/api/page-info/public';
+  const API_URL_PRODUCTS = '/api/products';
+  const API_URL_REVIEWS = '/api/reviews';
+  const API_URL_PAGE_INFO = '/api/page-info/public';
 
   //  Format harga konsisten dengan Product.jsx
   const formatPrice = (price) => {
@@ -107,9 +107,9 @@ const Home = () => {
         
         setTestimonials(validReviews);
         
-        console.log("✅ Data loaded successfully from database");
+        console.log("âœ… Data loaded successfully from database");
       } catch (error) {
-        console.error("❌ Gagal memuat data dari database:", error);
+        console.error("âŒ Gagal memuat data dari database:", error);
         console.error("Error details:", error.response?.data || error.message);
         // Set empty array jika gagal
         setTestimonials([]);
@@ -428,7 +428,7 @@ const Home = () => {
 
           </div>
           <div className="border-t border-white/5 mt-16 pt-8 text-center text-[#A1887F] text-xs font-sans font-black uppercase tracking-[0.3em]">
-            © 2026 Mochint Beauty Care.
+            Â© 2026 Mochint Beauty Care.
           </div>
         </div>
       </footer>

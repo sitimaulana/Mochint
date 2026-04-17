@@ -1,13 +1,13 @@
-import React, { useState, useEffect, useMemo } from 'react';
+﻿import React, { useState, useEffect, useMemo } from 'react';
 import axios from 'axios';
 
 const Appointment = () => {
   // API URLs
-  const APPOINTMENTS_API_URL = 'http://localhost:5000/api/appointments';
-  const MEMBERS_API_URL = 'http://localhost:5000/api/members';
-  const THERAPISTS_API_URL = 'http://localhost:5000/api/therapists';
-  const TREATMENTS_API_URL = 'http://localhost:5000/api/treatments';
-  const MEMBER_HISTORY_API_URL = 'http://localhost:5000/api/members/history';
+  const APPOINTMENTS_API_URL = '/api/appointments';
+  const MEMBERS_API_URL = '/api/members';
+  const THERAPISTS_API_URL = '/api/therapists';
+  const TREATMENTS_API_URL = '/api/treatments';
+  const MEMBER_HISTORY_API_URL = '/api/members/history';
 
   const Token = localStorage.getItem('token')
 
@@ -649,7 +649,7 @@ const Appointment = () => {
               <div className="text-xs sm:text-sm text-gray-600">Dikonfirmasi</div>
             </div>
             <div className="w-8 h-8 sm:w-10 sm:h-10 bg-blue-100 rounded-full flex items-center justify-center">
-              <span className="text-blue-600 text-sm sm:text-base font-bold">✓</span>
+              <span className="text-blue-600 text-sm sm:text-base font-bold">âœ“</span>
             </div>
           </div>
           <div className="mt-2 text-[10px] sm:text-xs text-gray-500">Janji temu disetujui</div>
@@ -662,7 +662,7 @@ const Appointment = () => {
               <div className="text-xs sm:text-sm text-gray-600">Selesai</div>
             </div>
             <div className="w-8 h-8 sm:w-10 sm:h-10 bg-green-100 rounded-full flex items-center justify-center">
-              <span className="text-green-600 text-sm sm:text-base font-bold">★</span>
+              <span className="text-green-600 text-sm sm:text-base font-bold">â˜…</span>
             </div>
           </div>
           <div className="mt-2 text-[10px] sm:text-xs text-gray-500">Perawatan selesai (Ditambahkan ke Riwayat)</div>
@@ -675,7 +675,7 @@ const Appointment = () => {
               <div className="text-xs sm:text-sm text-gray-600">Total</div>
             </div>
             <div className="w-8 h-8 sm:w-10 sm:h-10 bg-brown-100 rounded-full flex items-center justify-center">
-              <span className="text-brown-600 text-sm sm:text-base font-bold">∑</span>
+              <span className="text-brown-600 text-sm sm:text-base font-bold">âˆ‘</span>
             </div>
           </div>
           <div className="mt-2 text-[10px] sm:text-xs text-gray-500">Semua janji temu</div>
@@ -938,7 +938,7 @@ const Appointment = () => {
                 onClick={handleCancel}
                 className="text-gray-400 hover:text-gray-600 text-xl"
               >
-                ✕
+                âœ•
               </button>
             </div>
             <div className="space-y-3 sm:space-y-4 text-left">
@@ -1093,7 +1093,7 @@ const Appointment = () => {
                     <div className="text-xs text-gray-500">Pilih waktu janji temu (Jam operasional: 08:00 - 20:00)</div>
                     {formData.time && (
                       <div className="text-xs font-bold text-brown-600 bg-brown-50 px-3 py-2 rounded-md">
-                        ✓ Waktu dipilih: {formData.time}
+                        âœ“ Waktu dipilih: {formData.time}
                       </div>
                     )}
                   </>
@@ -1226,3 +1226,4 @@ const Appointment = () => {
 };
 
 export default Appointment;
+

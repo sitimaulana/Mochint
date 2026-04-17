@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+﻿import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Home, ChevronRight, Calendar, User, Share2, ArrowLeft } from 'lucide-react';
 import axios from 'axios';
@@ -10,7 +10,7 @@ const InformationDetail = () => {
   const [relatedArticles, setRelatedArticles] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  const API_URL = 'http://localhost:5000/api/articles';
+  const API_URL = '/api/articles';
 
   // Helper untuk format tanggal agar aman dari "Invalid Date"
   const formatDate = (dateString) => {

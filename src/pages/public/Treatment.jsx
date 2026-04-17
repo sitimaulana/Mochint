@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+﻿import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Home, Search, ChevronRight, ArrowRight, Filter, X, Menu, SlidersHorizontal } from 'lucide-react';
 import axios from 'axios';
@@ -21,7 +21,7 @@ const Treatment = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
 
   // API URL
-  const API_URL = 'http://localhost:5000/api/treatments';
+  const API_URL = '/api/treatments';
 
   const handleShowDetail = (treatment) => {
     setSelectedTreatment(treatment);
@@ -35,10 +35,10 @@ const Treatment = () => {
         setLoading(true);
         const response = await axios.get(API_URL);
         const data = response.data.data;
-        console.log('✅ Treatments loaded:', data.length);
+        console.log('âœ… Treatments loaded:', data.length);
         setTreatments(data);
       } catch (err) {
-        console.error("❌ Error fetching treatments from database:", err);
+        console.error("âŒ Error fetching treatments from database:", err);
       } finally {
         setLoading(false);
       }
@@ -46,7 +46,7 @@ const Treatment = () => {
     fetchTreatments();
   }, []);
 
-  // ✨ Ambil kategori unik
+  // âœ¨ Ambil kategori unik
   const categories = useMemo(() => {
     const uniqueCategories = new Set();
     treatments.forEach(t => {
@@ -60,7 +60,7 @@ const Treatment = () => {
     return ['All', ...Array.from(uniqueCategories).sort()];
   }, [treatments]);
 
-  // ✨ Filter data
+  // âœ¨ Filter data
   const filteredTreatments = useMemo(() => {
     let filtered = treatments;
     
@@ -86,14 +86,14 @@ const Treatment = () => {
     return filtered;
   }, [treatments, selectedCategory, searchQuery]);
 
-  // ✨ Reset filter
+  // âœ¨ Reset filter
   const handleResetFilter = () => {
     setSelectedCategory('All');
     setSearchQuery('');
     setIsFilterOpen(false);
   };
 
-  // ✨ Format Rupiah
+  // âœ¨ Format Rupiah
   const formatRupiah = (angka) => {
     const number = parseInt(angka) || 0;
     return 'Rp ' + number.toLocaleString('id-ID', { 
@@ -102,7 +102,7 @@ const Treatment = () => {
     });
   };
 
-  // ✨ Fungsi untuk cek apakah promo aktif
+  // âœ¨ Fungsi untuk cek apakah promo aktif
   const isPromoActive = (treatment) => {
     if (!treatment.discount_percentage || treatment.discount_percentage <= 0) return false;
     if (!treatment.promo_start_date || !treatment.promo_end_date) return false;
@@ -114,7 +114,7 @@ const Treatment = () => {
     return now >= startDate && now <= endDate;
   };
 
-  // ✨ Fungsi untuk hitung harga setelah diskon
+  // âœ¨ Fungsi untuk hitung harga setelah diskon
   const calculateDiscountedPrice = (price, discountPercentage) => {
     const discount = (price * discountPercentage) / 100;
     return price - discount;
@@ -279,7 +279,7 @@ const Treatment = () => {
 
           </div>
 
-          {/* ✨ MOBILE FILTER DRAWER */}
+          {/* âœ¨ MOBILE FILTER DRAWER */}
           {isFilterOpen && (
             <div className="fixed inset-0 z-50 lg:hidden">
               {/* Backdrop */}
@@ -428,7 +428,7 @@ const Treatment = () => {
             </div>
           )}
 
-          {/* ✨ LIST LAYANAN - RESPONSIVE GRID */}
+          {/* âœ¨ LIST LAYANAN - RESPONSIVE GRID */}
           <div className="w-full lg:w-3/4">
 
 
@@ -473,7 +473,7 @@ const Treatment = () => {
                       
                       {item.duration && (
                         <div className="px-2 py-1 mb-2 sm:mb-3 bg-gray-50 text-[7px] sm:text-[8px] font-bold text-[#8D6E63] rounded-lg flex items-center gap-1 w-fit">
-                          ⏱️ {item.duration}
+                          â±ï¸ {item.duration}
                         </div>
                       )}
                       
@@ -577,7 +577,7 @@ const Treatment = () => {
                       <div className="flex flex-wrap gap-2 sm:gap-3 items-center">
                         {item.duration && (
                           <div className="px-2 sm:px-3 py-1 bg-gray-50 text-[9px] sm:text-[10px] font-bold text-[#8D6E63] rounded-lg flex items-center gap-1">
-                            ⏱️ {item.duration}
+                            â±ï¸ {item.duration}
                           </div>
                         )}
                         

@@ -143,7 +143,7 @@ const googleCallback = async (req, res) => {
     const user = req.user;
     
     if (!user) {
-      return res.redirect('http://localhost:5173/login?error=google_auth_failed');
+      return res.redirect('http://103.185.38.61/login?error=google_auth_failed');
     }
 
     const token = jwt.sign(
@@ -168,10 +168,10 @@ const googleCallback = async (req, res) => {
     console.log(`🔐 Google OAuth - User ${user.email}, needsPassword: ${needsPassword}`);
 
     // Redirect ke frontend dengan token di URL
-    res.redirect(`http://localhost:5173/auth/google/callback?token=${token}&user=${encodeURIComponent(JSON.stringify(userData))}`);
+    res.redirect(`http://103.185.38.61/auth/google/callback?token=${token}&user=${encodeURIComponent(JSON.stringify(userData))}`);
   } catch (error) {
     console.error('Google callback error:', error);
-    res.redirect('http://localhost:5173/auth/login?error=server_error');
+    res.redirect('http://103.185.38.61/auth/login?error=server_error');
   }
 };
 

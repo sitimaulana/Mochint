@@ -2,12 +2,8 @@
 
 import axios from "axios";
 
-// GANTI INI:
-// const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000/api';
-// const DEBUG_MODE = process.env.NODE_ENV === 'development';
-
 // MENJADI INI:
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+const API_URL = import.meta.env.VITE_API_URL || '/api';
 const DEBUG_MODE = import.meta.env.MODE === 'development';
 
 // ============================

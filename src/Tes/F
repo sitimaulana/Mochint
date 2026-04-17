@@ -1,10 +1,10 @@
-// src/api/client.js
-const API_URL = 'http://localhost:5000/api';
+﻿// src/api/client.js
+const API_URL = '/api';
 
 // --- DEBUG MODE ---
 const DEBUG_MODE = process.env.NODE_ENV === 'development';
-const log = (...args) => DEBUG_MODE && console.log('🔧 API:', ...args);
-const logError = (...args) => DEBUG_MODE && console.error('❌ API Error:', ...args);
+const log = (...args) => DEBUG_MODE && console.log('ðŸ”§ API:', ...args);
+const logError = (...args) => DEBUG_MODE && console.error('âŒ API Error:', ...args);
 
 // --- 1. HELPER FUNCTIONS ---
 const getHeaders = () => {
@@ -83,7 +83,7 @@ export const authAPI = {
   // LOGIN - DUAL SYSTEM
   login: async (email, password) => {
     try {
-      log('🔐 Login attempt:', { email });
+      log('ðŸ” Login attempt:', { email });
       const response = await fetch(`${API_URL}/auth/login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -91,7 +91,7 @@ export const authAPI = {
       });
 
       const data = await response.json();
-      log('📥 Login response:', data);
+      log('ðŸ“¥ Login response:', data);
 
       if (!response.ok) {
         // Handle specific error messages from dual system
@@ -111,7 +111,7 @@ export const authAPI = {
       localStorage.setItem('user_type', data.user.user_type || 'member');
       localStorage.setItem('login_time', new Date().toISOString());
 
-      log('✅ Login successful:', { 
+      log('âœ… Login successful:', { 
         user_type: data.user.user_type,
         email: data.user.email,
         is_admin: data.user.is_admin
@@ -125,7 +125,7 @@ export const authAPI = {
       };
       
     } catch (error) {
-      logError('❌ Login error:', error);
+      logError('âŒ Login error:', error);
       
       // Better error messages for dual system
       if (error.message.includes('Password admin salah')) {
@@ -144,12 +144,12 @@ export const authAPI = {
 
   // LOGOUT
   logout: () => {
-    log('👋 Logout called');
+    log('ðŸ‘‹ Logout called');
     localStorage.removeItem('token');
     localStorage.removeItem('user');
     localStorage.removeItem('user_type');
     localStorage.removeItem('login_time');
-    log('✅ LocalStorage cleared');
+    log('âœ… LocalStorage cleared');
   },
 
   // GET CURRENT USER PROFILE (UPDATED FOR DUAL SYSTEM)
@@ -247,7 +247,7 @@ export const adminAPI = {
   // GET admin dashboard statistics
   getDashboardStats: async () => {
     try {
-      log('📊 Fetching admin dashboard stats');
+      log('ðŸ“Š Fetching admin dashboard stats');
       const response = await fetch(`${API_URL}/admin/dashboard`, {
         headers: getHeaders()
       });
@@ -257,7 +257,7 @@ export const adminAPI = {
       }
 
       const data = await response.json();
-      log('✅ Dashboard stats fetched');
+      log('âœ… Dashboard stats fetched');
       return data;
     } catch (error) {
       logError('Get dashboard stats error:', error);
@@ -893,7 +893,7 @@ export const isAdmin = () => {
   const user = getCurrentUser();
   const userType = getUserType();
   const result = userType === 'admin' && user?.is_admin === true;
-  log('🛡️ isAdmin check:', { 
+  log('ðŸ›¡ï¸ isAdmin check:', { 
     user_type: userType, 
     is_admin: user?.is_admin, 
     result 
@@ -904,7 +904,7 @@ export const isAdmin = () => {
 export const isMember = () => {
   const userType = getUserType();
   const result = userType === 'member';
-  log('👥 isMember check:', { 
+  log('ðŸ‘¥ isMember check:', { 
     user_type: userType, 
     result 
   });
@@ -950,7 +950,7 @@ const handleApiError = (error, context = 'API') => {
       error.message?.includes('authentikasi') ||
       error.message?.includes('unauthorized') ||
       error.message?.includes('Forbidden')) {
-    log('🔒 Auth error detected, clearing auth data');
+    log('ðŸ”’ Auth error detected, clearing auth data');
     clearAuthData();
     
     // Redirect to login page only if we're not already there
@@ -1049,7 +1049,7 @@ export const checkTokenExpiration = () => {
   
   // Token expires after 24 hours
   if (hoursDiff > 24) {
-    log('🕒 Token expired, clearing auth');
+    log('ðŸ•’ Token expired, clearing auth');
     clearAuthData();
     return true;
   }

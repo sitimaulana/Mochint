@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+﻿import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Home, Play, ArrowRight } from 'lucide-react';
 import axios from 'axios';
@@ -8,7 +8,7 @@ const Information = () => {
   const [articles, setArticles] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  const API_URL = 'http://localhost:5000/api/articles/user';
+  const API_URL = '/api/articles/user';
 
   // Fungsi untuk memotong text ke N kalimat pertama
   const truncateToSentences = (text, numSentences = 2) => {
@@ -128,7 +128,7 @@ const Information = () => {
                         {item.title}
                       </h3>
                       <p className="text-[10px] sm:text-xs text-gray-400 font-bold font-sans uppercase tracking-wider sm:tracking-widest">
-                        Mochint Guide • {new Date(item.updated_at || item.created_at).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })}
+                        Mochint Guide â€¢ {new Date(item.updated_at || item.created_at).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })}
                       </p>
                     </div>
                   </div>

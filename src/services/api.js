@@ -1,8 +1,8 @@
-// src/services/api.js
+﻿// src/services/api.js
 import axios from 'axios';
 
 const api = axios.create({
-  baseURL: 'http://localhost:5000/api', // GUNAKAN HARDCODE DULU
+  baseURL: '/api', // GUNAKAN HARDCODE DULU
   headers: {
     'Content-Type': 'application/json',
   },
