@@ -41,27 +41,41 @@ const BookingStep2 = () => {
   const filteredTreatments = useMemo(() => {
     let filtered = allTreatments;
     
-    // Filter berdasarkan kategori
+    // Filter berdasarkan kategori - Handle both array and string categories
     if (selectedCategory !== 'All') {
-      filtered = filtered.filter(t => t.category === selectedCategory);
+      filtered = filtered.filter(t => {
+        if (Array.isArray(t.category)) {
+          return t.category.includes(selectedCategory);
+        }
+        return t.category === selectedCategory;
+      });
     }
     
     // Filter berdasarkan pencarian
     if (searchTerm.trim() !== '') {
-      filtered = filtered.filter(t => 
-        t.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        t.category.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        (t.description && t.description.toLowerCase().includes(searchTerm.toLowerCase()))
-      );
+      filtered = filtered.filter(t => {
+        const categories = Array.isArray(t.category) ? t.category : [t.category];
+        return t.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          (t.description && t.description.toLowerCase().includes(searchTerm.toLowerCase())) ||
+          categories.some(cat => cat && cat.toLowerCase().includes(searchTerm.toLowerCase()));
+      });
     }
     
     return filtered;
   }, [allTreatments, selectedCategory, searchTerm]);
 
-  // 4. Dapatkan unique categories dari data backend
+  // 4. Dapatkan unique categories dari data backend - Handle both array and string
   const categories = useMemo(() => {
-    const uniqueCategories = [...new Set(allTreatments.map(t => t.category))];
-    return ['All', ...uniqueCategories.sort()];
+    const uniqueCategories = new Set();
+    allTreatments.forEach(t => {
+      // Handle both array and string categories
+      if (Array.isArray(t.category)) {
+        t.category.forEach(cat => uniqueCategories.add(cat));
+      } else if (t.category) {
+        uniqueCategories.add(t.category);
+      }
+    });
+    return ['All', ...Array.from(uniqueCategories).sort()];
   }, [allTreatments]);
 
   // 5. Format harga - DIPERBAIKI sesuai dengan Treatment.jsx
