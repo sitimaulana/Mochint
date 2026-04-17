@@ -1,12 +1,12 @@
-{
+﻿{
   "openapi": "3.0.1",
   "info": {
     "title": "Mochint Beauty Clinic API",
     "version": "1.0.0",
-    "description": "API documentation — terpisah berdasarkan fitur: Authentication, Products, Treatments, Therapists, Appointments, Members"
+    "description": "API documentation â€” terpisah berdasarkan fitur: Authentication, Products, Treatments, Therapists, Appointments, Members"
   },
   "servers": [
-    { "url": "http://localhost:5000", "description": "Local server" }
+    { "url": "/api", "description": "Local server" }
   ],
   "tags": [
     { "name": "Authentication", "description": "Login / Register / Logout" },

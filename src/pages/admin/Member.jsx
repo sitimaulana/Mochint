@@ -1,11 +1,11 @@
-import React, { useState, useEffect } from 'react';
+﻿import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 
 const Member = () => {
   // API URLs
-  const MEMBERS_API_URL = 'http://localhost:5000/api/members';
-  const APPOINTMENTS_API_URL = 'http://localhost:5000/api/appointments';
-  const HISTORY_API_URL = 'http://localhost:5000/api/members/history';
+  const MEMBERS_API_URL = '/api/members';
+  const APPOINTMENTS_API_URL = '/api/appointments';
+  const HISTORY_API_URL = '/api/members/history';
 
   const Token = localStorage.getItem('token');
   
@@ -166,8 +166,8 @@ const Member = () => {
       setHistoryLoading(true);
       
       if (debugMode) {
-        console.log(`📡 [DEBUG] Mengambil riwayat untuk member ID: ${memberId}`);
-        console.log(`📡 [DEBUG] API URL: ${HISTORY_API_URL}/${memberId}`);
+        console.log(`ðŸ“¡ [DEBUG] Mengambil riwayat untuk member ID: ${memberId}`);
+        console.log(`ðŸ“¡ [DEBUG] API URL: ${HISTORY_API_URL}/${memberId}`);
       }
       
       // Coba dari API terlebih dahulu
@@ -177,24 +177,24 @@ const Member = () => {
         }); 
         
         if (debugMode) {
-          console.log(`📡 [DEBUG] Status Response API Riwayat: ${response.status}`);
-          console.log(`📡 [DEBUG] Data Riwayat Diterima:`, response.data);
+          console.log(`ðŸ“¡ [DEBUG] Status Response API Riwayat: ${response.status}`);
+          console.log(`ðŸ“¡ [DEBUG] Data Riwayat Diterima:`, response.data);
         }
         
         if (response.data && response.data.length > 0) {
           if (debugMode) {
-            console.log(`📡 [DEBUG] Ditemukan ${response.data.length} catatan riwayat dari API`);
+            console.log(`ðŸ“¡ [DEBUG] Ditemukan ${response.data.length} catatan riwayat dari API`);
           }
           return response.data;
         } else {
           if (debugMode) {
-            console.log(`📡 [DEBUG] Tidak ada catatan riwayat dari API, menggunakan fallback`);
+            console.log(`ðŸ“¡ [DEBUG] Tidak ada catatan riwayat dari API, menggunakan fallback`);
           }
         }
       } catch (apiError) {
-        console.warn('⚠️ API Riwayat tidak tersedia, menggunakan fallback:', apiError.message);
+        console.warn('âš ï¸ API Riwayat tidak tersedia, menggunakan fallback:', apiError.message);
         if (debugMode) {
-          console.warn(`📡 [DEBUG] Detail Error API:`, apiError.response?.data || apiError.message);
+          console.warn(`ðŸ“¡ [DEBUG] Detail Error API:`, apiError.response?.data || apiError.message);
         }
       }
       
@@ -206,7 +206,7 @@ const Member = () => {
       );
       
       if (debugMode) {
-        console.log(`📡 [DEBUG] Ditemukan ${completedAppointments.length} appointments selesai untuk fallback`);
+        console.log(`ðŸ“¡ [DEBUG] Ditemukan ${completedAppointments.length} appointments selesai untuk fallback`);
       }
       
       // Konversi appointments ke format riwayat
@@ -228,7 +228,7 @@ const Member = () => {
       return fallbackHistory;
       
     } catch (err) {
-      console.error('❌ Error dalam fetchMemberHistory:', err);
+      console.error('âŒ Error dalam fetchMemberHistory:', err);
       return [];
     } finally {
       setHistoryLoading(false);
@@ -239,15 +239,15 @@ const Member = () => {
   const testHistoryAPI = async () => {
     if (members.length > 0) {
       const testMemberId = members[0].id;
-      console.log('🧪 [TEST] Menguji API riwayat untuk member:', testMemberId);
+      console.log('ðŸ§ª [TEST] Menguji API riwayat untuk member:', testMemberId);
       
       try {
         const response = await axios.get(`${HISTORY_API_URL}/${testMemberId}`);
-        console.log('🧪 [TEST] Response API:', response.data);
-        alert(`✅ Hasil Test API: ${response.data.length} catatan ditemukan\nCek konsol untuk detail.`);
+        console.log('ðŸ§ª [TEST] Response API:', response.data);
+        alert(`âœ… Hasil Test API: ${response.data.length} catatan ditemukan\nCek konsol untuk detail.`);
       } catch (error) {
-        console.error('🧪 [TEST] Error API:', error);
-        alert(`❌ Error API: ${error.message}\nCek konsol untuk detail.`);
+        console.error('ðŸ§ª [TEST] Error API:', error);
+        alert(`âŒ Error API: ${error.message}\nCek konsol untuk detail.`);
       }
     } else {
       alert('Tidak ada member tersedia untuk testing');
@@ -489,17 +489,17 @@ const Member = () => {
   };
 
   const viewHistory = async (member) => {
-    console.log('👁️ [RIWAYAT] Melihat riwayat untuk member:', member);
+    console.log('ðŸ‘ï¸ [RIWAYAT] Melihat riwayat untuk member:', member);
     setHistoryLoading(true);
     try {
       const history = await fetchMemberHistory(member.id);
-      console.log('👁️ [RIWAYAT] Riwayat diambil:', history);
+      console.log('ðŸ‘ï¸ [RIWAYAT] Riwayat diambil:', history);
       
       setMemberHistory(history);
       setViewingHistory({...member, history: history});
       
     } catch (error) {
-      console.error('❌ Error dalam viewHistory:', error);
+      console.error('âŒ Error dalam viewHistory:', error);
       // Fallback ke appointments jika semua gagal
       const fallbackHistory = appointments.filter(app => 
         app.member_id && app.member_id.toString() === member.id.toString() &&
@@ -1188,7 +1188,7 @@ const Member = () => {
                 <div className="text-sm font-medium text-gray-700 mb-1">{viewingHistory.name}</div>
                 <p className="text-xs sm:text-sm text-gray-600">
                   ID: <span className="font-medium">{viewingHistory.id}</span>
-                  <span className="mx-1">•</span>
+                  <span className="mx-1">â€¢</span>
                   Kunjungan: <span className="font-medium">{viewingHistory.total_visits || viewingHistory.totalVisits || 0}</span>
                 </p>
                 {debugMode && (
@@ -1308,7 +1308,7 @@ const Member = () => {
                         <div className="flex justify-between items-start mb-2">
                           <div>
                             <div className="text-sm font-semibold text-gray-800">{record.treatment_name || record.treatment}</div>
-                            <div className="text-xs text-gray-500">{record.date} {record.time && `• ${record.time}`}</div>
+                            <div className="text-xs text-gray-500">{record.date} {record.time && `â€¢ ${record.time}`}</div>
                           </div>
                           <span className={`px-2 py-1 rounded-full text-xs font-medium flex-shrink-0 ml-2 ${
                             record.status === 'completed' 

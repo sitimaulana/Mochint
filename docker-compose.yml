@@ -1,12 +1,10 @@
-version: '3.8'
-
 services:
   app:
     build: .
     container_name: app-mochint
     restart: always
     ports:
-      - "5000:5000"
+      - "80:5000"
     environment:
       - NODE_ENV=production
       - DATABASE_URL=mysql://root:password@db:3306/beauty_clinic
@@ -14,7 +12,7 @@ services:
       - JWT_SECRET=mochint_secret_key
       - GOOGLE_CLIENT_ID=541701158147-a1i4201q30oseloc60f4dh9ok034kbku.apps.googleusercontent.com
       - GOOGLE_CLIENT_SECRET=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
-      - GOOGLE_CALLBACK_URL=http://localhost:5000/api/auth/google/callback
+      - GOOGLE_CALLBACK_URL=http://103.185.38.16:5000/api/auth/google/callback
       - SESSION_SECRET=mochint_session_secret_development_only
       - EMAIL_SERVICE=gmail
       - EMAIL_USER=mochintclinic@gmail.com

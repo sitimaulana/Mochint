@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+﻿import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { 
   Phone,
@@ -42,7 +42,7 @@ const Contact = () => {
   const [saving, setSaving] = useState(false);
   const [notification, setNotification] = useState({ show: false, type: '', title: '', message: '' });
 
-  const API_URL = 'http://localhost:5000/api/contact';
+  const API_URL = '/api/contact';
 
   useEffect(() => {
     fetchContactData();
@@ -443,7 +443,7 @@ const Contact = () => {
 
             <div className="p-4 bg-[#FDFBF7] rounded-lg border border-[#D7CCC8]">
               <p className="text-sm text-[#6D4C41]">
-                💡 <strong>Tips:</strong> Informasi yang diisi di sini akan ditampilkan di halaman kontak website dan dapat diakses oleh pengunjung.
+                ðŸ’¡ <strong>Tips:</strong> Informasi yang diisi di sini akan ditampilkan di halaman kontak website dan dapat diakses oleh pengunjung.
               </p>
             </div>
           </div>
@@ -496,3 +496,4 @@ const Contact = () => {
 };
 
 export default Contact;
+

@@ -19,7 +19,7 @@ router.get('/google', (req, res, next) => {
     })(req, res, next);
   } catch (error) {
     console.error('Google OAuth not configured:', error.message);
-    res.redirect('http://localhost:5173/login?error=google_not_configured');
+    res.redirect('http://103.185.38.61/login?error=google_not_configured');
   }
 });
 
@@ -27,12 +27,12 @@ router.get('/google/callback', (req, res, next) => {
   try {
     const passport = require('../config/passport');
     passport.authenticate('google', { 
-      failureRedirect: 'http://localhost:5173/login?error=google_auth_failed',
+      failureRedirect: 'http://103.185.38.61/login?error=google_auth_failed',
       session: false 
     })(req, res, next);
   } catch (error) {
     console.error('Google OAuth callback error:', error.message);
-    res.redirect('http://localhost:5173/login?error=google_callback_error');
+    res.redirect('http://103.185.38.61/login?error=google_callback_error');
   }
 }, authController.googleCallback);
 

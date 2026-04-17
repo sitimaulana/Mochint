@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+﻿import React, { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams, useLocation } from 'react-router-dom';
 import { ArrowLeft, Eye, EyeOff, Lock, Mail, AlertCircle, CheckCircle } from 'lucide-react';
 import api from '../../api/client';
@@ -145,7 +145,7 @@ const Login = ({ onSwitch, onForgot, onLoginSuccess, onBack }) => {
 
   const handleGoogleLogin = () => {
     // Redirect to backend Google OAuth endpoint
-    window.location.href = 'http://localhost:5000/api/auth/google';
+    window.location.href = '/api/auth/google';
   };
 
   // Check if Google OAuth is configured
@@ -247,7 +247,7 @@ const Login = ({ onSwitch, onForgot, onLoginSuccess, onBack }) => {
                   <Lock className="absolute left-4 top-1/2 -translate-y-1/2 text-[#A1887F] group-focus-within:text-[#3E2723] transition-colors" size={18} />
                   <input 
                     type={showPassword ? "text" : "password"}
-                    placeholder="••••••••" 
+                    placeholder="â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢" 
                     required 
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}

@@ -1,4 +1,4 @@
-const passport = require('passport');
+﻿const passport = require('passport');
 const GoogleStrategy = require('passport-google-oauth20').Strategy;
 const memberModel = require('../models/Member');
 
@@ -9,7 +9,7 @@ const normalizeRow = (res) => {
 };
 
 // Debug: Log credentials yang dibaca
-console.log('🔑 Google OAuth Credentials:');
+console.log('ðŸ”‘ Google OAuth Credentials:');
 console.log('Client ID:', process.env.GOOGLE_CLIENT_ID?.substring(0, 20) + '...');
 console.log('Client Secret:', process.env.GOOGLE_CLIENT_SECRET ? 'SET (' + process.env.GOOGLE_CLIENT_SECRET.substring(0, 15) + '...)' : 'NOT SET');
 console.log('Callback URL:', process.env.GOOGLE_CALLBACK_URL);
@@ -19,7 +19,7 @@ passport.use(
     {
       clientID: process.env.GOOGLE_CLIENT_ID || 'your-google-client-id',
       clientSecret: process.env.GOOGLE_CLIENT_SECRET || 'your-google-client-secret',
-      callbackURL: process.env.GOOGLE_CALLBACK_URL || 'http://localhost:5000/api/auth/google/callback'
+      callbackURL: process.env.GOOGLE_CALLBACK_URL || '/api/auth/google/callback'
     },
     async (accessToken, refreshToken, profile, done) => {
       try {
@@ -69,3 +69,4 @@ passport.deserializeUser(async (id, done) => {
 });
 
 module.exports = passport;
+

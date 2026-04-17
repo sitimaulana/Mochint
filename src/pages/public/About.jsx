@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+﻿import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Home, ChevronLeft, ChevronRight, Loader } from 'lucide-react';
 import axios from 'axios';
@@ -20,7 +20,7 @@ const About = () => {
   });
   const [isLoading, setIsLoading] = useState(true);
 
-  const API_URL_PAGE_INFO = 'http://localhost:5000/api/page-info/public';
+  const API_URL_PAGE_INFO = '/api/page-info/public';
 
   useEffect(() => {
     const loadPageContent = async () => {
@@ -127,7 +127,7 @@ const About = () => {
                 <ul className="space-y-3">
                   {pageContent.vision.additional_data.misi.map((misi, index) => (
                     <li key={index} className="flex items-start gap-3">
-                      <span className="text-[#8D6E63] font-bold mt-1">•</span>
+                      <span className="text-[#8D6E63] font-bold mt-1">â€¢</span>
                       <span className="text-gray-600 leading-relaxed">{misi}</span>
                     </li>
                   ))}

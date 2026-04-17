@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+﻿import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { Mail, CheckCircle, AlertCircle, ArrowRight, Loader2 } from 'lucide-react';
 import axios from 'axios';
@@ -21,13 +21,13 @@ const EmailVerification = () => {
   useEffect(() => {
     // If no user data, redirect back to login
     if (!userData || !userData.email) {
-      console.log('⚠️ No user data, redirecting to login');
+      console.log('âš ï¸ No user data, redirecting to login');
       navigate('/auth/login', { replace: true });
       return;
     }
 
-    console.log('✅ User data received:', userData);
-    console.log('🔐 Flow type:', isForgotPassword ? 'Forgot Password' : 'Google OAuth');
+    console.log('âœ… User data received:', userData);
+    console.log('ðŸ” Flow type:', isForgotPassword ? 'Forgot Password' : 'Google OAuth');
     // Auto-send OTP on mount
     handleSendOtp();
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -43,11 +43,11 @@ const EmailVerification = () => {
 
   const handleSendOtp = async () => {
     if (!userData?.email) {
-      console.log('⚠️ No email found in userData');
+      console.log('âš ï¸ No email found in userData');
       return;
     }
     
-    console.log('📤 Sending OTP to:', userData.email);
+    console.log('ðŸ“¤ Sending OTP to:', userData.email);
     setSendingOtp(true);
     
     // Clear previous OTP
@@ -55,12 +55,12 @@ const EmailVerification = () => {
     setDevOtpCode('');
     
     try {
-      const response = await axios.post('http://localhost:5000/api/auth/send-otp', {
+      const response = await axios.post('/api/auth/send-otp', {
         email: userData.email,
         name: userData.name
       });
 
-      console.log('✅ OTP Response:', response.data);
+      console.log('âœ… OTP Response:', response.data);
 
       if (response.data.success) {
         setNotification({
@@ -73,12 +73,12 @@ const EmailVerification = () => {
         // Show OTP in console and store for development
         if (response.data.otp || response.data.devOTP) {
           const otpCode = response.data.otp || response.data.devOTP;
-          console.log('🔑 OTP Code (DEV):', otpCode);
+          console.log('ðŸ”‘ OTP Code (DEV):', otpCode);
           setDevOtpCode(otpCode); // Store for UI display
         }
       }
     } catch (error) {
-      console.error('❌ Error sending OTP:', error);
+      console.error('âŒ Error sending OTP:', error);
       console.error('Error details:', error.response?.data);
       setNotification({
         show: true,
@@ -143,7 +143,7 @@ const EmailVerification = () => {
 
     setLoading(true);
     try {
-      const response = await axios.post('http://localhost:5000/api/auth/verify-otp', {
+      const response = await axios.post('/api/auth/verify-otp', {
         email: userData.email,
         otp: otpCode
       });
@@ -348,3 +348,4 @@ const EmailVerification = () => {
 };
 
 export default EmailVerification;
+

@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+﻿import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Home, Search, ArrowRight, Filter, X, SlidersHorizontal } from 'lucide-react';
 import axios from 'axios';
@@ -19,7 +19,7 @@ const Product = () => {
   const [selectedProduct, setSelectedProduct] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
 
-  const API_URL = 'http://localhost:5000/api/products';
+  const API_URL = '/api/products';
 
   // Ambil unique categories dari data
   const categories = useMemo(() => {
@@ -105,7 +105,7 @@ const Product = () => {
 
   return (
     <div className="min-h-screen bg-[#FDFBF7] pb-20 font-sans text-[#3E2723]">
-      {/* ✨ CONTAINER dengan MARGIN KANAN KIRI */}
+      {/* âœ¨ CONTAINER dengan MARGIN KANAN KIRI */}
       <div className="container mx-auto px-6 sm:px-8 lg:px-12 xl:px-16 pt-6 sm:pt-8 max-w-[1400px]">
         
         {/* Breadcrumbs */}

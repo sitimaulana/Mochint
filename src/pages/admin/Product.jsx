@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+﻿import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 
 const Product = () => {
@@ -29,7 +29,7 @@ const Product = () => {
   const [notification, setNotification] = useState({ show: false, type: '', title: '', message: '' });
   const [searchTerm, setSearchTerm] = useState('');
 
-  const API_URL = 'http://localhost:5000/api/products';
+  const API_URL = '/api/products';
   
   const categories = ['Semua Produk', 'Acne', 'Brightening', 'Best Seller', 'Lainnya'];
   
@@ -866,7 +866,7 @@ const Product = () => {
                 {/* Info Promo */}
                 {isPromoActive(viewingProduct) && (
                   <div className="bg-red-50 border border-red-200 rounded-lg p-3">
-                    <p className="text-xs sm:text-sm font-bold text-red-800 mb-2">🎉 Promo Aktif!</p>
+                    <p className="text-xs sm:text-sm font-bold text-red-800 mb-2">ðŸŽ‰ Promo Aktif!</p>
                     <div className="text-xs sm:text-sm text-red-700">
                       <p>Diskon: <span className="font-bold">{viewingProduct.discount_percentage}%</span></p>
                       <p>Periode: {new Date(viewingProduct.promo_start_date).toLocaleDateString('id-ID')} - {new Date(viewingProduct.promo_end_date).toLocaleDateString('id-ID')}</p>

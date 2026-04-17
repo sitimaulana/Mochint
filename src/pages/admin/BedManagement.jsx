@@ -1,9 +1,9 @@
-import React, { useState, useEffect, useMemo } from 'react';
+﻿import React, { useState, useEffect, useMemo } from 'react';
 import { Bed, Calendar, Clock, RefreshCw, Users, CheckCircle, AlertCircle } from 'lucide-react';
 
 const BedManagement = () => {
-  const APPOINTMENTS_API_URL = 'http://localhost:5000/api/appointments';
-  const TIMESLOTS_API_URL = 'http://localhost:5000/api/timeslots';
+  const APPOINTMENTS_API_URL = '/api/appointments';
+  const TIMESLOTS_API_URL = '/api/timeslots';
   const Token = localStorage.getItem('token');
 
   const BEDS_CAPACITY = 3;
@@ -432,7 +432,7 @@ const BedManagement = () => {
                   }`}
                   title={isDisabled ? 'Aktifkan slot ini' : 'Nonaktifkan slot ini'}
                 >
-                  {isDisabled ? '✓' : '✕'}
+                  {isDisabled ? 'âœ“' : 'âœ•'}
                 </button>
                 
                 <div className="text-center mt-2">
@@ -554,3 +554,4 @@ const BedManagement = () => {
 };
 
 export default BedManagement;
+

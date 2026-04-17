@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+﻿import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 
@@ -27,8 +27,8 @@ const Therapist = () => {
   const [notification, setNotification] = useState({ show: false, type: '', title: '', message: '' });
 
   // API base URL
-  const API_URL = 'http://localhost:5000/api/therapists';
-  const APPOINTMENTS_API_URL = 'http://localhost:5000/api/appointments';
+  const API_URL = '/api/therapists';
+  const APPOINTMENTS_API_URL = '/api/appointments';
 
   const Token = localStorage.getItem('token');
 

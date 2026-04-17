@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+﻿import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Home, Calendar as CalendarIcon, Clock, Info, Bed, Loader2 } from 'lucide-react';
 import { appointmentAPI } from '../../../services/api';
@@ -54,9 +54,9 @@ const BookingStep3 = () => {
         const activeUser = JSON.parse(localStorage.getItem('active_user'));
         const currentUserId = activeUser?.id;
         
-        console.log('📅 Fetching appointments for date:', date);
-        console.log('👤 Current user ID:', currentUserId);
-        console.log('📊 Total appointments from API:', allAppointments.length);
+        console.log('ðŸ“… Fetching appointments for date:', date);
+        console.log('ðŸ‘¤ Current user ID:', currentUserId);
+        console.log('ðŸ“Š Total appointments from API:', allAppointments.length);
         
         // Filter appointments for selected date and confirmed status
         const filteredAppointments = allAppointments.filter(appointment => {
@@ -67,8 +67,8 @@ const BookingStep3 = () => {
           return dateMatch && statusMatch;
         });
         
-        console.log('✅ Filtered appointments (confirmed only):', filteredAppointments.length);
-        console.log('📋 Appointments:', filteredAppointments.map(a => ({ 
+        console.log('âœ… Filtered appointments (confirmed only):', filteredAppointments.length);
+        console.log('ðŸ“‹ Appointments:', filteredAppointments.map(a => ({ 
           time: a.time, 
           treatment: a.treatment_name,
           member_id: a.member_id,
@@ -87,14 +87,14 @@ const BookingStep3 = () => {
           };
         });
         
-        console.log('🛏️ Converted bookings:', convertedBookings);
+        console.log('ðŸ›ï¸ Converted bookings:', convertedBookings);
         
         setBookings(convertedBookings);
       } else {
         throw new Error('Failed to fetch appointments');
       }
     } catch (err) {
-      console.error('❌ Error fetching appointments:', err);
+      console.error('âŒ Error fetching appointments:', err);
       setError('Gagal memuat data jadwal. Menggunakan data offline.');
       setBookings([]);
     } finally {
@@ -105,7 +105,7 @@ const BookingStep3 = () => {
   const fetchDisabledTimeslots = async (date) => {
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch(`http://localhost:5000/api/timeslots?date=${date}`, {
+      const response = await fetch(`/api/timeslots?date=${date}`, {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
@@ -115,7 +115,7 @@ const BookingStep3 = () => {
       if (response.ok) {
         const data = await response.json();
         setDisabledTimeslots(data.data || []);
-        console.log('🚫 Disabled timeslots:', data.data);
+        console.log('ðŸš« Disabled timeslots:', data.data);
       } else {
         setDisabledTimeslots([]);
       }
@@ -163,8 +163,8 @@ const BookingStep3 = () => {
       availability[slot] = BEDS_CAPACITY;
     });
     
-    console.log('🛏️ Calculating bed availability...');
-    console.log('📋 Bookings to process:', bookings.length);
+    console.log('ðŸ›ï¸ Calculating bed availability...');
+    console.log('ðŸ“‹ Bookings to process:', bookings.length);
     
     bookings.forEach((booking, index) => {
       if (booking.date === selectedDate) {
@@ -182,7 +182,7 @@ const BookingStep3 = () => {
             const before = availability[slot];
             availability[slot] = Math.max(0, availability[slot] - booking.bedsUsed);
             if (before !== availability[slot]) {
-              console.log(`  ${slot}: ${before} → ${availability[slot]} bed`);
+              console.log(`  ${slot}: ${before} â†’ ${availability[slot]} bed`);
             }
           }
         });
@@ -191,7 +191,7 @@ const BookingStep3 = () => {
     
     const fullSlots = Object.values(availability).filter(v => v === 0).length;
     const availableSlots = Object.values(availability).filter(v => v > 0).length;
-    console.log(`📊 Summary: ${availableSlots} slots available, ${fullSlots} slots full`);
+    console.log(`ðŸ“Š Summary: ${availableSlots} slots available, ${fullSlots} slots full`);
     
     return availability;
   }, [selectedDate, bookings]);
@@ -219,7 +219,7 @@ const BookingStep3 = () => {
       const hasOverlap = (newStart < bookingEnd && newEnd > bookingStart);
       
       if (hasOverlap) {
-        console.log(`⚠️ User already has booking: ${booking.startTime} - ${calculateEndTime(booking.startTime)}`);
+        console.log(`âš ï¸ User already has booking: ${booking.startTime} - ${calculateEndTime(booking.startTime)}`);
       }
       
       return hasOverlap;
@@ -416,14 +416,14 @@ const BookingStep3 = () => {
         status: 'confirmed'
       };
       
-      console.log('📝 Creating appointment:', appointmentData);
+      console.log('ðŸ“ Creating appointment:', appointmentData);
       
       const response = await appointmentAPI.create(appointmentData);
       
       if (response.data && response.data.success) {
         const createdAppointment = response.data.data;
         
-        console.log('✅ Appointment created:', createdAppointment);
+        console.log('âœ… Appointment created:', createdAppointment);
         
         const finalData = {
           ...treatment,
@@ -444,7 +444,7 @@ const BookingStep3 = () => {
       }
       
     } catch (err) {
-      console.error('❌ Error creating appointment:', err);
+      console.error('âŒ Error creating appointment:', err);
       alert('Gagal membuat appointment. Silakan coba lagi.');
     } finally {
       setLoading(false);
@@ -547,16 +547,16 @@ const BookingStep3 = () => {
                     {!displayDate && (
                       <>
                         <p className="flex items-center gap-2">
-                          <span>💡</span>
-                          <span><span className="font-bold">Ketik manual</span> (DD/MM/YYYY) atau <span className="font-bold text-[#8D6E63]">klik icon 📅</span> di kanan untuk buka kalender</span>
+                          <span>ðŸ’¡</span>
+                          <span><span className="font-bold">Ketik manual</span> (DD/MM/YYYY) atau <span className="font-bold text-[#8D6E63]">klik icon ðŸ“…</span> di kanan untuk buka kalender</span>
                         </p>
                       </>
                     )}
                     {displayDate && displayDate.length < 10 && (
-                      <p className="text-blue-600">⌨️ Terus ketik untuk melengkapi tanggal...</p>
+                      <p className="text-blue-600">âŒ¨ï¸ Terus ketik untuk melengkapi tanggal...</p>
                     )}
                     {displayDate.length === 10 && !selectedDate && dateError && (
-                      <p className="text-red-600">❌ {dateError}</p>
+                      <p className="text-red-600">âŒ {dateError}</p>
                     )}
                   </div>
                 </div>
@@ -649,7 +649,7 @@ const BookingStep3 = () => {
                         </div>
                         
                         <div className="text-xs font-medium text-gray-600 bg-white px-3 py-1.5 rounded-full border border-gray-200">
-                          ⏰ Jam Operasional: 08:00 - 20:00
+                          â° Jam Operasional: 08:00 - 20:00
                         </div>
                       </div>
                     </div>

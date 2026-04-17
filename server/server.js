@@ -28,7 +28,7 @@ const PORT = process.env.PORT || 5000;
 const path = require('path');
 
 app.use(cors({
-  origin: '*',
+  origin: true,
   credentials: true,
   methods: ['GET','POST','PUT','PATCH','DELETE','OPTIONS'],
   allowedHeaders: ['Content-Type','Authorization','X-Requested-With','Accept']
@@ -114,8 +114,15 @@ app.get('/health', async (req, res) => {
 // Swagger UI
 app.use('/api/docs', swaggerUi.serve, swaggerUi.setup(swaggerDocument));
 
-app.listen(PORT, () => console.log(`Server running on http://localhost:${PORT}`));
+// PERHATIKAN: Jangan gunakan tanda kutip (' atau ") di dalam kurung!
+// Gunakan garis miring /.*/ yang merupakan format RegExp JavaScript.
 
-app.get('*(.*)', (req, res) => {
+app.get(/.*/, (req, res) => {
   res.sendFile(path.join(__dirname, '../public_html', 'index.html'));
+});
+
+// Pastikan app.listen tetap di paling bawah
+app.listen(PORT, '0.0.0.0', () => {
+  console.log(`🚀 Server running on port ${PORT}`);
+  console.log(`🌐 Accessible at http://103.185.38.16:${PORT}`);
 });

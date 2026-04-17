@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+﻿import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 
 const Treatment = () => {
@@ -56,8 +56,8 @@ const Treatment = () => {
   const [loadingOptions, setLoadingOptions] = useState(true);
 
   // API base URL
-  const API_URL = 'http://localhost:5000/api/treatments';
-  const OPTIONS_API_URL = 'http://localhost:5000/api/treatment-options';
+  const API_URL = '/api/treatments';
+  const OPTIONS_API_URL = '/api/treatment-options';
 
   // Auto-hide notification after 3 seconds
   useEffect(() => {

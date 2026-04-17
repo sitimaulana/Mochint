@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+﻿import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { authAPI } from '../../api/client';
 import { UserPlus, ShieldCheck, ArrowLeft, Eye, EyeOff, CheckCircle, AlertCircle } from 'lucide-react';
@@ -41,7 +41,7 @@ const Regist = ({ onSwitch, onRegisterSuccess, onBack }) => {
   const handleRegister = async (e) => {
     e.preventDefault();
     
-    console.log('🔍 Form submitted with data:', formData);
+    console.log('ðŸ” Form submitted with data:', formData);
     
     // Reset notifikasi dan errors
     setNotification({ show: false, type: '', message: '' });
@@ -96,8 +96,8 @@ const Regist = ({ onSwitch, onRegisterSuccess, onBack }) => {
       errorMessages.push('Alamat (minimal 10 karakter)');
     }
 
-    console.log('🔍 Validation errors:', errors);
-    console.log('🔍 Error messages:', errorMessages);
+    console.log('ðŸ” Validation errors:', errors);
+    console.log('ðŸ” Error messages:', errorMessages);
 
     // Jika ada error, tampilkan notifikasi
     if (Object.keys(errors).length > 0) {
@@ -125,7 +125,7 @@ const Regist = ({ onSwitch, onRegisterSuccess, onBack }) => {
     setIsSubmitting(true);
     
     try {
-      console.log('✅ All validations passed, submitting to API...');
+      console.log('âœ… All validations passed, submitting to API...');
       
       const res = await authAPI.register(formData);
       
@@ -199,7 +199,7 @@ const Regist = ({ onSwitch, onRegisterSuccess, onBack }) => {
         setNotification({
           show: true,
           type: 'error',
-          message: '🌐 Tidak dapat terhubung ke server. Periksa koneksi internet Anda.'
+          message: 'ðŸŒ Tidak dapat terhubung ke server. Periksa koneksi internet Anda.'
         });
       } else {
         // Error lainnya
@@ -218,7 +218,7 @@ const Regist = ({ onSwitch, onRegisterSuccess, onBack }) => {
   };
 
   const handleGoogleRegister = () => {
-    window.location.href = 'http://localhost:5000/api/auth/google';
+    window.location.href = '/api/auth/google';
   };
 
   const isGoogleOAuthEnabled = true;
