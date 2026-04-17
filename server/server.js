@@ -116,6 +116,6 @@ app.use('/api/docs', swaggerUi.serve, swaggerUi.setup(swaggerDocument));
 
 app.listen(PORT, () => console.log(`Server running on http://localhost:${PORT}`));
 
-app.get('*', (req, res) => {
+app.get('*(.*)', (req, res) => {
   res.sendFile(path.join(__dirname, '../public_html', 'index.html'));
 });
