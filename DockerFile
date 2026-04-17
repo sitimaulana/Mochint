@@ -1,29 +1,29 @@
-# --- Stage 1: Build Frontend (React + Vite) ---
+# --- Stage 1: Build Frontend (Vite) ---
 FROM node:20-slim AS build-frontend
 WORKDIR /app
 COPY package*.json ./
 RUN npm install
 COPY . .
-# Jalankan build vite (outputnya biasanya di folder /dist)
 RUN npm run build
 
-# --- Stage 2: Runner (Express + Static Frontend) ---
+# --- Stage 2: Runner (Express Server) ---
 FROM node:20-slim
 WORKDIR /app
 ENV NODE_ENV=production
 
-# Install dependencies untuk server saja
+# Install dependencies di root /app agar bisa di-require oleh /app/server
 COPY package*.json ./
 RUN npm install --production
+# Install express-session secara manual jika belum ada di package.json
+RUN npm install express-session
 
-# Salin source code Express (folder server)
+# Salin semua folder yang dibutuhkan
 COPY server ./server
-
-# Salin hasil build React dari Stage 1 ke folder public_html
-# Pastikan folder 'dist' sesuai dengan hasil build vite kamu
+COPY public ./public
+# Salin hasil build vite (dist) ke folder public_html
 COPY --from=build-frontend /app/dist ./public_html
 
 EXPOSE 5000
 
-# Jalankan server Express
+# Jalankan server.js yang ada di dalam folder server
 CMD ["node", "server/server.js"]
