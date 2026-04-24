@@ -20,7 +20,6 @@ RUN npm install express-session
 # Salin semua folder yang dibutuhkan
 COPY server ./server
 COPY public ./public
-# Salin hasil build vite (dist) ke folder public_html
 COPY --from=build-frontend /app/dist ./public_html
 
 EXPOSE 5000
