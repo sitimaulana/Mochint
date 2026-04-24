@@ -1,6 +1,6 @@
 ﻿import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Home, Calendar as CalendarIcon, Clock, Info, Bed, Loader2 } from 'lucide-react';
+import { Home, Calendar as CalendarIcon, Clock, Info, Bed, Loader2, Lightbulb, AlertCircle } from 'lucide-react';
 import { appointmentAPI } from '../../../services/api';
 
 const BookingStep3 = () => {
@@ -54,9 +54,9 @@ const BookingStep3 = () => {
         const activeUser = JSON.parse(localStorage.getItem('active_user'));
         const currentUserId = activeUser?.id;
         
-        console.log('ðŸ“… Fetching appointments for date:', date);
-        console.log('ðŸ‘¤ Current user ID:', currentUserId);
-        console.log('ðŸ“Š Total appointments from API:', allAppointments.length);
+        console.log('[FETCH] Fetching appointments for date:', date);
+        console.log('[USER] Current user ID:', currentUserId);
+        console.log('[INFO] Total appointments from API:', allAppointments.length);
         
         // Filter appointments for selected date and confirmed status
         const filteredAppointments = allAppointments.filter(appointment => {
@@ -67,8 +67,8 @@ const BookingStep3 = () => {
           return dateMatch && statusMatch;
         });
         
-        console.log('âœ… Filtered appointments (confirmed only):', filteredAppointments.length);
-        console.log('ðŸ“‹ Appointments:', filteredAppointments.map(a => ({ 
+        console.log('[SUCCESS] Filtered appointments (confirmed only):', filteredAppointments.length);
+        console.log('[LIST] Appointments:', filteredAppointments.map(a => ({
           time: a.time, 
           treatment: a.treatment_name,
           member_id: a.member_id,
@@ -87,7 +87,7 @@ const BookingStep3 = () => {
           };
         });
         
-        console.log('ðŸ›ï¸ Converted bookings:', convertedBookings);
+        console.log('[BED] Converted bookings:', convertedBookings);
         
         setBookings(convertedBookings);
       } else {
@@ -115,7 +115,7 @@ const BookingStep3 = () => {
       if (response.ok) {
         const data = await response.json();
         setDisabledTimeslots(data.data || []);
-        console.log('ðŸš« Disabled timeslots:', data.data);
+        console.log('[BLOCKED] Disabled timeslots:', data.data);
       } else {
         setDisabledTimeslots([]);
       }
@@ -163,8 +163,8 @@ const BookingStep3 = () => {
       availability[slot] = BEDS_CAPACITY;
     });
     
-    console.log('ðŸ›ï¸ Calculating bed availability...');
-    console.log('ðŸ“‹ Bookings to process:', bookings.length);
+    console.log('[BED] Calculating bed availability...');
+    console.log('[LIST] Bookings to process:', bookings.length);
     
     bookings.forEach((booking, index) => {
       if (booking.date === selectedDate) {
@@ -182,7 +182,7 @@ const BookingStep3 = () => {
             const before = availability[slot];
             availability[slot] = Math.max(0, availability[slot] - booking.bedsUsed);
             if (before !== availability[slot]) {
-              console.log(`  ${slot}: ${before} â†’ ${availability[slot]} bed`);
+              console.log(`  ${slot}: ${before} → ${availability[slot]} bed`);
             }
           }
         });
@@ -191,7 +191,7 @@ const BookingStep3 = () => {
     
     const fullSlots = Object.values(availability).filter(v => v === 0).length;
     const availableSlots = Object.values(availability).filter(v => v > 0).length;
-    console.log(`ðŸ“Š Summary: ${availableSlots} slots available, ${fullSlots} slots full`);
+    console.log(`[INFO] Summary: ${availableSlots} slots available, ${fullSlots} slots full`);
     
     return availability;
   }, [selectedDate, bookings]);
@@ -219,7 +219,7 @@ const BookingStep3 = () => {
       const hasOverlap = (newStart < bookingEnd && newEnd > bookingStart);
       
       if (hasOverlap) {
-        console.log(`âš ï¸ User already has booking: ${booking.startTime} - ${calculateEndTime(booking.startTime)}`);
+        console.log(`[WARNING] User already has booking: ${booking.startTime} - ${calculateEndTime(booking.startTime)}`);
       }
       
       return hasOverlap;
@@ -416,14 +416,14 @@ const BookingStep3 = () => {
         status: 'confirmed'
       };
       
-      console.log('ðŸ“ Creating appointment:', appointmentData);
+      console.log('[NOTIFY] Creating appointment:', appointmentData);
       
       const response = await appointmentAPI.create(appointmentData);
       
       if (response.data && response.data.success) {
         const createdAppointment = response.data.data;
         
-        console.log('âœ… Appointment created:', createdAppointment);
+        console.log('[SUCCESS] Appointment created:', createdAppointment);
         
         const finalData = {
           ...treatment,
@@ -547,16 +547,20 @@ const BookingStep3 = () => {
                     {!displayDate && (
                       <>
                         <p className="flex items-center gap-2">
-                          <span>ðŸ’¡</span>
-                          <span><span className="font-bold">Ketik manual</span> (DD/MM/YYYY) atau <span className="font-bold text-[#8D6E63]">klik icon ðŸ“…</span> di kanan untuk buka kalender</span>
+                          <Lightbulb size={14} className="text-yellow-500" />
+                          <span><span className="font-bold">Ketik manual</span> (DD/MM/YYYY) atau <span className="font-bold text-[#8D6E63]">klik icon kalender</span> di kanan untuk buka kalender</span>
                         </p>
                       </>
                     )}
                     {displayDate && displayDate.length < 10 && (
-                      <p className="text-blue-600">âŒ¨ï¸ Terus ketik untuk melengkapi tanggal...</p>
+                      <p className="text-blue-600 flex items-center gap-2">
+                        <span>⌨️</span> Terus ketik untuk melengkapi tanggal...
+                      </p>
                     )}
                     {displayDate.length === 10 && !selectedDate && dateError && (
-                      <p className="text-red-600">âŒ {dateError}</p>
+                      <p className="text-red-600 flex items-center gap-2">
+                        <AlertCircle size={14} /> {dateError}
+                      </p>
                     )}
                   </div>
                 </div>
@@ -648,8 +652,9 @@ const BookingStep3 = () => {
                           </div>
                         </div>
                         
-                        <div className="text-xs font-medium text-gray-600 bg-white px-3 py-1.5 rounded-full border border-gray-200">
-                          â° Jam Operasional: 08:00 - 20:00
+                        <div className="text-xs font-medium text-gray-600 bg-white px-3 py-1.5 rounded-full border border-gray-200 flex items-center gap-2">
+                          <Clock size={14} className="text-[#8D6E63]" />
+                          Jam Operasional: 08:00 - 20:00
                         </div>
                       </div>
                     </div>

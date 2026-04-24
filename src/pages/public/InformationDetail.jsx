@@ -2,6 +2,7 @@
 import { useParams, useNavigate } from 'react-router-dom';
 import { Home, ChevronRight, Calendar, User, Share2, ArrowLeft } from 'lucide-react';
 import axios from 'axios';
+import Preloader from '../../components/common/Preloader';
 
 const InformationDetail = () => {
   const { id } = useParams();
@@ -46,7 +47,7 @@ const InformationDetail = () => {
     fetchDetail();
   }, [id]);
 
-  if (loading) return <div className="min-h-screen bg-[#FDFBF7] flex items-center justify-center font-bold text-[#8D6E63]">Membuka Jurnal...</div>;
+  if (loading) return <Preloader type="fullscreen" text="Membuka Jurnal..." bgColor="bg-[#FDFBF7]" />;
 
   if (!article) {
     return (

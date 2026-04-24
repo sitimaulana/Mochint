@@ -1,5 +1,7 @@
-﻿import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import axios from 'axios';
+import { Check, Star, Hash, X } from 'lucide-react';
+import Preloader from '../../components/common/Preloader';
 
 const Appointment = () => {
   // API URLs
@@ -595,14 +597,7 @@ const Appointment = () => {
   const isLoading = Object.values(loading).some(l => l === true);
 
   if (isLoading) {
-    return (
-      <div className="flex justify-center items-center h-64">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-brown-600 mx-auto"></div>
-          <p className="mt-4 text-gray-600">Memuat data appointment...</p>
-        </div>
-      </div>
-    );
+    return <Preloader type="partial" text="Memuat data appointment..." />;
   }
 
   if (error && appointments.length === 0) {
@@ -649,7 +644,7 @@ const Appointment = () => {
               <div className="text-xs sm:text-sm text-gray-600">Dikonfirmasi</div>
             </div>
             <div className="w-8 h-8 sm:w-10 sm:h-10 bg-blue-100 rounded-full flex items-center justify-center">
-              <span className="text-blue-600 text-sm sm:text-base font-bold">âœ“</span>
+              <span className="text-blue-600 text-sm sm:text-base font-bold">✓</span>
             </div>
           </div>
           <div className="mt-2 text-[10px] sm:text-xs text-gray-500">Janji temu disetujui</div>
@@ -662,7 +657,7 @@ const Appointment = () => {
               <div className="text-xs sm:text-sm text-gray-600">Selesai</div>
             </div>
             <div className="w-8 h-8 sm:w-10 sm:h-10 bg-green-100 rounded-full flex items-center justify-center">
-              <span className="text-green-600 text-sm sm:text-base font-bold">â˜…</span>
+              <Star className="text-green-600" size={20} />
             </div>
           </div>
           <div className="mt-2 text-[10px] sm:text-xs text-gray-500">Perawatan selesai (Ditambahkan ke Riwayat)</div>
@@ -675,7 +670,7 @@ const Appointment = () => {
               <div className="text-xs sm:text-sm text-gray-600">Total</div>
             </div>
             <div className="w-8 h-8 sm:w-10 sm:h-10 bg-brown-100 rounded-full flex items-center justify-center">
-              <span className="text-brown-600 text-sm sm:text-base font-bold">âˆ‘</span>
+              <Hash className="text-brown-600" size={20} />
             </div>
           </div>
           <div className="mt-2 text-[10px] sm:text-xs text-gray-500">Semua janji temu</div>
@@ -936,9 +931,9 @@ const Appointment = () => {
               <h3 className="text-base sm:text-lg font-bold text-gray-800">{isAdding ? 'Booking Baru' : 'Perbarui Booking'}</h3>
               <button 
                 onClick={handleCancel}
-                className="text-gray-400 hover:text-gray-600 text-xl"
+                className="text-gray-400 hover:text-gray-600 transition-colors"
               >
-                âœ•
+                <X size={24} />
               </button>
             </div>
             <div className="space-y-3 sm:space-y-4 text-left">
@@ -1093,7 +1088,7 @@ const Appointment = () => {
                     <div className="text-xs text-gray-500">Pilih waktu janji temu (Jam operasional: 08:00 - 20:00)</div>
                     {formData.time && (
                       <div className="text-xs font-bold text-brown-600 bg-brown-50 px-3 py-2 rounded-md">
-                        âœ“ Waktu dipilih: {formData.time}
+                        ✓ Waktu dipilih: {formData.time}
                       </div>
                     )}
                   </>

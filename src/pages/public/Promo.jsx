@@ -1,7 +1,8 @@
 ﻿import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Home, MessageCircle, ChevronRight, CheckCircle2, Percent, Loader } from 'lucide-react';
+import { Home, MessageCircle, ChevronRight, CheckCircle2, Percent } from 'lucide-react';
 import axios from 'axios';
+import Preloader from '../../components/common/Preloader';
 
 const Promo = () => {
   const navigate = useNavigate();
@@ -46,11 +47,7 @@ const Promo = () => {
   };
 
   if (isLoading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-[#FDFBF7]">
-        <div className="animate-spin text-[#8D6E63]"><Loader size={48} /></div>
-      </div>
-    );
+    return <Preloader type="fullscreen" text="Mempersiapkan Penawaran Eksklusif..." bgColor="bg-[#FDFBF7]" />;
   }
 
   return (

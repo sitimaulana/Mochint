@@ -12,10 +12,10 @@ import {
   Save,
   AlertCircle,
   Check,
-  Loader2,
   Map,
   Building2
 } from 'lucide-react';
+import Preloader from '../../components/common/Preloader';
 
 const Contact = () => {
   const [contactData, setContactData] = useState({
@@ -135,14 +135,7 @@ const Contact = () => {
   };
 
   if (loading) {
-    return (
-      <div className="min-h-screen bg-[#FDFBF7] flex items-center justify-center">
-        <div className="text-center">
-          <Loader2 className="w-12 h-12 animate-spin text-[#8D6E63] mx-auto mb-4" />
-          <p className="text-[#3E2723] font-medium">Memuat data kontak...</p>
-        </div>
-      </div>
-    );
+    return <Preloader type="fullscreen" text="Memuat data kontak..." bgColor="bg-[#FDFBF7]" />;
   }
 
   return (

@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { User, Calendar, MessageCircle, Clock, ChevronRight, Award, X, Save, Settings, Star, Send, Loader2 } from 'lucide-react';
+import { User, Calendar, MessageCircle, Clock, ChevronRight, Award, X, Save, Settings, Star, Send } from 'lucide-react';
 import { reviewsAPI } from '../../api/client';
 import { memberAPI, appointmentAPI } from '../../services/api';
+import Preloader from '../../components/common/Preloader';
 
 const Dashboard = () => {
   const navigate = useNavigate();
@@ -411,14 +412,7 @@ const Dashboard = () => {
 
   // Loading state
   if (loading || !user) {
-    return (
-      <div className="min-h-screen bg-[#FDFBF7] flex items-center justify-center">
-        <div className="text-center">
-          <Loader2 className="animate-spin text-[#8D6E63] mx-auto mb-4" size={48} />
-          <p className="mt-4 text-gray-600 font-sans font-medium">Memuat dashboard...</p>
-        </div>
-      </div>
-    );
+    return <Preloader type="fullscreen" text="Memuat dashboard..." bgColor="bg-[#FDFBF7]" />;
   }
 
   return (

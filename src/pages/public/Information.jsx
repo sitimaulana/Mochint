@@ -1,7 +1,8 @@
 ﻿import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Home, Play, ArrowRight } from 'lucide-react';
+import { Home, Play, ArrowRight, Calendar } from 'lucide-react';
 import axios from 'axios';
+import Preloader from '../../components/common/Preloader';
 
 const Information = () => {
   const navigate = useNavigate();
@@ -43,11 +44,7 @@ const Information = () => {
   const latestArticles = articles.slice(1); 
   const popularNews = articles.slice(0, 6);
 
-  if (loading) return (
-    <div className="min-h-screen bg-[#FDFBF7] flex items-center justify-center font-bold text-[#8D6E63]">
-      Memuat Jurnal Kecantikan...
-    </div>
-  );
+  if (loading) return <Preloader type="fullscreen" text="Memuat Jurnal Kecantikan..." bgColor="bg-[#FDFBF7]" />;
 
   return (
     <div className="min-h-screen bg-[#FDFBF7] pb-16 sm:pb-20 md:pb-24 font-sans text-[#3E2723]">
@@ -127,8 +124,12 @@ const Information = () => {
                       <h3 className="font-display font-bold text-lg sm:text-xl md:text-2xl leading-tight group-hover:text-[#8D6E63] transition-colors tracking-tight text-[#3E2723] line-clamp-2">
                         {item.title}
                       </h3>
-                      <p className="text-[10px] sm:text-xs text-gray-400 font-bold font-sans uppercase tracking-wider sm:tracking-widest">
-                        Mochint Guide â€¢ {new Date(item.updated_at || item.created_at).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })}
+                      <p className="text-[10px] sm:text-xs text-gray-400 font-bold font-sans uppercase tracking-wider sm:tracking-widest flex items-center gap-2">
+                        Mochint Guide
+                        <span className="flex items-center gap-1">
+                          <Calendar size={12} className="sm:w-3 sm:h-3" />
+                          {new Date(item.updated_at || item.created_at).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })}
+                        </span>
                       </p>
                     </div>
                   </div>

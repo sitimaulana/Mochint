@@ -2,6 +2,7 @@
 import { useNavigate } from 'react-router-dom';
 import { Home, Search, ArrowRight, Filter, X, SlidersHorizontal } from 'lucide-react';
 import axios from 'axios';
+import Preloader from '../../components/common/Preloader';
 
 // Import komponen detail
 import ProductDetail from './ProductDetail';
@@ -94,14 +95,7 @@ const Product = () => {
     return price - discount;
   };
 
-  if (loading) return (
-    <div className="min-h-screen bg-[#FDFBF7] flex items-center justify-center font-sans">
-      <div className="text-center">
-        <div className="animate-spin rounded-full h-16 w-16 border-4 border-[#8D6E63] border-t-transparent mx-auto mb-4"></div>
-        <p className="font-bold text-[#8D6E63]">Mempersiapkan Produk Kecantikan...</p>
-      </div>
-    </div>
-  );
+  if (loading) return <Preloader type="fullscreen" text="Mempersiapkan Produk Kecantikan..." bgColor="bg-[#FDFBF7]" />;
 
   return (
     <div className="min-h-screen bg-[#FDFBF7] pb-20 font-sans text-[#3E2723]">

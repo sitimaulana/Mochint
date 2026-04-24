@@ -1,6 +1,7 @@
 ﻿import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
+import Preloader from '../../components/common/Preloader';
 
 const Therapist = () => {
   const navigate = useNavigate();
@@ -315,14 +316,7 @@ const Therapist = () => {
 
   // Loading state
   if (loading) {
-    return (
-      <div className="flex justify-center items-center h-64">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-brown-600 mx-auto"></div>
-          <p className="mt-4 text-gray-600">Memuat data terapis...</p>
-        </div>
-      </div>
-    );
+    return <Preloader type="partial" text="Memuat data terapis..." />;
   }
 
   // Error state

@@ -1,5 +1,6 @@
 ﻿import React, { useState, useEffect } from 'react';
 import axios from 'axios';
+import Preloader from '../../components/common/Preloader';
 
 const Product = () => {
   const [products, setProducts] = useState([]);
@@ -28,6 +29,7 @@ const Product = () => {
   const [error, setError] = useState(null);
   const [notification, setNotification] = useState({ show: false, type: '', title: '', message: '' });
   const [searchTerm, setSearchTerm] = useState('');
+  const [selectedCategory, setSelectedCategory] = useState(''); // Filter kategori
 
   const API_URL = '/api/products';
   
@@ -380,14 +382,7 @@ const Product = () => {
     setFormData(prev => ({ ...prev, image: '' }));
   };
 
-  if (loading) return (
-    <div className="flex justify-center items-center min-h-[400px] p-4">
-      <div className="text-center">
-        <div className="animate-spin rounded-full h-10 w-10 sm:h-12 sm:w-12 border-b-2 border-brown-600 mx-auto"></div>
-        <p className="mt-3 sm:mt-4 text-sm sm:text-base text-gray-600">Memuat produk...</p>
-      </div>
-    </div>
-  );
+  if (loading) return <Preloader type="partial" text="Memuat produk..." />;
 
   return (
     <div className="space-y-4 sm:space-y-6 p-4 sm:p-0">
@@ -404,32 +399,64 @@ const Product = () => {
         </button>
       </div>
 
-      {/* Search Bar */}
+      {/* Search Bar & Filters */}
       <div className="bg-white rounded-xl shadow-sm p-3 sm:p-4 border border-gray-200">
-        <div className="relative">
-          <div className="absolute inset-y-0 left-0 pl-2 sm:pl-3 flex items-center pointer-events-none">
-            <svg className="h-4 w-4 sm:h-5 sm:w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-            </svg>
+        <div className="space-y-3">
+          {/* Search Bar */}
+          <div className="relative">
+            <div className="absolute inset-y-0 left-0 pl-2 sm:pl-3 flex items-center pointer-events-none">
+              <svg className="h-4 w-4 sm:h-5 sm:w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+              </svg>
+            </div>
+            <input
+              type="search"
+              placeholder="Cari produk..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="block w-full pl-8 sm:pl-10 pr-3 py-1.5 sm:py-2 text-sm sm:text-base border border-gray-300 rounded-lg bg-gray-50 focus:outline-none focus:ring-2 focus:ring-brown-500 focus:border-transparent transition-colors duration-200"
+            />
           </div>
-          <input
-            type="search"
-            placeholder="Cari produk..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="block w-full pl-8 sm:pl-10 pr-3 py-1.5 sm:py-2 text-sm sm:text-base border border-gray-300 rounded-lg bg-gray-50 focus:outline-none focus:ring-2 focus:ring-brown-500 focus:border-transparent transition-colors duration-200"
-          />
+
+          {/* Category Filter */}
+          <div className="flex flex-col sm:flex-row gap-2 items-start sm:items-center">
+            <label className="text-sm font-medium text-gray-700">Filter Kategori:</label>
+            <select
+              value={selectedCategory}
+              onChange={(e) => setSelectedCategory(e.target.value)}
+              className="flex-1 px-3 py-1.5 sm:py-2 text-sm border border-gray-300 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-brown-500 focus:border-transparent transition-colors duration-200"
+            >
+              <option value="">Semua Kategori</option>
+              {categories.map((category) => (
+                <option key={category} value={category}>
+                  {category}
+                </option>
+              ))}
+            </select>
+            {selectedCategory && (
+              <button
+                onClick={() => setSelectedCategory('')}
+                className="px-3 py-1.5 sm:py-2 text-sm bg-gray-200 hover:bg-gray-300 text-gray-800 rounded-lg transition-colors"
+              >
+                Reset Filter
+              </button>
+            )}
+          </div>
+
+          {/* Results Summary */}
+          {(searchTerm || selectedCategory) && (
+            <p className="text-sm text-gray-600">
+              Menampilkan {products.filter(product => {
+                const matchesSearch = (product.name || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+                  (product.category || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+                  (product.description || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+                  (product.id || '').toString().toLowerCase().includes(searchTerm.toLowerCase());
+                const matchesCategory = !selectedCategory || product.category === selectedCategory;
+                return matchesSearch && matchesCategory;
+              }).length} dari {products.length} produk
+            </p>
+          )}
         </div>
-        {searchTerm && (
-          <p className="mt-2 text-sm text-gray-600">
-            Menampilkan {products.filter(product => 
-              (product.name || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
-              (product.category || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
-              (product.description || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
-              (product.id || '').toString().toLowerCase().includes(searchTerm.toLowerCase())
-            ).length} dari {products.length} produk
-          </p>
-        )}
       </div>
 
       <div className="bg-white rounded-xl shadow-sm p-3 sm:p-6 border border-gray-200">
@@ -437,12 +464,14 @@ const Product = () => {
         {products.length > 0 ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4 md:gap-6">
             {products
-              .filter(product => 
-                (product.name || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
-                (product.category || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
-                (product.description || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
-                (product.id || '').toString().toLowerCase().includes(searchTerm.toLowerCase())
-              )
+              .filter(product => {
+                const matchesSearch = (product.name || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+                  (product.category || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+                  (product.description || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+                  (product.id || '').toString().toLowerCase().includes(searchTerm.toLowerCase());
+                const matchesCategory = !selectedCategory || product.category === selectedCategory;
+                return matchesSearch && matchesCategory;
+              })
               .map((product) => (
               <div key={product._id || product.id} className="bg-white rounded-lg border border-gray-200 overflow-hidden hover:shadow-md transition-all duration-200">
                 <div className="h-40 sm:h-48 overflow-hidden bg-gray-100 relative">
