@@ -437,6 +437,8 @@ const Dashboard = () => {
           <h2 className="text-base sm:text-lg font-semibold text-gray-800">Janji Temu Hari Ini</h2>
           <a href="/admin/appointment" className="flex items-center gap-1 text-xs sm:text-sm text-brown-600 hover:text-brown-700 font-medium">
               Lihat Semua <i className="fas fa-chevron-right" style={{ fontSize: '16px' }}></i>
+          </a>
+        </div>
         <div className="mb-4">
           <div className="text-xs sm:text-sm text-gray-600">
             Menampilkan <span className="font-bold">{todayAppointments.length}</span> janji temu untuk hari ini
@@ -582,9 +584,7 @@ const Dashboard = () => {
         <div className="bg-white rounded-xl shadow-sm p-4 sm:p-6 border border-gray-200">
           <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2 mb-4 sm:mb-6">
             <h2 className="text-base sm:text-lg font-semibold text-gray-800">Anggota Teratas berdasarkan Kunjungan</h2>
-            <a href="/admin/member" className="flex items-center gap-1 text-xs sm:text-sm text-brown-600 hover:text-brown-700 font-medium">
-              Lihat Semua <i className=" fas fa-chevron-right\ style={{ fontSize: \16px\ }}></i>
-            </a>
+            <a href="/admin/member" className="flex items-center gap-1 text-xs sm:text-sm text-brown-600 hover:text-brown-700 font-medium">Lihat Semua <i className="fas fa-chevron-right\ style={{ fontSize: \16px\ }}"></i></a>
           </div>
           <div className="space-y-3 sm:space-y-4">
             {topMembers.map((member, index) => (
@@ -617,7 +617,7 @@ const Dashboard = () => {
         <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2 mb-4">
           <h2 className="text-base sm:text-lg font-semibold text-gray-800">Perawatan Selesai Terbaru</h2>
           <a href="/admin/appointment" className="flex items-center gap-1 text-xs sm:text-sm text-brown-600 hover:text-brown-700 font-medium">
-            Lihat Semua <i className=" fas fa-chevron-right\ style={{ fontSize: \16px\ }}></i>
+            Lihat Semua <i className=" fas fa-chevron-right\ style={{ fontSize: \16px\ }}"></i>
           </a>
         </div>
         <div className="space-y-2 sm:space-y-3">
@@ -708,6 +708,7 @@ const Dashboard = () => {
     </div>
   );
 };
+
 
 const StatCard = ({ title, value, icon: Icon, color, subtitle }) => {
   const colorClasses = {
