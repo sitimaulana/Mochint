@@ -1,5 +1,6 @@
 ﻿import React, { useState, useEffect, useMemo } from 'react';
 import Preloader from '../../components/common/Preloader';
+import { Bed, Calendar, CheckCircle, Users, AlertCircle, RefreshCw } from '../../components/icons';
 
 const BedManagement = () => {
   const APPOINTMENTS_API_URL = '/api/appointments';

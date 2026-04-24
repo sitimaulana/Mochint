@@ -1,6 +1,21 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import axios from 'axios';
 import Preloader from '../../components/common/Preloader';
+import {
+  Star,
+  User,
+  Calendar,
+  Clock,
+  Check,
+  X,
+  Plus,
+  Edit,
+  Trash,
+  Loader2,
+  Search,
+  Filter,
+  ArrowRight
+} from '../../components/icons';
 
 const Appointment = () => {
   // API URLs

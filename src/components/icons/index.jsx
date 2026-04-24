@@ -52,7 +52,9 @@ export const Users = createIcon(<><circle cx="9" cy="8" r="3" /><circle cx="17" 
 export const UserPlus = createIcon(<><circle cx="9" cy="8" r="3" /><path d="M3.5 21a5.5 5.5 0 0 1 11 0" /><line x1="17" y1="8" x2="17" y2="14" /><line x1="14" y1="11" x2="20" y2="11" /></>);
 export const Edit3 = createIcon(<><path d="M12 20h9" /><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z" /></>);
 export const Edit2 = createIcon(<><path d="M12 20h9" /><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z" /></>);
+export const Edit = Edit2;
 export const Trash2 = createIcon(<><path d="M3 6h18" /><path d="M8 6V4h8v2" /><path d="M6 6l1 14h10l1-14" /><line x1="10" y1="11" x2="10" y2="17" /><line x1="14" y1="11" x2="14" y2="17" /></>);
+export const Trash = Trash2;
 export const History = createIcon(<><path d="M3 12a9 9 0 1 0 3-6.7" /><polyline points="3 4 3 10 9 10" /></>);
 export const ClipboardList = createIcon(<><rect x="8" y="3" width="8" height="4" rx="1" /><path d="M9 5H7a2 2 0 0 0-2 2v11a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2" /><line x1="8" y1="11" x2="16" y2="11" /><line x1="8" y1="15" x2="16" y2="15" /></>);
 export const Award = createIcon(<><circle cx="12" cy="8" r="5" /><path d="M8.5 13.5 7 22l5-2.5L17 22l-1.5-8.5" /></>);
