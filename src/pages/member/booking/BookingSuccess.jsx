@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Home, MapPin, Phone, Mail, Calendar, User, List, CheckCircle } from 'lucide-react';
+import { Home, MapPin, Phone, Mail, Calendar, User, List, CheckCircle } from '/src/components/icons';
 
 const BookingSuccess = () => {
   const navigate = useNavigate();

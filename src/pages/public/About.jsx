@@ -1,6 +1,6 @@
-﻿import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Home, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Home, ChevronLeft, ChevronRight } from '/src/components/icons';
 import axios from 'axios';
 import Preloader from '../../components/common/Preloader';
 
@@ -124,7 +124,7 @@ const About = () => {
                 <ul className="space-y-3">
                   {pageContent.vision.additional_data.misi.map((misi, index) => (
                     <li key={index} className="flex items-start gap-3">
-                      <span className="text-[#8D6E63] font-bold mt-1">â€¢</span>
+                      <span className="text-[#8D6E63] font-bold mt-1">•</span>
                       <span className="text-gray-600 leading-relaxed">{misi}</span>
                     </li>
                   ))}
@@ -247,3 +247,4 @@ const About = () => {
 };
 
 export default About;
+

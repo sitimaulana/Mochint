@@ -1,6 +1,6 @@
-﻿import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Home, Search, ArrowRight, Filter, X, SlidersHorizontal } from 'lucide-react';
+import { Home, Search, ArrowRight, Filter, X, SlidersHorizontal } from '/src/components/icons';
 import axios from 'axios';
 import Preloader from '../../components/common/Preloader';
 
@@ -99,7 +99,7 @@ const Product = () => {
 
   return (
     <div className="min-h-screen bg-[#FDFBF7] pb-20 font-sans text-[#3E2723]">
-      {/* âœ¨ CONTAINER dengan MARGIN KANAN KIRI */}
+      {/* ✨ CONTAINER dengan MARGIN KANAN KIRI */}
       <div className="container mx-auto px-6 sm:px-8 lg:px-12 xl:px-16 pt-6 sm:pt-8 max-w-[1400px]">
         
         {/* Breadcrumbs */}
@@ -461,3 +461,4 @@ const Product = () => {
 };
 
 export default Product;
+

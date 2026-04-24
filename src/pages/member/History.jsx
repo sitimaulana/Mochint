@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Home, ChevronDown, Loader2 } from 'lucide-react';
+import { Home, ChevronDown, Loader2 } from '/src/components/icons';
 import { appointmentAPI } from '../../services/api';
 import { mockHistory } from '../../api/mockData'; 
 
@@ -314,3 +314,4 @@ const History = () => {
 };
 
 export default History;
+

@@ -1,6 +1,6 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Search, Plus, Home, AlertCircle } from 'lucide-react';
+import { Search, Plus, Home, AlertCircle } from '/src/components/icons';
 import { treatmentAPI } from '../../../services/api';
 import Preloader from '../../../components/common/Preloader';
 

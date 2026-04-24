@@ -1,6 +1,6 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Home } from 'lucide-react';
+import { Home } from '/src/components/icons';
 
 const BookingStep1 = () => {
   const navigate = useNavigate();

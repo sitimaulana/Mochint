@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
+import { ChevronRight, Stethoscope } from '/src/components/icons';
 import Preloader from '../../components/common/Preloader';
 
 const Dashboard = () => {
@@ -436,7 +437,9 @@ const Dashboard = () => {
         <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2 mb-4">
           <h2 className="text-base sm:text-lg font-semibold text-gray-800">Janji Temu Hari Ini</h2>
           <a href="/admin/appointment" className="flex items-center gap-1 text-xs sm:text-sm text-brown-600 hover:text-brown-700 font-medium">
-              Lihat Semua <i className="fas fa-chevron-right" style={{ fontSize: '16px' }}></i>
+            Lihat Semua <ChevronRight size={16} />
+          </a>
+        </div>
         <div className="mb-4">
           <div className="text-xs sm:text-sm text-gray-600">
             Menampilkan <span className="font-bold">{todayAppointments.length}</span> janji temu untuk hari ini
@@ -537,7 +540,7 @@ const Dashboard = () => {
           <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2 mb-4 sm:mb-6">
             <h2 className="text-base sm:text-lg font-semibold text-gray-800">Anggota Terbaru</h2>
             <a href="/admin/member" className="flex items-center gap-1 text-xs sm:text-sm text-brown-600 hover:text-brown-700 font-medium">
-              Lihat Semua <i className="fas fa-chevron-right" style={{ fontSize: '16px' }}></i>
+              Lihat Semua <ChevronRight size={16} />
             </a>
           </div>
           <div className="space-y-3 sm:space-y-4">
@@ -583,7 +586,7 @@ const Dashboard = () => {
           <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2 mb-4 sm:mb-6">
             <h2 className="text-base sm:text-lg font-semibold text-gray-800">Anggota Teratas berdasarkan Kunjungan</h2>
             <a href="/admin/member" className="flex items-center gap-1 text-xs sm:text-sm text-brown-600 hover:text-brown-700 font-medium">
-              Lihat Semua <i className=" fas fa-chevron-right\ style={{ fontSize: \16px\ }}></i>
+              Lihat Semua <ChevronRight size={16} />
             </a>
           </div>
           <div className="space-y-3 sm:space-y-4">
@@ -617,7 +620,7 @@ const Dashboard = () => {
         <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2 mb-4">
           <h2 className="text-base sm:text-lg font-semibold text-gray-800">Perawatan Selesai Terbaru</h2>
           <a href="/admin/appointment" className="flex items-center gap-1 text-xs sm:text-sm text-brown-600 hover:text-brown-700 font-medium">
-            Lihat Semua <i className=" fas fa-chevron-right\ style={{ fontSize: \16px\ }}></i>
+            Lihat Semua <ChevronRight size={16} />
           </a>
         </div>
         <div className="space-y-2 sm:space-y-3">
@@ -657,7 +660,7 @@ const Dashboard = () => {
         <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2 mb-4">
           <h2 className="text-base sm:text-lg font-semibold text-gray-800">Terapis Teratas</h2>
           <a href="/admin/therapist" className="flex items-center gap-1 text-xs sm:text-sm text-brown-600 hover:text-brown-700 font-medium">
-            Lihat Semua <i className="fas fa-chevron-right" style={{ fontSize: '16px' }}></i>
+            Lihat Semua <ChevronRight size={16} />
           </a>
         </div>
         <div className="space-y-3 sm:space-y-4">
@@ -668,7 +671,7 @@ const Dashboard = () => {
                   <span>{therapist.image}</span>
                 ) : (
                   <div className="w-8 h-8 sm:w-10 sm:h-10 bg-brown-100 rounded-full flex items-center justify-center">
-                    <i className="fas fa-stethoscope text-brown-600" style={{ fontSize: '18px' }}></i>
+                    <Stethoscope size={18} className="text-brown-600" />
                   </div>
                 )}
               </div>

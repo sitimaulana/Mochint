@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { Home, Calendar, Clock, MapPin, CheckCircle, Printer, ArrowLeft } from 'lucide-react';
+import { Home, Calendar, Clock, MapPin, CheckCircle, Printer, ArrowLeft } from '/src/components/icons';
 import { appointmentAPI } from '../../services/api';
 import { mockAppointments } from '../../api/mockData';
 import Preloader from '../../components/common/Preloader';

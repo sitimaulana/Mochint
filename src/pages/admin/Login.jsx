@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, Eye, EyeOff } from 'lucide-react';
+import { ArrowLeft, Eye, EyeOff } from '/src/components/icons';
 import api from '../../api/client';
 
 const Login = ({ onSwitch, onForgot, onLoginSuccess, onBack }) => {

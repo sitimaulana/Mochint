@@ -1,5 +1,5 @@
-﻿import React, { useState, useEffect, useRef } from 'react';
-import { ArrowRight, MapPin, Phone, Star, ChevronLeft, ChevronRight, MessageCircle } from 'lucide-react';
+import React, { useState, useEffect, useRef } from 'react';
+import { ArrowRight, MapPin, Phone, Star, ChevronLeft, ChevronRight, MessageCircle } from '/src/components/icons';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import Preloader from '../../components/common/Preloader';
@@ -108,9 +108,9 @@ const Home = () => {
         
         setTestimonials(validReviews);
         
-        console.log("âœ… Data loaded successfully from database");
+        console.log("✅ Data loaded successfully from database");
       } catch (error) {
-        console.error("âŒ Gagal memuat data dari database:", error);
+        console.error("❌ Gagal memuat data dari database:", error);
         console.error("Error details:", error.response?.data || error.message);
         // Set empty array jika gagal
         setTestimonials([]);
@@ -425,7 +425,7 @@ const Home = () => {
 
           </div>
           <div className="border-t border-white/5 mt-16 pt-8 text-center text-[#A1887F] text-xs font-sans font-black uppercase tracking-[0.3em]">
-            Â© 2026 Mochint Beauty Care.
+            © 2026 Mochint Beauty Care.
           </div>
         </div>
       </footer>
@@ -434,3 +434,4 @@ const Home = () => {
 };
 
 export default Home;
+

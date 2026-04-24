@@ -1,6 +1,6 @@
-﻿import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { Mail, CheckCircle, AlertCircle, ArrowRight, Loader2 } from 'lucide-react';
+import { Mail, CheckCircle, AlertCircle, ArrowRight, Loader2 } from '/src/components/icons';
 import axios from 'axios';
 
 const EmailVerification = () => {
@@ -21,13 +21,13 @@ const EmailVerification = () => {
   useEffect(() => {
     // If no user data, redirect back to login
     if (!userData || !userData.email) {
-      console.log('âš ï¸ No user data, redirecting to login');
+      console.log('⚠️ No user data, redirecting to login');
       navigate('/auth/login', { replace: true });
       return;
     }
 
-    console.log('âœ… User data received:', userData);
-    console.log('ðŸ” Flow type:', isForgotPassword ? 'Forgot Password' : 'Google OAuth');
+    console.log('✅ User data received:', userData);
+    console.log('🔐 Flow type:', isForgotPassword ? 'Forgot Password' : 'Google OAuth');
     // Auto-send OTP on mount
     handleSendOtp();
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -43,11 +43,11 @@ const EmailVerification = () => {
 
   const handleSendOtp = async () => {
     if (!userData?.email) {
-      console.log('âš ï¸ No email found in userData');
+      console.log('⚠️ No email found in userData');
       return;
     }
     
-    console.log('ðŸ“¤ Sending OTP to:', userData.email);
+    console.log('📤 Sending OTP to:', userData.email);
     setSendingOtp(true);
     
     // Clear previous OTP
@@ -60,7 +60,7 @@ const EmailVerification = () => {
         name: userData.name
       });
 
-      console.log('âœ… OTP Response:', response.data);
+      console.log('✅ OTP Response:', response.data);
 
       if (response.data.success) {
         setNotification({
@@ -73,12 +73,12 @@ const EmailVerification = () => {
         // Show OTP in console and store for development
         if (response.data.otp || response.data.devOTP) {
           const otpCode = response.data.otp || response.data.devOTP;
-          console.log('ðŸ”‘ OTP Code (DEV):', otpCode);
+          console.log('🔑 OTP Code (DEV):', otpCode);
           setDevOtpCode(otpCode); // Store for UI display
         }
       }
     } catch (error) {
-      console.error('âŒ Error sending OTP:', error);
+      console.error('❌ Error sending OTP:', error);
       console.error('Error details:', error.response?.data);
       setNotification({
         show: true,
@@ -348,4 +348,5 @@ const EmailVerification = () => {
 };
 
 export default EmailVerification;
+
 

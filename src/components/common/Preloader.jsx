@@ -1,5 +1,5 @@
 import React from 'react';
-import { Loader } from 'lucide-react';
+import { Loader } from '/src/components/icons';
 
 /**
  * Preloader Component - Unified loading indicator untuk seluruh aplikasi
@@ -68,3 +68,4 @@ const Preloader = ({
 };
 
 export default Preloader;
+

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useMembers } from '../../context/MemberContext';
-import { X, User, Mail, Phone, Save, Settings, Edit3, ShieldCheck } from 'lucide-react';
+import { X, User, Mail, Phone, Save, Settings, Edit3, ShieldCheck } from '/src/components/icons';
 
 const Member = () => {
   const { updateMember } = useMembers();

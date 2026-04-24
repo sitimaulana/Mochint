@@ -10,7 +10,7 @@ import {
   ChevronRight,
   Menu,
   X
-} from 'lucide-react';
+} from '/src/components/icons';
 
 const Sidebar = () => {
   const location = useLocation();

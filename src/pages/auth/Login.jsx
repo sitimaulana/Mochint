@@ -1,6 +1,6 @@
-﻿import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams, useLocation } from 'react-router-dom';
-import { ArrowLeft, Eye, EyeOff, Lock, Mail, AlertCircle, CheckCircle } from 'lucide-react';
+import { ArrowLeft, Eye, EyeOff, Lock, Mail, AlertCircle, CheckCircle } from '/src/components/icons';
 import api from '../../api/client';
 
 const Login = ({ onSwitch, onForgot, onLoginSuccess, onBack }) => {
@@ -336,3 +336,4 @@ const Login = ({ onSwitch, onForgot, onLoginSuccess, onBack }) => {
 };
 
 export default Login;
+

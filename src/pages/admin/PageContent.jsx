@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { 
   AlertCircle,
@@ -6,7 +6,7 @@ import {
   Eye,
   EyeOff,
   X
-} from 'lucide-react';
+} from '/src/components/icons';
 
 // API Configuration
 const API_URL = import.meta.env.VITE_API_URL || '/api';
@@ -1065,7 +1065,7 @@ const PageContent = () => {
                 {/* Show helper text when editing about section */}
                 {editingInfo && formData.page_type === 'home' && formData.section_key === 'about' && (
                   <p className="text-xs text-blue-600 mt-1 font-medium">
-                    ðŸ“ Anda sedang mengedit section <strong>About</strong> yang muncul di halaman Home
+                    📝 Anda sedang mengedit section <strong>About</strong> yang muncul di halaman Home
                   </p>
                 )}
               </div>
@@ -1211,18 +1211,18 @@ const PageContent = () => {
                     />
                     <div className="mt-2 p-2 bg-blue-50 border border-blue-200 rounded">
                       <p className="text-xs text-blue-800">
-                        ðŸ’¡ <strong>Tips:</strong> Untuk performa terbaik, compress gambar sebelum upload atau gunakan URL dari hosting/CDN.
+                        💡 <strong>Tips:</strong> Untuk performa terbaik, compress gambar sebelum upload atau gunakan URL dari hosting/CDN.
                       </p>
                     </div>
                   </div>
 
-                  <div className="text-center text-xs font-bold text-gray-500 my-2">â”€â”€ ATAU â”€â”€</div>
+                  <div className="text-center text-xs font-bold text-gray-500 my-2">── ATAU ──</div>
 
                   {/* Method 2: Image URL Input - RECOMMENDED */}
                   <div className="bg-white p-3 rounded-lg border-2 border-green-300 shadow-sm">
                     <label className="flex items-center gap-2 text-xs font-semibold text-gray-700 mb-1.5">
                       <span className="bg-green-100 text-green-700 text-[10px] font-bold px-2 py-0.5 rounded-full">REKOMENDASI</span>
-                      ðŸ”— Masukkan URL Gambar
+                      🔗 Masukkan URL Gambar
                     </label>
                     <input
                       type="url"
@@ -1234,7 +1234,7 @@ const PageContent = () => {
                     />
                     <div className="mt-2 p-2 bg-green-50 border border-green-200 rounded">
                       <p className="text-xs text-green-800">
-                        âœ… <strong>Keuntungan URL:</strong> Loading lebih cepat, tidak ada batasan ukuran, mudah diganti.
+                        ✅ <strong>Keuntungan URL:</strong> Loading lebih cepat, tidak ada batasan ukuran, mudah diganti.
                       </p>
                     </div>
                   </div>
@@ -1242,7 +1242,7 @@ const PageContent = () => {
                   {/* Image Preview */}
                   {previewImage && (
                     <div className="mt-4 bg-white p-3 rounded-lg border border-gray-200">
-                      <p className="text-xs font-semibold text-gray-700 mb-2">ðŸ‘ï¸ Preview Gambar:</p>
+                      <p className="text-xs font-semibold text-gray-700 mb-2">👁️ Preview Gambar:</p>
                       <div className="relative inline-block">
                         <img
                           src={previewImage}
@@ -1271,7 +1271,7 @@ const PageContent = () => {
                   {!previewImage && (
                     <div className="mt-3 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
                       <p className="text-xs text-yellow-800">
-                        âš ï¸ <strong>Belum ada gambar.</strong> Upload gambar atau masukkan URL untuk menampilkan gambar.
+                        ⚠️ <strong>Belum ada gambar.</strong> Upload gambar atau masukkan URL untuk menampilkan gambar.
                       </p>
                     </div>
                   )}
@@ -1438,7 +1438,7 @@ const PageContent = () => {
                     </div>
                     
                     <p className="text-xs text-amber-800 bg-amber-100 p-2 rounded">
-                      ðŸ’¡ Tambahkan penghargaan yang akan ditampilkan dalam slider
+                      💡 Tambahkan penghargaan yang akan ditampilkan dalam slider
                     </p>
 
                     {additionalFields.awards.map((award, index) => (
@@ -1537,7 +1537,7 @@ const PageContent = () => {
                     </div>
                     
                     <p className="text-xs text-teal-800 bg-teal-100 p-2 rounded">
-                      ðŸ¢ Tambahkan fasilitas yang tersedia di klinik
+                      🏢 Tambahkan fasilitas yang tersedia di klinik
                     </p>
 
                     {additionalFields.facilities.map((facility, index) => (
@@ -1679,7 +1679,7 @@ const PageContent = () => {
                       {/* WhatsApp URL */}
                       <div>
                         <label className="block text-sm font-medium text-gray-700 mb-1.5">
-                          ðŸ”— Link WhatsApp
+                          🔗 Link WhatsApp
                         </label>
                         <input
                           type="text"
@@ -1705,7 +1705,7 @@ const PageContent = () => {
 
                       <div className="mb-3">
                         <label className="block text-sm font-medium text-gray-700 mb-1.5">
-                          ðŸ—ºï¸ Link Embed Google Maps
+                          🗺️ Link Embed Google Maps
                         </label>
                         <textarea
                           value={additionalFields.map_embed_url}
@@ -1719,7 +1719,7 @@ const PageContent = () => {
 
                       <div>
                         <label className="block text-sm font-medium text-gray-700 mb-1.5">
-                          ðŸ“ Link Google Maps (Klik Lokasi)
+                          📍 Link Google Maps (Klik Lokasi)
                         </label>
                         <input
                           type="text"
@@ -1737,7 +1737,7 @@ const PageContent = () => {
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                         </svg>
                         <div className="flex-1">
-                          <p className="text-xs font-semibold text-green-900 mb-1">âœ¨ Informasi Tambahan:</p>
+                          <p className="text-xs font-semibold text-green-900 mb-1">✨ Informasi Tambahan:</p>
                           <ul className="text-xs text-green-800 space-y-1 ml-3 list-disc">
                             <li>Data ini akan ditampilkan di bagian <strong>Footer</strong> website</li>
                             <li>Pastikan nomor WhatsApp aktif dan bisa menerima pesan</li>
@@ -1814,3 +1814,4 @@ const PageContent = () => {
 };
 
 export default PageContent;
+

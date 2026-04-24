@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { NavLink, useNavigate, useLocation } from 'react-router-dom';
-import { Menu, X, User, Calendar, MessageCircle, ChevronDown, LogOut } from 'lucide-react';
+import { Menu, X, User, Calendar, MessageCircle, ChevronDown, LogOut } from '/src/components/icons';
 
 const Navbar = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);

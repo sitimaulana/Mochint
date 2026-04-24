@@ -1,5 +1,5 @@
 import React from 'react';
-import { X, Home, ShoppingBag, ChevronRight, ShieldCheck, Tag, ExternalLink, ArrowLeft } from 'lucide-react';
+import { X, Home, ShoppingBag, ChevronRight, ShieldCheck, Tag, ExternalLink, ArrowLeft } from '/src/components/icons';
 
 const ProductDetail = ({ isOpen, onClose, product }) => {
   if (!isOpen || !product) return null;

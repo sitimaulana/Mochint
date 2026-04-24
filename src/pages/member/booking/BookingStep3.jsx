@@ -491,7 +491,7 @@ const BookingStep3 = () => {
             <div className="space-y-6 sm:space-y-8 md:space-y-10 mt-6 sm:mt-8">
               <div>
                 <label className="text-[9px] sm:text-[10px] font-black text-[#5D4037] mb-3 sm:mb-4 uppercase flex items-center gap-2 tracking-wider sm:tracking-widest font-sans ml-1">
-                  <i className="fas fa-calendar" style={{ color: '#8D6E63', fontSize: '14px' }}></i> 1. Pilih Tanggal Perawatan
+                  <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#8D6E63" strokeWidth="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg> 1. Pilih Tanggal Perawatan
                 </label>
                 <div className="flex flex-col gap-4">
                   <div className="flex flex-col lg:flex-row gap-4 items-start">
@@ -522,7 +522,7 @@ const BookingStep3 = () => {
                             title="Buka kalender"
                           />
                           <div className="w-11 h-11 flex items-center justify-center bg-[#8D6E63] text-white rounded-xl hover:bg-[#5D4037] transition-all cursor-pointer hover:scale-105 active:scale-95 shadow-sm">
-                            <i className="fas fa-calendar" style={{ fontSize: '20px' }}></i>
+                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
                           </div>
                         </div>
                       </div>
@@ -536,7 +536,7 @@ const BookingStep3 = () => {
                     
                     {selectedDate && (
                       <div className="flex items-center gap-2 px-4 py-3 bg-green-50 border border-green-200 rounded-[20px] text-sm text-green-700 font-medium w-full lg:w-auto animate-fadeIn">
-                        <i className="fas fa-calendar" style={{ fontSize: '16px' }}></i>
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
                         <span className="text-xs md:text-sm">{formatSelectedDate()}</span>
                       </div>
                     )}
@@ -546,7 +546,7 @@ const BookingStep3 = () => {
                     {!displayDate && (
                       <>
                         <p className="flex items-center gap-2">
-                          <i className="fas fa-lightbulb" style={{ color: '#EAB308', fontSize: '14px' }}></i>
+                          <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#EAB308" strokeWidth="2"><path d="M9 18h6"/><path d="M10 22h4"/><path d="M8 14a6 6 0 1 1 8 0c-.84.74-1.5 1.68-1.8 2.86H9.8C9.5 15.68 8.84 14.74 8 14z"/></svg>
                           <span><span className="font-bold">Ketik manual</span> (DD/MM/YYYY) atau <span className="font-bold text-[#8D6E63]">klik icon kalender</span> di kanan untuk buka kalender</span>
                         </p>
                       </>
@@ -558,7 +558,7 @@ const BookingStep3 = () => {
                     )}
                     {displayDate.length === 10 && !selectedDate && dateError && (
                       <p className="text-red-600 flex items-center gap-2">
-                        <i className="fas fa-circle-exclamation" style={{ fontSize: '14px' }}></i> {dateError}
+                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg> {dateError}
                       </p>
                     )}
                   </div>
@@ -667,7 +667,7 @@ const BookingStep3 = () => {
         <div className="w-full lg:w-96">
           <div className="bg-white border border-gray-200 text-[#3E2723] p-8 rounded-[40px] shadow-lg sticky top-8 text-left">
             <h3 className="text-xl font-display font-bold mb-8 flex items-center gap-3 text-[#8D6E63] tracking-tight">
-              <i className="fas fa-circle-info" style={{ fontSize: '22px' }}></i> Ringkasan Booking
+              <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="10" x2="12" y2="16"/><line x1="12" y1="7" x2="12.01" y2="7"/></svg> Ringkasan Booking
             </h3>
             
             <div className="space-y-6 font-sans">
@@ -732,7 +732,7 @@ const BookingStep3 = () => {
             >
               {loading ? (
                 <>
-                  <i className="fas fa-spinner fa-spin" style={{ fontSize: '18px' }}></i>
+                  <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="animate-spin"><circle cx="12" cy="12" r="10" opacity="0.25"/><path d="M22 12a10 10 0 0 0-10-10"/></svg>
                   <span>Membuat Appointment...</span>
                 </>
               ) : selectedDate && selectedTime ? (

@@ -1,5 +1,5 @@
 import React from 'react';
-import { X, Home, ChevronRight, Sparkles, Clock, CircleDot, ArrowLeft } from 'lucide-react';
+import { X, Home, ChevronRight, Sparkles, Clock, CircleDot, ArrowLeft } from '/src/components/icons';
 
 const TreatmentDetail = ({ isOpen, onClose, treatment }) => {
   if (!isOpen || !treatment) return null;

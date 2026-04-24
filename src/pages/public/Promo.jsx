@@ -1,6 +1,6 @@
-﻿import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Home, MessageCircle, ChevronRight, CheckCircle2, Percent } from 'lucide-react';
+import { Home, MessageCircle, ChevronRight, CheckCircle2, Percent } from '/src/components/icons';
 import axios from 'axios';
 import Preloader from '../../components/common/Preloader';
 
@@ -138,3 +138,4 @@ const Promo = () => {
 };
 
 export default Promo;
+

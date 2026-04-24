@@ -1,6 +1,6 @@
 import React, { useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { Loader2 } from 'lucide-react';
+import { Loader2 } from '/src/components/icons';
 
 const GoogleCallback = () => {
   const navigate = useNavigate();
@@ -56,3 +56,4 @@ const GoogleCallback = () => {
 };
 
 export default GoogleCallback;
+

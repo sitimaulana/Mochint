@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Home, ChevronDown, Loader2, Calendar, Clock, User, CreditCard } from 'lucide-react';
+import { Home, ChevronDown, Loader2, Calendar, Clock, User, CreditCard } from '/src/components/icons';
 import { appointmentAPI } from '../../services/api';
 import { mockAppointments } from "../../api/mockData";
 

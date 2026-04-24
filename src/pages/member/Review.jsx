@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Star, Send, Award, MessageSquare } from 'lucide-react';
+import { Star, Send, Award, MessageSquare } from '/src/components/icons';
 import { postReview } from '../../api/client';
 
 const Review = () => {

@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { 
   Phone,
@@ -14,7 +14,7 @@ import {
   Check,
   Map,
   Building2
-} from 'lucide-react';
+} from '/src/components/icons';
 import Preloader from '../../components/common/Preloader';
 
 const Contact = () => {
@@ -436,7 +436,7 @@ const Contact = () => {
 
             <div className="p-4 bg-[#FDFBF7] rounded-lg border border-[#D7CCC8]">
               <p className="text-sm text-[#6D4C41]">
-                ðŸ’¡ <strong>Tips:</strong> Informasi yang diisi di sini akan ditampilkan di halaman kontak website dan dapat diakses oleh pengunjung.
+                💡 <strong>Tips:</strong> Informasi yang diisi di sini akan ditampilkan di halaman kontak website dan dapat diakses oleh pengunjung.
               </p>
             </div>
           </div>
@@ -489,4 +489,5 @@ const Contact = () => {
 };
 
 export default Contact;
+
 
