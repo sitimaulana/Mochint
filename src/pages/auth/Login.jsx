@@ -247,7 +247,7 @@ const Login = ({ onSwitch, onForgot, onLoginSuccess, onBack }) => {
                   <Lock className="absolute left-4 top-1/2 -translate-y-1/2 text-[#A1887F] group-focus-within:text-[#3E2723] transition-colors" size={18} />
                   <input 
                     type={showPassword ? "text" : "password"}
-                    placeholder="â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢" 
+                    placeholder="Masukkan password Anda" 
                     required 
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
