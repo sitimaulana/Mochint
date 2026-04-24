@@ -1,5 +1,5 @@
 ﻿import React, { useState, useEffect, useMemo } from 'react';
-import { Bed, Calendar, Clock, RefreshCw, Users, CheckCircle, AlertCircle } from 'lucide-react';
+import { Bed, Calendar, Clock, RefreshCw, Users, CheckCircle, AlertCircle, Check, X } from 'lucide-react';
 
 const BedManagement = () => {
   const APPOINTMENTS_API_URL = '/api/appointments';
@@ -432,7 +432,7 @@ const BedManagement = () => {
                   }`}
                   title={isDisabled ? 'Aktifkan slot ini' : 'Nonaktifkan slot ini'}
                 >
-                  {isDisabled ? 'âœ“' : 'âœ•'}
+                  {isDisabled ? <Check size={12} /> : <X size={12} />}
                 </button>
                 
                 <div className="text-center mt-2">

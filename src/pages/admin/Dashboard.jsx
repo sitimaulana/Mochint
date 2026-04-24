@@ -1,5 +1,6 @@
 ﻿import React, { useState, useEffect } from 'react';
 import axios from 'axios';
+import { ChevronRight, Stethoscope } from 'lucide-react';
 
 const Dashboard = () => {
   const APPOINTMENTS_API_URL = '/api/appointments';
@@ -441,8 +442,8 @@ const Dashboard = () => {
       <div className="bg-white rounded-xl shadow-sm p-4 sm:p-6 border border-gray-200">
         <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2 mb-4">
           <h2 className="text-base sm:text-lg font-semibold text-gray-800">Janji Temu Hari Ini</h2>
-          <a href="/admin/appointment" className="text-xs sm:text-sm text-brown-600 hover:text-brown-700 font-medium">
-            Lihat Semua â†’
+          <a href="/admin/appointment" className="flex items-center gap-1 text-xs sm:text-sm text-brown-600 hover:text-brown-700 font-medium">
+            Lihat Semua <ChevronRight size={16} />
           </a>
         </div>
 
@@ -545,8 +546,8 @@ const Dashboard = () => {
         <div className="bg-white rounded-xl shadow-sm p-4 sm:p-6 border border-gray-200">
           <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2 mb-4 sm:mb-6">
             <h2 className="text-base sm:text-lg font-semibold text-gray-800">Anggota Terbaru</h2>
-            <a href="/admin/member" className="text-xs sm:text-sm text-brown-600 hover:text-brown-700 font-medium">
-              Lihat Semua â†’
+            <a href="/admin/member" className="flex items-center gap-1 text-xs sm:text-sm text-brown-600 hover:text-brown-700 font-medium">
+              Lihat Semua <ChevronRight size={16} />
             </a>
           </div>
           <div className="space-y-3 sm:space-y-4">
@@ -591,8 +592,8 @@ const Dashboard = () => {
         <div className="bg-white rounded-xl shadow-sm p-4 sm:p-6 border border-gray-200">
           <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2 mb-4 sm:mb-6">
             <h2 className="text-base sm:text-lg font-semibold text-gray-800">Anggota Teratas berdasarkan Kunjungan</h2>
-            <a href="/admin/member" className="text-xs sm:text-sm text-brown-600 hover:text-brown-700 font-medium">
-              Lihat Semua â†’
+            <a href="/admin/member" className="flex items-center gap-1 text-xs sm:text-sm text-brown-600 hover:text-brown-700 font-medium">
+              Lihat Semua <ChevronRight size={16} />
             </a>
           </div>
           <div className="space-y-3 sm:space-y-4">
@@ -625,8 +626,8 @@ const Dashboard = () => {
       <div className="bg-white rounded-xl shadow-sm p-4 sm:p-6 border border-gray-200">
         <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2 mb-4">
           <h2 className="text-base sm:text-lg font-semibold text-gray-800">Perawatan Selesai Terbaru</h2>
-          <a href="/admin/appointment" className="text-xs sm:text-sm text-brown-600 hover:text-brown-700 font-medium">
-            Lihat Semua â†’
+          <a href="/admin/appointment" className="flex items-center gap-1 text-xs sm:text-sm text-brown-600 hover:text-brown-700 font-medium">
+            Lihat Semua <ChevronRight size={16} />
           </a>
         </div>
         <div className="space-y-2 sm:space-y-3">
@@ -665,21 +666,29 @@ const Dashboard = () => {
       <div className="bg-white rounded-xl shadow-sm p-4 sm:p-6 border border-gray-200">
         <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2 mb-4">
           <h2 className="text-base sm:text-lg font-semibold text-gray-800">Terapis Teratas</h2>
-          <a href="/admin/therapist" className="text-xs sm:text-sm text-brown-600 hover:text-brown-700 font-medium">
-            Lihat Semua â†’
+          <a href="/admin/therapist" className="flex items-center gap-1 text-xs sm:text-sm text-brown-600 hover:text-brown-700 font-medium">
+            Lihat Semua <ChevronRight size={16} />
           </a>
         </div>
         <div className="space-y-3 sm:space-y-4">
           {topTherapists.map((therapist) => (
             <div key={therapist.id} className="flex items-center p-3 sm:p-4 hover:bg-gray-50 rounded-lg border border-gray-200 transition-colors duration-200 gap-3">
-              <div className="text-2xl sm:text-3xl flex-shrink-0">{therapist.image || 'ðŸ‘©â€âš•ï¸'}</div>
+              <div className="text-2xl sm:text-3xl flex-shrink-0">
+                {therapist.image ? (
+                  <span>{therapist.image}</span>
+                ) : (
+                  <div className="w-8 h-8 sm:w-10 sm:h-10 bg-brown-100 rounded-full flex items-center justify-center">
+                    <Stethoscope size={18} className="text-brown-600" />
+                  </div>
+                )}
+              </div>
               <div className="flex-1 min-w-0">
                 <h3 className="text-sm sm:text-base font-semibold text-gray-800 truncate">{therapist.name}</h3>
                 <div className="flex flex-col sm:flex-row sm:items-center text-xs sm:text-sm text-gray-500 space-y-0.5 sm:space-y-0">
                   <span className="whitespace-nowrap">{therapist.completedAppointments || 0} perawatan selesai</span>
                   {therapist.totalAppointments > 0 && (
                     <>
-                      <span className="hidden sm:inline mx-2">â€¢</span>
+                      <span className="hidden sm:inline mx-2">•</span>
                       <span className="whitespace-nowrap">{therapist.totalAppointments} total janji temu</span>
                     </>
                   )}
