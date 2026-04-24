@@ -1,6 +1,7 @@
 ﻿import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { ChevronRight, Stethoscope } from 'lucide-react';
+import Preloader from '../../components/common/Preloader';
 
 const Dashboard = () => {
   const APPOINTMENTS_API_URL = '/api/appointments';
@@ -360,14 +361,7 @@ const Dashboard = () => {
   const isLoading = Object.values(loading).some(l => l === true);
 
   if (isLoading) {
-    return (
-      <div className="flex justify-center items-center h-64">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-brown-600 mx-auto"></div>
-          <p className="mt-4 text-gray-600">Memuat data dashboard...</p>
-        </div>
-      </div>
-    );
+    return <Preloader type="partial" text="Memuat data dashboard..." />;
   }
 
   if (error && (appointments.length === 0 && members.length === 0 && therapists.length === 0)) {

@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import axios from 'axios';
 import { Check, Star, Hash, X } from 'lucide-react';
+import Preloader from '../../components/common/Preloader';
 
 const Appointment = () => {
   // API URLs
@@ -596,14 +597,7 @@ const Appointment = () => {
   const isLoading = Object.values(loading).some(l => l === true);
 
   if (isLoading) {
-    return (
-      <div className="flex justify-center items-center h-64">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-brown-600 mx-auto"></div>
-          <p className="mt-4 text-gray-600">Memuat data appointment...</p>
-        </div>
-      </div>
-    );
+    return <Preloader type="partial" text="Memuat data appointment..." />;
   }
 
   if (error && appointments.length === 0) {

@@ -1,5 +1,6 @@
 ﻿import React, { useState, useEffect } from 'react';
 import axios from 'axios';
+import Preloader from '../../components/common/Preloader';
 
 const Product = () => {
   const [products, setProducts] = useState([]);
@@ -381,14 +382,7 @@ const Product = () => {
     setFormData(prev => ({ ...prev, image: '' }));
   };
 
-  if (loading) return (
-    <div className="flex justify-center items-center min-h-[400px] p-4">
-      <div className="text-center">
-        <div className="animate-spin rounded-full h-10 w-10 sm:h-12 sm:w-12 border-b-2 border-brown-600 mx-auto"></div>
-        <p className="mt-3 sm:mt-4 text-sm sm:text-base text-gray-600">Memuat produk...</p>
-      </div>
-    </div>
-  );
+  if (loading) return <Preloader type="partial" text="Memuat produk..." />;
 
   return (
     <div className="space-y-4 sm:space-y-6 p-4 sm:p-0">

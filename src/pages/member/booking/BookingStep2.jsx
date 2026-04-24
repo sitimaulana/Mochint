@@ -1,7 +1,8 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Search, Plus, Home, Loader2, AlertCircle } from 'lucide-react';
+import { Search, Plus, Home, AlertCircle } from 'lucide-react';
 import { treatmentAPI } from '../../../services/api';
+import Preloader from '../../../components/common/Preloader';
 
 const BookingStep2 = () => {
   const navigate = useNavigate();
@@ -110,14 +111,7 @@ const BookingStep2 = () => {
 
   // 8. Loading State
   if (loading) {
-    return (
-      <div className="min-h-screen bg-[#FDFBF7] flex items-center justify-center">
-        <div className="text-center">
-          <Loader2 className="animate-spin text-[#8D6E63] mx-auto mb-4" size={48} />
-          <p className="text-gray-500 font-sans font-medium">Memuat data treatment...</p>
-        </div>
-      </div>
-    );
+    return <Preloader type="fullscreen" text="Memuat data treatment..." bgColor="bg-[#FDFBF7]" />;
   }
 
   // 9. Error State

@@ -1,7 +1,8 @@
 ﻿import React, { useState, useEffect, useRef } from 'react';
-import { ArrowRight, MapPin, Phone, Star, ChevronLeft, ChevronRight, Loader, MessageCircle } from 'lucide-react';
+import { ArrowRight, MapPin, Phone, Star, ChevronLeft, ChevronRight, MessageCircle } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
+import Preloader from '../../components/common/Preloader';
 
 const Home = () => {
   const navigate = useNavigate();
@@ -144,11 +145,7 @@ const Home = () => {
   };
 
   if (isLoading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-white">
-        <div className="animate-spin text-[#8D6E63]"><Loader size={48} /></div>
-      </div>
-    );
+    return <Preloader type="fullscreen" text="Mempersiapkan Layanan Terbaik..." />;
   }
 
   return (

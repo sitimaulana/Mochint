@@ -1,5 +1,6 @@
 ﻿import React, { useState, useEffect } from 'react';
 import axios from 'axios';
+import Preloader from '../../components/common/Preloader';
 
 const Treatment = () => {
   const [treatments, setTreatments] = useState([]);
@@ -620,11 +621,7 @@ const Treatment = () => {
 
   // Loading state
   if (loading) {
-    return (
-      <div className="flex justify-center items-center h-64">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-brown-600"></div>
-      </div>
-    );
+    return <Preloader type="partial" text="Memuat perawatan..." />;
   }
 
   // Error state

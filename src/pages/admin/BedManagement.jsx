@@ -1,5 +1,6 @@
 ﻿import React, { useState, useEffect, useMemo } from 'react';
 import { Bed, Calendar, Clock, RefreshCw, Users, CheckCircle, AlertCircle, Check, X } from 'lucide-react';
+import Preloader from '../../components/common/Preloader';
 
 const BedManagement = () => {
   const APPOINTMENTS_API_URL = '/api/appointments';
@@ -235,14 +236,7 @@ const BedManagement = () => {
   };
 
   if (loading) {
-    return (
-      <div className="flex justify-center items-center h-64">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-brown-600 mx-auto"></div>
-          <p className="mt-4 text-gray-600">Memuat data bed...</p>
-        </div>
-      </div>
-    );
+    return <Preloader type="partial" text="Memuat data bed..." />;
   }
 
   return (

@@ -1,7 +1,8 @@
 ﻿import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Home, ChevronLeft, ChevronRight, Loader } from 'lucide-react';
+import { Home, ChevronLeft, ChevronRight } from 'lucide-react';
 import axios from 'axios';
+import Preloader from '../../components/common/Preloader';
 
 // Import Swiper React components & styles
 import { Swiper, SwiperSlide } from 'swiper/react';
@@ -62,11 +63,7 @@ const About = () => {
   const facilities = pageContent.facilities?.additional_data?.items || [];
 
   if (isLoading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-[#FDFBF7]">
-        <div className="animate-spin text-[#8D6E63]"><Loader size={48} /></div>
-      </div>
-    );
+    return <Preloader type="fullscreen" text="Memuat Informasi Tentang Kami..." bgColor="bg-[#FDFBF7]" />;
   }
 
   return (

@@ -1,7 +1,8 @@
 ﻿import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { Home, ChevronRight, Calendar, User, Share2, ArrowLeft, Loader } from 'lucide-react';
+import { Home, ChevronRight, Calendar, User, Share2, ArrowLeft } from 'lucide-react';
 import axios from 'axios';
+import Preloader from '../../components/common/Preloader';
 
 const InformationDetail = () => {
   const { id } = useParams();
@@ -46,14 +47,7 @@ const InformationDetail = () => {
     fetchDetail();
   }, [id]);
 
-  if (loading) return (
-    <div className="min-h-screen bg-[#FDFBF7] flex items-center justify-center font-sans">
-      <div className="text-center">
-        <div className="animate-spin text-[#8D6E63] mb-4"><Loader size={48} /></div>
-        <p className="font-bold text-[#8D6E63]">Membuka Jurnal...</p>
-      </div>
-    </div>
-  );
+  if (loading) return <Preloader type="fullscreen" text="Membuka Jurnal..." bgColor="bg-[#FDFBF7]" />;
 
   if (!article) {
     return (

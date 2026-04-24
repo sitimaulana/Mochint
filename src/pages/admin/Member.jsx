@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { Trash2, Edit2, History, AlertCircle, Search, AlertTriangle, Beaker, CheckCircle as CheckCircleIcon, XCircle } from 'lucide-react';
+import Preloader from '../../components/common/Preloader';
 
 const Member = () => {
   // API URLs
@@ -245,7 +246,7 @@ const Member = () => {
       try {
         const response = await axios.get(`${HISTORY_API_URL}/${testMemberId}`);
         console.log('[TEST] [TEST] Response API:', response.data);
-        alert(`[ERROR]… Hasil Test API: ${response.data.length} catatan ditemukan\nCek konsol untuk detail.`);
+        alert(`[ERROR]ï¿½ Hasil Test API: ${response.data.length} catatan ditemukan\nCek konsol untuk detail.`);
       } catch (error) {
         console.error('[TEST] [TEST] Error API:', error);
         alert(`âŒ Error API: ${error.message}\nCek konsol untuk detail.`);
@@ -542,14 +543,7 @@ const Member = () => {
 
   // Loading state
   if (loading && members.length === 0) {
-    return (
-      <div className="flex justify-center items-center h-64">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-brown-600 mx-auto"></div>
-          <p className="mt-4 text-gray-600">Memuat data member...</p>
-        </div>
-      </div>
-    );
+    return <Preloader type="partial" text="Memuat data member..." />;
   }
 
   // Error state

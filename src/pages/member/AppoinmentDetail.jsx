@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { Home, Calendar, Clock, MapPin, CheckCircle, Printer, ArrowLeft, Loader2 } from 'lucide-react';
+import { Home, Calendar, Clock, MapPin, CheckCircle, Printer, ArrowLeft } from 'lucide-react';
 import { appointmentAPI } from '../../services/api';
 import { mockAppointments } from '../../api/mockData';
+import Preloader from '../../components/common/Preloader';
 
 const AppointmentDetail = () => {
   const { id } = useParams();
@@ -89,14 +90,7 @@ const AppointmentDetail = () => {
   }, [id]);
 
   if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-[#FDFBF7] font-sans p-4">
-        <div className="text-center">
-          <Loader2 className="animate-spin text-[#8D6E63] mx-auto mb-4" size={48} />
-          <p className="font-bold text-[#8D6E63] font-display text-lg sm:text-xl tracking-tight">Memuat data...</p>
-        </div>
-      </div>
-    );
+    return <Preloader type="fullscreen" text="Memuat data..." bgColor="bg-[#FDFBF7]" />;
   }
 
   if (error) {

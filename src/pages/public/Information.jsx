@@ -1,7 +1,8 @@
 ﻿import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Home, Play, ArrowRight, Loader, Calendar } from 'lucide-react';
+import { Home, Play, ArrowRight, Calendar } from 'lucide-react';
 import axios from 'axios';
+import Preloader from '../../components/common/Preloader';
 
 const Information = () => {
   const navigate = useNavigate();
@@ -43,14 +44,7 @@ const Information = () => {
   const latestArticles = articles.slice(1); 
   const popularNews = articles.slice(0, 6);
 
-  if (loading) return (
-    <div className="min-h-screen bg-[#FDFBF7] flex items-center justify-center font-sans">
-      <div className="text-center">
-        <div className="animate-spin text-[#8D6E63] mb-4"><Loader size={48} /></div>
-        <p className="font-bold text-[#8D6E63]">Memuat Jurnal Kecantikan...</p>
-      </div>
-    </div>
-  );
+  if (loading) return <Preloader type="fullscreen" text="Memuat Jurnal Kecantikan..." bgColor="bg-[#FDFBF7]" />;
 
   return (
     <div className="min-h-screen bg-[#FDFBF7] pb-16 sm:pb-20 md:pb-24 font-sans text-[#3E2723]">

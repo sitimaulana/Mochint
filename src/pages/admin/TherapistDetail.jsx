@@ -1,6 +1,7 @@
 ﻿import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import axios from 'axios';
+import Preloader from '../../components/common/Preloader';
 
 const TherapistDetail = () => {
   const { id } = useParams();
@@ -158,14 +159,7 @@ const TherapistDetail = () => {
   };
 
   if (loading) {
-    return (
-      <div className="flex justify-center items-center h-screen">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-brown-600 mx-auto"></div>
-          <p className="mt-4 text-gray-600">Memuat data therapist...</p>
-        </div>
-      </div>
-    );
+    return <Preloader type="fullscreen" text="Memuat data therapist..." />;
   }
 
   if (error || !therapist) {
