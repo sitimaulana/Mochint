@@ -1,6 +1,6 @@
 ﻿import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Home, Search, ArrowRight, Filter, X, SlidersHorizontal } from 'lucide-react';
+import { Home, Search, ArrowRight, Filter, X, SlidersHorizontal, Loader } from 'lucide-react';
 import axios from 'axios';
 
 // Import komponen detail
@@ -97,7 +97,7 @@ const Product = () => {
   if (loading) return (
     <div className="min-h-screen bg-[#FDFBF7] flex items-center justify-center font-sans">
       <div className="text-center">
-        <div className="animate-spin rounded-full h-16 w-16 border-4 border-[#8D6E63] border-t-transparent mx-auto mb-4"></div>
+        <div className="animate-spin text-[#8D6E63] mb-4"><Loader size={48} /></div>
         <p className="font-bold text-[#8D6E63]">Mempersiapkan Produk Kecantikan...</p>
       </div>
     </div>

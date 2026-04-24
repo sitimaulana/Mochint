@@ -1,6 +1,6 @@
 ﻿import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Home, Play, ArrowRight } from 'lucide-react';
+import { Home, Play, ArrowRight, Loader } from 'lucide-react';
 import axios from 'axios';
 
 const Information = () => {
@@ -44,8 +44,11 @@ const Information = () => {
   const popularNews = articles.slice(0, 6);
 
   if (loading) return (
-    <div className="min-h-screen bg-[#FDFBF7] flex items-center justify-center font-bold text-[#8D6E63]">
-      Memuat Jurnal Kecantikan...
+    <div className="min-h-screen bg-[#FDFBF7] flex items-center justify-center font-sans">
+      <div className="text-center">
+        <div className="animate-spin text-[#8D6E63] mb-4"><Loader size={48} /></div>
+        <p className="font-bold text-[#8D6E63]">Memuat Jurnal Kecantikan...</p>
+      </div>
     </div>
   );
 
