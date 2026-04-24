@@ -1,6 +1,6 @@
 ﻿import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Home, Search, ChevronRight, ArrowRight, Filter, X, Menu, SlidersHorizontal } from 'lucide-react';
+import { Home, Search, ChevronRight, ArrowRight, Filter, X, Menu, SlidersHorizontal, Clock } from 'lucide-react';
 import axios from 'axios';
 
 // Import komponen detailnya
@@ -473,7 +473,8 @@ const Treatment = () => {
                       
                       {item.duration && (
                         <div className="px-2 py-1 mb-2 sm:mb-3 bg-gray-50 text-[7px] sm:text-[8px] font-bold text-[#8D6E63] rounded-lg flex items-center gap-1 w-fit">
-                          â±ï¸ {item.duration}
+                          <Clock size={12} className="sm:w-[14px] sm:h-[14px]" />
+                          {item.duration}
                         </div>
                       )}
                       
@@ -577,7 +578,8 @@ const Treatment = () => {
                       <div className="flex flex-wrap gap-2 sm:gap-3 items-center">
                         {item.duration && (
                           <div className="px-2 sm:px-3 py-1 bg-gray-50 text-[9px] sm:text-[10px] font-bold text-[#8D6E63] rounded-lg flex items-center gap-1">
-                            â±ï¸ {item.duration}
+                            <Clock size={14} className="sm:w-4 sm:h-4" />
+                            {item.duration}
                           </div>
                         )}
                         
