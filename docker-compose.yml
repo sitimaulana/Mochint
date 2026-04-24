@@ -45,7 +45,7 @@ services:
     restart: always
     environment:
       PMA_HOST: db
-      PMA_ABSOLUTE_URI: http://103.185.38.16/pma/
+      PMA_ABSOLUTE_URI: http://103.185.38.16/phpmyadmin/
     networks:
       - app-network
 
