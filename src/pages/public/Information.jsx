@@ -9,7 +9,7 @@ import {
   Search,
   Filter,
   ArrowRight,
-  Play,
+  Play
 } from '../../components/icons';
 
 const Information = () => {

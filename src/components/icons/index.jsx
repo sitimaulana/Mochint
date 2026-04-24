@@ -98,6 +98,7 @@ export const Hash = createIcon(<><line x1="4" y1="9" x2="20" y2="9" /><line x1="
 export const Beaker = createIcon(<><path d="M10 2h4" /><path d="M11 2v5l-5 9a3 3 0 0 0 2.6 4.5h6.8A3 3 0 0 0 18 16l-5-9V2" /><path d="M8 14h8" /></>);
 export const XCircle = createIcon(<><circle cx="12" cy="12" r="10" /><line x1="15" y1="9" x2="9" y2="15" /><line x1="9" y1="9" x2="15" y2="15" /></>);
 export const Thermometer = createIcon(<><path d="M14 14.76V5a2 2 0 1 0-4 0v9.76a4 4 0 1 0 4 0z" /></>);
+export const Play = createIcon(<><polygon points="5 3 19 12 5 21 5 3" /></>);
 
 export const MessageCircle2 = MessageCircle;
 export const Bell = createIcon(<><path d="M15 17h5l-1.4-1.4A2 2 0 0 1 18 14.2V11a6 6 0 1 0-12 0v3.2a2 2 0 0 1-.6 1.4L4 17h5" /><path d="M9 21a3 3 0 0 0 6 0" /></>);
