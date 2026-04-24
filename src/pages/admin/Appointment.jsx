@@ -1,6 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import axios from 'axios';
-import { Check, Star, Hash, X } from 'lucide-react';
 import Preloader from '../../components/common/Preloader';
 
 const Appointment = () => {
