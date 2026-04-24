@@ -47,7 +47,7 @@ services:
     environment:
       PMA_HOST: db
     ports:
-      - "8081:80"
+      - "80:80"
     networks:
       - app-network
 
