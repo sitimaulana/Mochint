@@ -35,14 +35,14 @@ const createAllTables = async (pool) => {
         id INT PRIMARY KEY AUTO_INCREMENT,
         appointment_id VARCHAR(20) UNIQUE,
         customer_name VARCHAR(100) NOT NULL,
-        customer_id INT,
+        member_id INT,
         treatment VARCHAR(100) NOT NULL,
         therapist VARCHAR(100) NOT NULL,
         date VARCHAR(20) NOT NULL,
         time VARCHAR(10) NOT NULL,
         end_time VARCHAR(10) NOT NULL,
         amount DECIMAL(10, 2),
-        status ENUM('pending', 'confirmed', 'completed') DEFAULT 'pending',
+        status ENUM('confirmed', 'completed') DEFAULT 'confirmed',
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       )
     `);

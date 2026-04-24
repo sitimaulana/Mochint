@@ -26,13 +26,22 @@ const BookingSuccess = () => {
     }
   }, [navigate]);
 
+  // Format price helper
+  const formatPrice = (price) => {
+    if (typeof price === 'number') {
+      return price.toLocaleString('id-ID', { minimumFractionDigits: 0, maximumFractionDigits: 0 });
+    }
+    // If already string, remove any .00 or ,00 suffix
+    return price?.toString().replace(/[.,]00$/, '');
+  };
+
   if (!booking || !user) return null;
 
   return (
-    <div className="min-h-screen bg-[#FDFBF7] p-4 md:p-8 font-sans">
+    <div className="min-h-screen bg-[#FDFBF7] p-4 sm:p-6 md:p-8 font-sans">
       
-      {/* NAVBAR SEDERHANA */}
-      <nav className="flex items-center gap-3 text-[10px] md:text-xs mb-10 font-bold uppercase tracking-[0.2em] text-gray-400 font-sans">
+      {/* NAVBAR SEDERHANA - HIDDEN ON MOBILE */}
+      <nav className="hidden md:flex items-center gap-3 text-xs mb-10 font-bold uppercase tracking-[0.2em] text-gray-400 font-sans">
         <button 
           onClick={() => navigate('/member')} 
           className="p-2 bg-white rounded-lg shadow-sm text-[#8D6E63] hover:bg-[#8D6E63] hover:text-white transition-all"
@@ -41,25 +50,37 @@ const BookingSuccess = () => {
         </button>
         <span>/</span>
         <span className="text-[#8D6E63] bg-[#8D6E63]/10 px-4 py-1.5 rounded-full font-display font-bold lowercase first-letter:uppercase">
-          Appointment
+          Reservasi
         </span>
       </nav>
 
       <div className="max-w-6xl mx-auto text-left">
-        <h1 className="text-4xl md:text-6xl font-display font-bold text-[#8D6E63] mb-2 tracking-tighter leading-tight">Detail Appointment</h1>
-        <p className="text-gray-500 mb-12 text-sm md:text-base leading-relaxed font-sans font-medium">
+        <h1 className="text-2xl sm:text-3xl md:text-5xl lg:text-6xl font-display font-bold text-[#8D6E63] mb-2 tracking-tighter leading-tight">Detail</h1>
+        <p className="text-gray-500 mb-8 sm:mb-10 md:mb-12 text-xs sm:text-sm md:text-base leading-relaxed font-sans font-medium">
           Tampil memukau setiap hari dengan solusi kecantikan modern yang disesuaikan hanya untuk Anda!
         </p>
 
-        <div className="flex flex-col lg:flex-row gap-8">
+        <div className="flex flex-col lg:flex-row gap-6 sm:gap-8">
           
           {/* KIRI: RINCIAN APPOINTMENT */}
-          <div className="flex-1 bg-white rounded-[40px] shadow-sm border border-gray-100 p-8 md:p-12 relative overflow-hidden">
+          <div className="flex-1 bg-white rounded-2xl sm:rounded-3xl md:rounded-[40px] shadow-sm border border-gray-100 p-6 sm:p-8 md:p-12 relative overflow-hidden">
             <div className="flex justify-between items-center mb-8">
-              <h2 className="text-3xl font-display font-bold text-[#5D4037] tracking-tight">Rincian</h2>
-              <span className="px-5 py-1.5 bg-[#4CAF50] text-white text-[10px] font-bold rounded-full uppercase tracking-widest flex items-center gap-2 shadow-sm font-sans">
-                <CheckCircle size={12} /> Confirmed
-              </span>
+              <div>
+                <h2 className="text-3xl font-display font-bold text-[#5D4037] tracking-tight">Rincian</h2>
+                {booking.appointment_id && (
+                  <p className="text-xs text-gray-500 mt-1 font-mono font-bold">
+                    ID: {booking.appointment_id}
+                  </p>
+                )}
+              </div>
+              <div className="flex flex-col items-end gap-2">
+                <span className="px-5 py-1.5 bg-[#4CAF50] text-white text-[10px] font-bold rounded-full uppercase tracking-widest flex items-center gap-2 shadow-sm font-sans">
+                  <CheckCircle size={12} /> Confirmed
+                </span>
+                <span className="px-4 py-1 bg-blue-50 text-blue-700 text-[9px] font-bold rounded-full uppercase tracking-wider flex items-center gap-1.5 font-sans">
+                  <CheckCircle size={10} /> Tersimpan di Database
+                </span>
+              </div>
             </div>
 
             {/* Box Highlight Waktu */}
@@ -93,18 +114,51 @@ const BookingSuccess = () => {
                 <div>
                   <p className="text-[10px] text-gray-400 font-black uppercase tracking-widest mb-1">Layanan</p>
                   <p className="text-sm font-bold text-[#5D4037] font-display">{booking.name}</p>
+                  {booking.duration && (
+                    <p className="text-[11px] text-gray-500 mt-1 font-medium">Durasi: {booking.duration}</p>
+                  )}
                 </div>
               </div>
               <div className="md:text-right">
-                <p className="text-[10px] text-gray-400 font-black uppercase tracking-widest mb-1">Biaya Perawatan</p>
-                <p className="text-lg font-bold text-[#8D6E63] font-display">Rp {booking.price}</p>
+                <p className="text-[10px] text-gray-400 font-black uppercase tracking-widest mb-1">Waktu Perawatan</p>
+                <p className="text-sm font-bold text-[#8D6E63] font-display">
+                  {booking.startTime} - {booking.endTime || '--:--'}
+                </p>
+                <p className="text-[11px] text-gray-500 mt-1 font-medium">WIB</p>
+              </div>
+            </div>
+
+            {/* Biaya Section terpisah */}
+            <div className="border-b border-gray-100 pb-6 mb-2">
+              <div className="flex justify-between items-center">
+                <p className="text-[10px] text-gray-400 font-black uppercase tracking-widest">Biaya Perawatan</p>
+                <p className="text-2xl font-bold text-[#8D6E63] font-display">Rp {formatPrice(booking.price)}</p>
+              </div>
+            </div>
+
+            {/* Informasi Appointment Terdaftar */}
+            <div className="mt-8 p-5 bg-green-50 border border-green-200 rounded-2xl">
+              <div className="flex items-start gap-3">
+                <CheckCircle className="text-green-600 flex-shrink-0 mt-0.5" size={20} />
+                <div className="text-xs text-gray-700 space-y-2">
+                  <p className="font-bold text-green-800 text-sm">✅ Reservasi Berhasil Terdaftar!</p>
+                  <p className="leading-relaxed">
+                    Reservasi Anda sudah tersimpan di sistem database klinik. 
+                    Anda dapat melihat detail reservasu ini di halaman History atau Dashboard Member.
+                  </p>
+                  {booking.appointment_id && (
+                    <p className="font-mono text-xs bg-white px-3 py-2 rounded-lg border border-green-200 inline-block">
+                      <span className="text-gray-500">Kode Booking:</span> <span className="font-bold text-green-700">{booking.appointment_id}</span>
+                    </p>
+                  )}
+                </div>
               </div>
             </div>
 
             {/* Total Section */}
             <div className="mt-8 flex justify-between items-center text-2xl font-display font-bold text-[#5D4037]">
               <span>Total Biaya:</span>
-              <span className="text-[#8D6E63]">Rp {booking.price}</span>
+              <span className="text-[#8D6E63]">Rp {formatPrice(booking.price)}</span>
             </div>
           </div>
 
@@ -137,11 +191,34 @@ const BookingSuccess = () => {
             </div>
 
             <button 
-              onClick={() => navigate('/member')}
+              onClick={() => navigate('/member/appointment')}
               className="w-full py-5 bg-[#8D6E63] text-white font-display font-bold rounded-[20px] shadow-xl shadow-[#8D6E63]/20 hover:bg-[#5D4037] transition-all uppercase text-[10px] tracking-[0.2em]"
             >
-              Appointment List
+              Lihat Reservasi
             </button>
+            
+            {/* Informasi Tambahan */}
+            <div className="bg-[#FDFBF7] rounded-[20px] p-6 border border-gray-100">
+              <h4 className="text-xs font-bold text-[#5D4037] mb-3 uppercase tracking-wider">Langkah Selanjutnya:</h4>
+              <ul className="space-y-2 text-xs text-gray-600">
+                <li className="flex items-start gap-2">
+                  <span className="text-[#8D6E63] font-bold">1.</span>
+                  <span>Silakan datang <span className="font-bold text-[#5D4037]">15 menit sebelum</span> waktu</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <span className="text-[#8D6E63] font-bold">2.</span>
+                  <span>Bawa <span className="font-bold text-[#5D4037]">ID Member</span> atau screenshot halaman ini</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <span className="text-[#8D6E63] font-bold">3.</span>
+                  <span>Pembayaran dilakukan di <span className="font-bold text-[#5D4037]">kasir klinik</span></span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <span className="text-[#8D6E63] font-bold">4.</span>
+                  <span>Jika ingin reschedule, hubungi kami minimal <span className="font-bold text-[#5D4037]">1 hari sebelumnya</span></span>
+                </li>
+              </ul>
+            </div>
           </div>
         </div>
       </div>

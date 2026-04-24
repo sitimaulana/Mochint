@@ -1,0 +1,56 @@
+services:
+  app:
+    build: .
+    container_name: app-mochint
+    restart: always
+    ports:
+      - "80:5000"
+    environment:
+      - NODE_ENV=production
+      - DATABASE_URL=mysql://root:password@db:3306/beauty_clinic
+      - PORT=5000
+      - JWT_SECRET=mochint_secret_key
+      - GOOGLE_CLIENT_ID=541701158147-a1i4201q30oseloc60f4dh9ok034kbku.apps.googleusercontent.com
+      - GOOGLE_CLIENT_SECRET=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
+      - GOOGLE_CALLBACK_URL=http://103.185.38.16:5000/api/auth/google/callback
+      - SESSION_SECRET=mochint_session_secret_development_only
+      - EMAIL_SERVICE=gmail
+      - EMAIL_USER=mochintclinic@gmail.com
+      - EMAIL_PASSWORD=dpxbadvautyxfrib
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - app-network
+
+  # Database MySQL
+  db:
+    image: mysql:8.0
+    container_name: db-mochint
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: password
+      MYSQL_DATABASE: beauty_clinic
+    volumes:
+      - ./mysql_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-ppassword"]
+      interval: 5s
+      retries: 10
+    networks:
+      - app-network
+
+  # phpMyAdmin
+  phpmyadmin:
+    image: phpmyadmin/phpmyadmin
+    container_name: pma-mochint
+    environment:
+      PMA_HOST: db
+    ports:
+      - "8081:80"
+    networks:
+      - app-network
+
+networks:
+  app-network:
+    driver: bridge

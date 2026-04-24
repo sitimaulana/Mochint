@@ -15,7 +15,7 @@ export const AppointmentProvider = ({ children }) => {
       therapist: 'Dr. Smith',
       date: '15 Dec 2023, 10:00 AM',
       amount: '$120',
-      status: 'pending',
+      status: 'confirmed',
       notes: 'Sensitive skin, needs gentle products'
     },
     {
@@ -48,7 +48,7 @@ export const AppointmentProvider = ({ children }) => {
       therapist: 'Dr. Smith',
       date: '20 Dec 2023, 9:00 AM',
       amount: '$150',
-      status: 'pending',
+      status: 'confirmed',
       notes: 'First consultation'
     },
     {
@@ -123,7 +123,7 @@ export const AppointmentProvider = ({ children }) => {
     const newId = `AP${String(appointments.length + 1).padStart(3, '0')}`;
     const newAppointment = {
       id: newId,
-      status: 'pending',
+      status: 'confirmed',
       ...appointmentData
     };
     setAppointments(prev => [...prev, newAppointment]);
@@ -163,7 +163,6 @@ export const AppointmentProvider = ({ children }) => {
             name: appointment.therapist,
             totalAppointments: 0,
             completedAppointments: 0,
-            pendingAppointments: 0,
             confirmedAppointments: 0
           };
         }
@@ -172,8 +171,6 @@ export const AppointmentProvider = ({ children }) => {
         
         if (appointment.status === 'completed') {
           therapistMap[appointment.therapist].completedAppointments += 1;
-        } else if (appointment.status === 'pending') {
-          therapistMap[appointment.therapist].pendingAppointments += 1;
         } else if (appointment.status === 'confirmed') {
           therapistMap[appointment.therapist].confirmedAppointments += 1;
         }
@@ -195,11 +192,10 @@ export const AppointmentProvider = ({ children }) => {
   // Get appointment statistics
   const getAppointmentStats = () => {
     const total = appointments.length;
-    const pending = appointments.filter(a => a.status === 'pending').length;
     const confirmed = appointments.filter(a => a.status === 'confirmed').length;
     const completed = appointments.filter(a => a.status === 'completed').length;
     
-    return { total, pending, confirmed, completed };
+    return { total, confirmed, completed };
   };
 
   // Get today's appointments
@@ -220,7 +216,7 @@ export const AppointmentProvider = ({ children }) => {
     
     return appointments.filter(app => {
       // This is a simplified filter - you might want to implement proper date parsing
-      return app.status === 'confirmed' || app.status === 'pending';
+      return app.status === 'confirmed';
     }).slice(0, 10); // Limit to 10 upcoming appointments
   };
 
@@ -241,7 +237,6 @@ export const AppointmentProvider = ({ children }) => {
     return therapistStats.map(therapist => ({
       name: therapist.name,
       completed: therapist.completedAppointments,
-      pending: therapist.pendingAppointments,
       confirmed: therapist.confirmedAppointments,
       completionRate: therapist.totalAppointments > 0 
         ? Math.round((therapist.completedAppointments / therapist.totalAppointments) * 100) 

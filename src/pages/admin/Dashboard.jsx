@@ -1,10 +1,10 @@
-import React, { useState, useEffect } from 'react';
+﻿import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 
 const Dashboard = () => {
-  const APPOINTMENTS_API_URL = 'http://localhost:5000/api/appointments';
-  const MEMBERS_API_URL = 'http://localhost:5000/api/members';
-  const THERAPISTS_API_URL = 'http://localhost:5000/api/therapists';
+  const APPOINTMENTS_API_URL = '/api/appointments';
+  const MEMBERS_API_URL = '/api/members';
+  const THERAPISTS_API_URL = '/api/therapists';
 
   const Token = localStorage.getItem('token');
 
@@ -36,9 +36,9 @@ const Dashboard = () => {
         axios.get(THERAPISTS_API_URL, { headers: { Authorization: `Bearer ${Token}` } })
       ]);
 
-      setAppointments(appointmentsRes.data || []);
-      setMembers(membersRes.data || []);
-      setTherapists(therapistsRes.data || []);
+      setAppointments(appointmentsRes.data.data || []);
+      setMembers(membersRes.data.data || []);
+      setTherapists(therapistsRes.data.data || []);
       setError(null);
     } catch (err) {
       console.error('Error mengambil data dashboard:', err);
@@ -54,10 +54,9 @@ const Dashboard = () => {
 
   const calculateAppointmentStats = () => {
     const total = appointments.length;
-    const pending = appointments.filter(a => a.status?.toLowerCase() === 'pending').length;
-    const confirmed = appointments.filter(a => a.status?.toLowerCase() === 'confirmed').length;
-    const completed = appointments.filter(a => a.status?.toLowerCase() === 'completed').length;
-    return { total, pending, confirmed, completed };
+    const confirmed = appointments.filter(a => a?.status?.toLowerCase() === 'confirmed').length;
+    const completed = appointments.filter(a => a?.status?.toLowerCase() === 'completed').length;
+    return { total, confirmed, completed };
   };
 
   const appointmentStats = calculateAppointmentStats();
@@ -147,9 +146,7 @@ const Dashboard = () => {
     try {
       let nextStatus;
 
-      if (currentStatus === 'pending') {
-        nextStatus = 'confirmed';
-      } else if (currentStatus === 'confirmed') {
+      if (currentStatus === 'confirmed') {
         nextStatus = 'completed';
       } else {
         return;
@@ -177,7 +174,7 @@ const Dashboard = () => {
 
     const totalVisits = appointments
       .filter(app => app.status?.toLowerCase() === 'completed')
-      .filter(app => app.customer_id)
+      .filter(app => app.member_id)
       .length;
 
     const currentDate = new Date();
@@ -231,9 +228,9 @@ const Dashboard = () => {
     const memberVisits = {};
 
     appointments
-      .filter(app => app.status?.toLowerCase() === 'completed' && app.customer_id)
+      .filter(app => app.status?.toLowerCase() === 'completed' && app.member_id)
       .forEach(app => {
-        const memberId = app.customer_id;
+        const memberId = app.member_id;
         if (!memberVisits[memberId]) {
           memberVisits[memberId] = {
             memberId,
@@ -284,6 +281,9 @@ const Dashboard = () => {
     })
     .slice(0, 5);
 
+    console.log(recentTreatments);
+    
+
   const calculateTotalRevenue = () => {
     return appointments
       .filter(appointment => appointment.status?.toLowerCase() === 'completed')
@@ -296,7 +296,7 @@ const Dashboard = () => {
   const totalRevenue = calculateTotalRevenue();
 
   const formatRevenue = (amount) => {
-    return `Rp ${amount.toLocaleString('id-ID')}`;
+    return `Rp ${amount.toLocaleString('id-ID', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`;
   };
 
   const formattedTotalRevenue = formatRevenue(totalRevenue);
@@ -304,33 +304,41 @@ const Dashboard = () => {
   const getTopTherapists = (count = 3) => {
     const therapistStats = {};
 
+    // Hitung completed appointments per terapis
     appointments
-      .filter(app => app.status?.toLowerCase() === 'completed' && app.therapist)
+      .filter(app => app.status?.toLowerCase() === 'completed')
       .forEach(app => {
-        const therapistName = app.therapist.toString().trim();
-        if (!therapistStats[therapistName]) {
-          therapistStats[therapistName] = {
-            name: therapistName,
-            completedAppointments: 0,
-            totalAppointments: 0
-          };
-        }
-        therapistStats[therapistName].completedAppointments++;
-      });
-
-    appointments
-      .filter(app => app.therapist)
-      .forEach(app => {
-        const therapistName = app.therapist.toString().trim();
-        if (therapistStats[therapistName]) {
-          therapistStats[therapistName].totalAppointments++;
+        // Support both therapist and therapist_name fields
+        const therapistName = (app.therapist_name || app.therapist)?.toString().trim();
+        
+        if (therapistName) {
+          if (!therapistStats[therapistName]) {
+            therapistStats[therapistName] = {
+              name: therapistName,
+              completedAppointments: 0,
+              totalAppointments: 0
+            };
+          }
+          therapistStats[therapistName].completedAppointments++;
         }
       });
 
+    // Hitung total appointments per terapis (semua status)
+    appointments.forEach(app => {
+      // Support both therapist and therapist_name fields
+      const therapistName = (app.therapist_name || app.therapist)?.toString().trim();
+      
+      if (therapistName && therapistStats[therapistName]) {
+        therapistStats[therapistName].totalAppointments++;
+      }
+    });
+
+    // Sort by completed appointments (terbanyak ke tersedikit)
     const sortedTherapists = Object.values(therapistStats)
       .sort((a, b) => b.completedAppointments - a.completedAppointments)
       .slice(0, count);
 
+    // Map dengan data terapis dari database
     return sortedTherapists.map(therapistStat => {
       const therapistFromDb = therapists.find(t =>
         t.name?.toString().trim().toLowerCase() === therapistStat.name.toLowerCase()
@@ -338,7 +346,7 @@ const Dashboard = () => {
 
       return {
         ...therapistStat,
-        image: therapistFromDb?.image || '👩‍⚕️',
+        image: therapistFromDb?.image || 'ðŸ‘©â€âš•ï¸',
         status: therapistFromDb?.status || 'active',
         id: therapistFromDb?.id || therapistStat.name,
         specialty: therapistFromDb?.specialty || 'Terapis'
@@ -382,15 +390,15 @@ const Dashboard = () => {
   }
 
   return (
-    <div className="space-y-6 p-6 bg-white min-h-screen">
-      <div className="flex justify-between items-center">
+    <div className="space-y-4 sm:space-y-6 p-4 sm:p-6 bg-white min-h-screen">
+      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-gray-800">Beranda</h1>
-          <p className="text-gray-600">Selamat datang kembali! Ini yang terjadi hari ini.</p>
+          <h1 className="text-xl sm:text-2xl font-bold text-gray-800">Beranda</h1>
+          <p className="text-sm sm:text-base text-gray-600">Selamat datang kembali! Ini yang terjadi hari ini.</p>
         </div>
         <button
           onClick={fetchAllData}
-          className="px-4 py-2 bg-brown-600 text-white rounded-lg hover:bg-brown-700 transition-colors duration-200 flex items-center"
+          className="px-3 sm:px-4 py-2 bg-brown-600 text-white text-sm sm:text-base rounded-lg hover:bg-brown-700 transition-colors duration-200 flex items-center justify-center w-full sm:w-auto"
         >
           <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
@@ -411,100 +419,88 @@ const Dashboard = () => {
           title="Janji Temu Hari Ini"
           value={todayAppointments.length.toString()}
           icon={CalendarIcon}
-          color="blue"
-          subtitle="Hanya pending & confirmed"
+          color="brown"
+          subtitle="Hanya confirmed"
         />
         <StatCard
           title="Total Kunjungan"
           value={memberStats.totalVisits.toString()}
           icon={ChartBarIcon}
-          color="green"
+          color="brown"
           subtitle={`${memberStats.newThisMonth} baru bulan ini`}
         />
         <StatCard
           title="Total Pendapatan"
           value={formattedTotalRevenue}
           icon={DollarIcon}
-          color="orange"
+          color="brown"
           subtitle="Dari janji temu selesai"
         />
       </div>
 
-      <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-200">
-        <div className="flex justify-between items-center mb-4">
-          <h2 className="text-lg font-semibold text-gray-800">Janji Temu Hari Ini</h2>
-          <a href="/admin/appointment" className="text-sm text-brown-600 hover:text-brown-700 font-medium">
-            Lihat Semua →
+      <div className="bg-white rounded-xl shadow-sm p-4 sm:p-6 border border-gray-200">
+        <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2 mb-4">
+          <h2 className="text-base sm:text-lg font-semibold text-gray-800">Janji Temu Hari Ini</h2>
+          <a href="/admin/appointment" className="text-xs sm:text-sm text-brown-600 hover:text-brown-700 font-medium">
+            Lihat Semua â†’
           </a>
         </div>
 
         <div className="mb-4">
-          <div className="text-sm text-gray-600">
+          <div className="text-xs sm:text-sm text-gray-600">
             Menampilkan <span className="font-bold">{todayAppointments.length}</span> janji temu untuk hari ini
-            <span className="text-xs text-gray-500 ml-2">(Janji temu yang selesai tidak ditampilkan)</span>
+            <span className="text-[10px] sm:text-xs text-gray-500 block sm:inline sm:ml-2">(Janji temu yang selesai tidak ditampilkan)</span>
           </div>
         </div>
 
         {todayAppointments.length > 0 ? (
-          <div className="space-y-3">
+          <div className="space-y-2 sm:space-y-3">
             {todayAppointments.map((appointment) => (
-              <div key={appointment.id} className="flex items-center justify-between p-4 hover:bg-gray-50 rounded-lg border border-gray-200 transition-colors duration-200">
-                <div className="flex items-center flex-1 min-w-0">
-                  <div className={`w-3 h-3 rounded-full mr-3 flex-shrink-0 ${appointment.status?.toLowerCase() === 'confirmed' ? 'bg-blue-500' : 'bg-yellow-500'
+              <div key={appointment.id} className="flex flex-col sm:flex-row sm:items-center sm:justify-between p-3 sm:p-4 hover:bg-gray-50 rounded-lg border border-gray-200 transition-colors duration-200 gap-3">
+                <div className="flex items-start sm:items-center flex-1 min-w-0">
+                  <div className={`w-2 h-2 sm:w-3 sm:h-3 rounded-full mt-1 sm:mt-0 mr-2 sm:mr-3 flex-shrink-0 ${appointment.status?.toLowerCase() === 'confirmed' ? 'bg-blue-500' : 'bg-yellow-500'
                     }`}></div>
                   <div className="flex-1 min-w-0">
-                    <div className="flex items-center mb-1">
-                      <h3 className="font-medium text-gray-800 truncate">
+                    <div className="flex flex-col sm:flex-row sm:items-center mb-1 gap-1 sm:gap-0">
+                      <h3 className="text-sm sm:text-base font-medium text-gray-800 truncate">
                         {appointment.customer_name || 'T/A'}
                       </h3>
-                      {appointment.customer_id && (
-                        <span className="text-xs bg-gray-100 text-gray-600 px-2 py-1 rounded ml-2">
-                          ID: {appointment.customer_id}
+                      {appointment.member_id && (
+                        <span className="text-[10px] sm:text-xs bg-gray-100 text-gray-600 px-2 py-1 rounded sm:ml-2 w-fit">
+                          ID: {appointment.member_id}
                         </span>
                       )}
                     </div>
-                    <div className="flex flex-col sm:flex-row sm:items-center text-sm text-gray-500">
+                    <div className="flex flex-col text-xs sm:text-sm text-gray-500 space-y-0.5 sm:space-y-0">
                       <span className="font-medium truncate">{appointment.treatment || 'Tidak ada perawatan'}</span>
                       {appointment.therapist && (
-                        <>
-                          <span className="hidden sm:inline mx-2">•</span>
-                          <span className="text-brown-600 font-medium truncate">{appointment.therapist}</span>
-                        </>
+                        <span className="text-brown-600 font-medium truncate">{appointment.therapist}</span>
                       )}
                     </div>
                   </div>
                 </div>
-                <div className="flex items-center space-x-3 ml-4 flex-shrink-0">
-                  <div className="text-right">
-                    <div className="text-sm font-medium text-gray-800">
+                <div className="flex items-center justify-between sm:justify-end space-x-2 sm:space-x-3 sm:ml-4 flex-shrink-0">
+                  <div className="text-left sm:text-right">
+                    <div className="text-xs sm:text-sm font-medium text-gray-800">
                       {formatAppointmentTime(appointment.time)}
                     </div>
-                    <span className={`text-xs px-3 py-1 rounded-full font-medium ${
+                    <span className={`text-[10px] sm:text-xs px-2 sm:px-3 py-1 rounded-full font-medium ${
                       appointment.status?.toLowerCase() === 'confirmed'
                         ? 'bg-blue-100 text-blue-800'
                         : 'bg-yellow-100 text-yellow-800'
                       }`}>
-                      {appointment.status || 'pending'}
+                      {appointment.status || 'confirmed'}
                     </span>
                   </div>
 
                   <div className="flex space-x-1">
-                    {appointment.status?.toLowerCase() === 'pending' && (
-                      <button
-                        onClick={() => handleQuickUpdateStatus(appointment.id, 'pending')}
-                        className="px-3 py-1 bg-blue-500 text-white text-xs rounded hover:bg-blue-600 transition-colors duration-200 font-medium"
-                        title="Konfirmasi Janji Temu"
-                      >
-                        Konfirmasi
-                      </button>
-                    )}
                     {appointment.status?.toLowerCase() === 'confirmed' && (
                       <button
                         onClick={() => handleQuickUpdateStatus(appointment.id, 'confirmed')}
-                        className="px-3 py-1 bg-green-500 text-white text-xs rounded hover:bg-green-600 transition-colors duration-200 font-medium"
+                        className="px-2 sm:px-3 py-1 bg-green-500 text-white text-[10px] sm:text-xs rounded hover:bg-green-600 transition-colors duration-200 font-medium whitespace-nowrap"
                         title="Tandai sebagai Selesai"
                       >
-                        Selesaikan
+                        Selesai
                       </button>
                     )}
                   </div>
@@ -513,27 +509,27 @@ const Dashboard = () => {
             ))}
           </div>
         ) : (
-          <div className="text-center py-10">
-            <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
-              <svg className="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <div className="text-center py-8 sm:py-10 px-4">
+            <div className="w-12 h-12 sm:w-16 sm:h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-3 sm:mb-4">
+              <svg className="w-6 h-6 sm:w-8 sm:h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
               </svg>
             </div>
-            <h3 className="text-lg font-medium text-gray-900 mb-2">Tidak Ada Janji Temu Aktif Hari Ini</h3>
-            <p className="text-gray-500 mb-4">Anda tidak memiliki janji temu pending atau confirmed untuk hari ini.</p>
-            <div className="flex justify-center space-x-3">
+            <h3 className="text-base sm:text-lg font-medium text-gray-900 mb-2">Tidak Ada Janji Temu Aktif Hari Ini</h3>
+            <p className="text-xs sm:text-base text-gray-500 mb-3 sm:mb-4">Anda tidak memiliki janji temu confirmed untuk hari ini.</p>
+            <div className="flex flex-col sm:flex-row justify-center gap-2 sm:gap-3">
               <a
                 href="/admin/appointment"
-                className="inline-flex items-center px-4 py-2 bg-brown-600 text-white rounded-lg hover:bg-brown-700 transition-colors duration-200"
+                className="inline-flex items-center justify-center px-3 sm:px-4 py-2 bg-brown-600 text-white text-sm rounded-lg hover:bg-brown-700 transition-colors duration-200"
               >
                 <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
                 </svg>
-                Tambah Janji Temu Baru
+                Tambah Janji Temu
               </a>
               <button
                 onClick={fetchAllData}
-                className="inline-flex items-center px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors duration-200"
+                className="inline-flex items-center justify-center px-3 sm:px-4 py-2 bg-gray-100 text-gray-700 text-sm rounded-lg hover:bg-gray-200 transition-colors duration-200"
               >
                 <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
@@ -545,33 +541,36 @@ const Dashboard = () => {
         )}
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-200">
-          <div className="flex justify-between items-center mb-6">
-            <h2 className="text-lg font-semibold text-gray-800">Anggota Terbaru</h2>
-            <a href="/admin/member" className="text-sm text-brown-600 hover:text-brown-700 font-medium">
-              Lihat Semua →
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
+        <div className="bg-white rounded-xl shadow-sm p-4 sm:p-6 border border-gray-200">
+          <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2 mb-4 sm:mb-6">
+            <h2 className="text-base sm:text-lg font-semibold text-gray-800">Anggota Terbaru</h2>
+            <a href="/admin/member" className="text-xs sm:text-sm text-brown-600 hover:text-brown-700 font-medium">
+              Lihat Semua â†’
             </a>
           </div>
-          <div className="space-y-4">
+          <div className="space-y-3 sm:space-y-4">
             {recentMembers.map((member) => (
-              <div key={member.id} className="flex items-center p-3 hover:bg-gray-50 rounded-lg border border-gray-200 transition-colors duration-200">
-                <div className="w-10 h-10 bg-brown-100 rounded-full flex items-center justify-center mr-3">
-                  <span className="text-sm font-medium text-brown-600">
+              <div key={member.id} className="flex items-center p-2 sm:p-3 hover:bg-gray-50 rounded-lg border border-gray-200 transition-colors duration-200">
+                <div className="w-8 h-8 sm:w-10 sm:h-10 bg-brown-100 rounded-full flex items-center justify-center mr-2 sm:mr-3 flex-shrink-0">
+                  <span className="text-xs sm:text-sm font-medium text-brown-600">
                     {member.name?.charAt(0)?.toUpperCase() || '?'}
                   </span>
                 </div>
-                <div className="flex-1">
-                  <h3 className="font-medium text-gray-800">{member.name || 'T/A'}</h3>
-                  <div className="flex items-center text-sm text-gray-500">
-                    <span>{member.email || 'Tidak ada email'}</span>
+                <div className="flex-1 min-w-0">
+                  <h3 className="text-sm sm:text-base font-medium text-gray-800 truncate">{member.name || 'T/A'}</h3>
+                  <div className="flex items-center text-xs sm:text-sm text-gray-500">
+                    <span className="truncate">{member.email || 'Tidak ada email'}</span>
                   </div>
                 </div>
-                <div className="text-right">
-                  <div className="text-sm font-medium text-gray-500">
-                    {member.join_date ? new Date(member.join_date).toLocaleDateString('id-ID') : 'T/A'}
+                <div className="text-right ml-2 flex-shrink-0">
+                  <div className="text-xs sm:text-sm font-medium text-gray-500 whitespace-nowrap">
+                    {member.join_date ? new Date(member.join_date).toLocaleDateString('id-ID', {
+                      day: 'numeric',
+                      month: 'short'
+                    }) : 'T/A'}
                   </div>
-                  <span className={`text-xs px-2 py-1 rounded-full ${
+                  <span className={`text-[10px] sm:text-xs px-1.5 sm:px-2 py-0.5 sm:py-1 rounded-full inline-block mt-1 ${
                     member.status?.toLowerCase() === 'active'
                       ? 'bg-green-100 text-green-800'
                       : 'bg-gray-100 text-gray-800'
@@ -582,40 +581,40 @@ const Dashboard = () => {
               </div>
             ))}
             {recentMembers.length === 0 && (
-              <div className="text-center py-8 text-gray-500">
+              <div className="text-center py-6 sm:py-8 text-sm text-gray-500">
                 Tidak ada anggota terbaru ditemukan
               </div>
             )}
           </div>
         </div>
 
-        <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-200">
-          <div className="flex justify-between items-center mb-6">
-            <h2 className="text-lg font-semibold text-gray-800">Anggota Teratas berdasarkan Kunjungan</h2>
-            <a href="/admin/member" className="text-sm text-brown-600 hover:text-brown-700 font-medium">
-              Lihat Semua →
+        <div className="bg-white rounded-xl shadow-sm p-4 sm:p-6 border border-gray-200">
+          <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2 mb-4 sm:mb-6">
+            <h2 className="text-base sm:text-lg font-semibold text-gray-800">Anggota Teratas berdasarkan Kunjungan</h2>
+            <a href="/admin/member" className="text-xs sm:text-sm text-brown-600 hover:text-brown-700 font-medium">
+              Lihat Semua â†’
             </a>
           </div>
-          <div className="space-y-4">
+          <div className="space-y-3 sm:space-y-4">
             {topMembers.map((member, index) => (
-              <div key={member.id} className="flex items-center p-3 hover:bg-gray-50 rounded-lg border border-gray-200 transition-colors duration-200">
-                <div className="w-8 h-8 flex items-center justify-center bg-brown-100 text-brown-600 font-bold rounded-full mr-3">
+              <div key={member.id} className="flex items-center p-2 sm:p-3 hover:bg-gray-50 rounded-lg border border-gray-200 transition-colors duration-200">
+                <div className="w-6 h-6 sm:w-8 sm:h-8 flex items-center justify-center bg-brown-100 text-brown-600 text-xs sm:text-base font-bold rounded-full mr-2 sm:mr-3 flex-shrink-0">
                   {index + 1}
                 </div>
-                <div className="flex-1">
-                  <h3 className="font-medium text-gray-800">{member.name || 'T/A'}</h3>
-                  <div className="flex items-center text-sm text-gray-500">
-                    <span>{member.email || 'Tidak ada email'}</span>
+                <div className="flex-1 min-w-0">
+                  <h3 className="text-sm sm:text-base font-medium text-gray-800 truncate">{member.name || 'T/A'}</h3>
+                  <div className="flex items-center text-xs sm:text-sm text-gray-500">
+                    <span className="truncate">{member.email || 'Tidak ada email'}</span>
                   </div>
                 </div>
-                <div className="text-right">
-                  <div className="text-lg font-bold text-gray-800">{member.total_visits || 0}</div>
-                  <span className="text-xs text-gray-500">kunjungan</span>
+                <div className="text-right ml-2 flex-shrink-0">
+                  <div className="text-base sm:text-lg font-bold text-gray-800">{member.total_visits || 0}</div>
+                  <span className="text-[10px] sm:text-xs text-gray-500 whitespace-nowrap">kunjungan</span>
                 </div>
               </div>
             ))}
             {topMembers.length === 0 && (
-              <div className="text-center py-8 text-gray-500">
+              <div className="text-center py-6 sm:py-8 text-sm text-gray-500">
                 Tidak ada data perawatan tersedia
               </div>
             )}
@@ -623,30 +622,32 @@ const Dashboard = () => {
         </div>
       </div>
 
-      <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-200">
-        <div className="flex justify-between items-center mb-4">
-          <h2 className="text-lg font-semibold text-gray-800">Perawatan Selesai Terbaru</h2>
-          <a href="/admin/appointment" className="text-sm text-brown-600 hover:text-brown-700 font-medium">
-            Lihat Semua →
+      <div className="bg-white rounded-xl shadow-sm p-4 sm:p-6 border border-gray-200">
+        <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2 mb-4">
+          <h2 className="text-base sm:text-lg font-semibold text-gray-800">Perawatan Selesai Terbaru</h2>
+          <a href="/admin/appointment" className="text-xs sm:text-sm text-brown-600 hover:text-brown-700 font-medium">
+            Lihat Semua â†’
           </a>
         </div>
-        <div className="space-y-3">
+        <div className="space-y-2 sm:space-y-3">
           {recentTreatments.map((treatment) => (
-            <div key={treatment.id} className="flex items-center p-4 hover:bg-gray-50 rounded-lg border border-gray-200 transition-colors duration-200">
-              <div className="flex-1">
-                <div className="flex justify-between items-center mb-2">
-                  <h3 className="font-medium text-gray-800">{treatment.customer_name || 'T/A'}</h3>
-                  <span className="text-sm font-bold text-green-600">
-                    Rp {(treatment.amount || 0).toLocaleString('id-ID')}
+            <div key={treatment.id} className="flex flex-col sm:flex-row sm:items-center p-3 sm:p-4 hover:bg-gray-50 rounded-lg border border-gray-200 transition-colors duration-200 gap-2">
+              <div className="flex-1 min-w-0">
+                <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center mb-2 gap-1">
+                  <h3 className="text-sm sm:text-base font-medium text-gray-800 truncate">{treatment.customer_name || 'T/A'}</h3>
+                  <span className="text-xs sm:text-sm font-bold text-green-600 whitespace-nowrap">
+                    Rp {(treatment.amount || 0).toLocaleString('id-ID', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
                   </span>
                 </div>
-                <div className="flex flex-col sm:flex-row sm:items-center text-sm text-gray-500">
-                  <span>{treatment.treatment || 'T/A'}</span>
-                  <span className="hidden sm:inline mx-2">•</span>
-                  <span className="text-brown-600 font-medium">{treatment.therapist || 'T/A'}</span>
-                  <span className="hidden sm:inline mx-2">•</span>
-                  <span>
-                    {treatment.date ? new Date(treatment.date).toLocaleDateString('id-ID') : 'T/A'}
+                <div className="flex flex-col text-xs sm:text-sm text-gray-500 space-y-0.5">
+                  <span className="truncate">{treatment.treatment_name || 'T/A'}</span>
+                  <span className="text-brown-600 font-medium truncate">{treatment.therapist_name || 'T/A'}</span>
+                  <span className="truncate">
+                    {treatment.date ? new Date(treatment.date).toLocaleDateString('id-ID', {
+                      day: 'numeric',
+                      month: 'short',
+                      year: 'numeric'
+                    }) : 'T/A'}
                     {treatment.time && `, ${formatAppointmentTime(treatment.time)}`}
                   </span>
                 </div>
@@ -654,41 +655,41 @@ const Dashboard = () => {
             </div>
           ))}
           {recentTreatments.length === 0 && (
-            <div className="text-center py-8 text-gray-500">
+            <div className="text-center py-6 sm:py-8 text-sm text-gray-500">
               Belum ada perawatan yang selesai
             </div>
           )}
         </div>
       </div>
 
-      <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-200">
-        <div className="flex justify-between items-center mb-4">
-          <h2 className="text-lg font-semibold text-gray-800">Terapis Teratas</h2>
-          <a href="/admin/therapist" className="text-sm text-brown-600 hover:text-brown-700 font-medium">
-            Lihat Semua →
+      <div className="bg-white rounded-xl shadow-sm p-4 sm:p-6 border border-gray-200">
+        <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2 mb-4">
+          <h2 className="text-base sm:text-lg font-semibold text-gray-800">Terapis Teratas</h2>
+          <a href="/admin/therapist" className="text-xs sm:text-sm text-brown-600 hover:text-brown-700 font-medium">
+            Lihat Semua â†’
           </a>
         </div>
-        <div className="space-y-4">
+        <div className="space-y-3 sm:space-y-4">
           {topTherapists.map((therapist) => (
-            <div key={therapist.id} className="flex items-center p-4 hover:bg-gray-50 rounded-lg border border-gray-200 transition-colors duration-200">
-              <div className="text-3xl mr-4">{therapist.image || '👩‍⚕️'}</div>
-              <div className="flex-1">
-                <h3 className="font-semibold text-gray-800">{therapist.name}</h3>
-                <div className="flex items-center text-sm text-gray-500">
-                  <span>{therapist.completedAppointments || 0} perawatan selesai</span>
+            <div key={therapist.id} className="flex items-center p-3 sm:p-4 hover:bg-gray-50 rounded-lg border border-gray-200 transition-colors duration-200 gap-3">
+              <div className="text-2xl sm:text-3xl flex-shrink-0">{therapist.image || 'ðŸ‘©â€âš•ï¸'}</div>
+              <div className="flex-1 min-w-0">
+                <h3 className="text-sm sm:text-base font-semibold text-gray-800 truncate">{therapist.name}</h3>
+                <div className="flex flex-col sm:flex-row sm:items-center text-xs sm:text-sm text-gray-500 space-y-0.5 sm:space-y-0">
+                  <span className="whitespace-nowrap">{therapist.completedAppointments || 0} perawatan selesai</span>
                   {therapist.totalAppointments > 0 && (
                     <>
-                      <span className="mx-2">•</span>
-                      <span>{therapist.totalAppointments} total janji temu</span>
+                      <span className="hidden sm:inline mx-2">â€¢</span>
+                      <span className="whitespace-nowrap">{therapist.totalAppointments} total janji temu</span>
                     </>
                   )}
                 </div>
               </div>
-              <div className="text-right">
-                <div className="text-lg font-bold text-brown-600 mb-1">
+              <div className="text-right flex-shrink-0">
+                <div className="text-base sm:text-lg font-bold text-brown-600 mb-1">
                   {therapist.completedAppointments || 0}
                 </div>
-                <span className={`text-xs px-2 py-1 rounded-full ${
+                <span className={`text-[10px] sm:text-xs px-1.5 sm:px-2 py-0.5 sm:py-1 rounded-full inline-block ${
                   therapist.status?.toLowerCase() === 'active'
                     ? 'bg-green-100 text-green-800'
                     : 'bg-gray-100 text-gray-800'
@@ -699,7 +700,7 @@ const Dashboard = () => {
             </div>
           ))}
           {topTherapists.length === 0 && (
-            <div className="text-center py-8 text-gray-500">
+            <div className="text-center py-6 sm:py-8 text-sm text-gray-500">
               Tidak ada data terapis tersedia
             </div>
           )}

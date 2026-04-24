@@ -1,29 +1,44 @@
-{
+﻿{
   "openapi": "3.0.1",
   "info": {
     "title": "Mochint Beauty Clinic API",
     "version": "1.0.0",
-    "description": "API documentation untuk backend Klinik Kecantikan"
+    "description": "API documentation â€” terpisah berdasarkan fitur: Authentication, Products, Treatments, Therapists, Appointments, Members"
   },
   "servers": [
-    { "url": "http://localhost:5000", "description": "Local server" }
+    { "url": "/api", "description": "Local server" }
+  ],
+  "tags": [
+    { "name": "Authentication", "description": "Login / Register / Logout" },
+    { "name": "Products", "description": "Produk toko" },
+    { "name": "Treatments", "description": "Layanan perawatan" },
+    { "name": "Therapists", "description": "Data terapis" },
+    { "name": "Appointments", "description": "Jadwal & pemesanan" },
+    { "name": "Members", "description": "Data user/member" }
   ],
   "components": {
     "securitySchemes": {
-      "bearerAuth": {
-        "type": "http",
-        "scheme": "bearer",
-        "bearerFormat": "JWT"
-      }
+      "bearerAuth": { "type": "http", "scheme": "bearer", "bearerFormat": "JWT" }
     },
     "schemas": {
-      "AuthRequest": {
+      "LoginRequest": {
         "type": "object",
         "properties": {
-          "email": { "type": "string", "example": "admin@mochint.com" },
-          "password": { "type": "string", "example": "admin123" }
+          "email": { "type": "string", "example": "user@domain.com" },
+          "password": { "type": "string", "example": "secret" }
         },
         "required": ["email", "password"]
+      },
+      "RegisterRequest": {
+        "type": "object",
+        "properties": {
+          "name": { "type": "string", "example": "Jane Doe" },
+          "email": { "type": "string", "example": "jane@domain.com" },
+          "phone": { "type": "string", "example": "08123456789" },
+          "address": { "type": "string", "example": "Jl. Contoh 123" },
+          "password": { "type": "string", "example": "pa$$word" }
+        },
+        "required": ["name","email","phone","address","password"]
       },
       "AuthResponse": {
         "type": "object",
@@ -31,6 +46,24 @@
           "success": { "type": "boolean" },
           "token": { "type": "string" },
           "user": { "type": "object" }
+        }
+      },
+      "LogoutResponse": {
+        "type": "object",
+        "properties": {
+          "success": { "type": "boolean" },
+          "message": { "type": "string" }
+        }
+      },
+      "Product": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "integer" },
+          "name": { "type": "string" },
+          "category": { "type": "string" },
+          "price": { "type": "number" },
+          "description": { "type": "string" },
+          "image": { "type": "string" }
         }
       },
       "Treatment": {
@@ -44,6 +77,16 @@
           "description": { "type": "string" }
         }
       },
+      "Therapist": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "integer" },
+          "name": { "type": "string" },
+          "email": { "type": "string" },
+          "phone": { "type": "string" },
+          "status": { "type": "string" }
+        }
+      },
       "AppointmentCreate": {
         "type": "object",
         "properties": {
@@ -55,73 +98,231 @@
           "amount": { "type": "number" }
         },
         "required": ["customer_name","treatment","therapist","date","time"]
+      },
+      "Appointment": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "integer" },
+          "appointment_id": { "type": "string" },
+          "customer_name": { "type": "string" },
+          "treatment": { "type": "string" },
+          "therapist": { "type": "string" },
+          "date": { "type": "string" },
+          "time": { "type": "string" },
+          "amount": { "type": "number" },
+          "status": { "type": "string" }
+        }
+      },
+      "Member": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "integer" },
+          "name": { "type": "string" },
+          "email": { "type": "string" },
+          "phone": { "type": "string" },
+          "address": { "type": "string" },
+          "join_date": { "type": "string" }
+        }
       }
     }
   },
+  "security": [],
   "paths": {
     "/api/auth/login": {
       "post": {
-        "summary": "Login",
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": { "schema": { "$ref": "#/components/schemas/AuthRequest" } }
-          }
-        },
+        "tags": ["Authentication"],
+        "summary": "Login (admin or member)",
+        "requestBody": { "required": true, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/LoginRequest" } } } },
         "responses": {
-          "200": { "description": "Success", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/AuthResponse" } } } },
+          "200": { "description": "Authenticated", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/AuthResponse" } } } },
           "400": { "description": "Bad Request" },
+          "401": { "description": "Invalid credentials" },
+          "404": { "description": "User not found" }
+        }
+      }
+    },
+    "/api/auth/register": {
+      "post": {
+        "tags": ["Authentication"],
+        "summary": "Register new member",
+        "requestBody": { "required": true, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/RegisterRequest" } } } },
+        "responses": {
+          "201": { "description": "Member created", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/AuthResponse" } } } },
+          "400": { "description": "Validation error" },
+          "409": { "description": "Email already registered" }
+        }
+      }
+    },
+    "/api/auth/logout": {
+      "post": {
+        "tags": ["Authentication"],
+        "summary": "Logout (invalidate token on client side)",
+        "security": [{ "bearerAuth": [] }],
+        "responses": {
+          "200": { "description": "Logged out", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/LogoutResponse" } } } },
           "401": { "description": "Unauthorized" }
+        }
+      }
+    },
+    "/api/products": {
+      "get": {
+        "tags": ["Products"],
+        "summary": "List products (public)",
+        "responses": {
+          "200": { "description": "Array of products", "content": { "application/json": { "schema": { "type": "array", "items": { "$ref": "#/components/schemas/Product" } } } } }
+        }
+      }
+    },
+    "/api/products/{id}": {
+      "get": {
+        "tags": ["Products"],
+        "summary": "Get product by id",
+        "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "integer" } }],
+        "responses": {
+          "200": { "description": "Product", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Product" } } } },
+          "404": { "description": "Not found" }
         }
       }
     },
     "/api/treatments": {
       "get": {
+        "tags": ["Treatments"],
         "summary": "List treatments (public)",
         "responses": {
           "200": { "description": "Array of treatments", "content": { "application/json": { "schema": { "type": "array", "items": { "$ref": "#/components/schemas/Treatment" } } } } }
         }
       }
     },
+    "/api/treatments/{id}": {
+      "get": {
+        "tags": ["Treatments"],
+        "summary": "Get treatment by id",
+        "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "integer" } }],
+        "responses": {
+          "200": { "description": "Treatment", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Treatment" } } } },
+          "404": { "description": "Not found" }
+        }
+      }
+    },
     "/api/therapists": {
       "get": {
+        "tags": ["Therapists"],
         "summary": "List therapists (public)",
         "responses": {
-          "200": { "description": "Array of therapists", "content": { "application/json": { "schema": { "type": "array", "items": { "type": "object" } } } } }
+          "200": { "description": "Array of therapists", "content": { "application/json": { "schema": { "type": "array", "items": { "$ref": "#/components/schemas/Therapist" } } } } }
+        }
+      }
+    },
+    "/api/therapists/{id}": {
+      "get": {
+        "tags": ["Therapists"],
+        "summary": "Get therapist by id",
+        "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "integer" } }],
+        "responses": {
+          "200": { "description": "Therapist", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Therapist" } } } },
+          "404": { "description": "Not found" }
         }
       }
     },
     "/api/appointments": {
       "get": {
+        "tags": ["Appointments"],
         "summary": "List appointments (protected)",
         "security": [{ "bearerAuth": [] }],
         "responses": {
-          "200": { "description": "Array of appointments", "content": { "application/json": { "schema": { "type": "array", "items": { "type": "object" } } } } },
+          "200": { "description": "Array of appointments", "content": { "application/json": { "schema": { "type": "array", "items": { "$ref": "#/components/schemas/Appointment" } } } } },
           "401": { "description": "Unauthorized" }
         }
       },
       "post": {
+        "tags": ["Appointments"],
         "summary": "Create appointment (protected)",
         "security": [{ "bearerAuth": [] }],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": { "schema": { "$ref": "#/components/schemas/AppointmentCreate" } }
-          }
-        },
+        "requestBody": { "required": true, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/AppointmentCreate" } } } },
         "responses": {
-          "200": { "description": "Created", "content": { "application/json": { "schema": { "type": "object" } } } },
+          "201": { "description": "Created", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Appointment" } } } },
           "400": { "description": "Bad Request" },
+          "401": { "description": "Unauthorized" }
+        }
+      }
+    },
+    "/api/appointments/{id}": {
+      "get": {
+        "tags": ["Appointments"],
+        "summary": "Get appointment by id (protected)",
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "integer" } }],
+        "responses": {
+          "200": { "description": "Appointment", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Appointment" } } } },
+          "401": { "description": "Unauthorized" },
+          "404": { "description": "Not found" }
+        }
+      },
+      "put": {
+        "tags": ["Appointments"],
+        "summary": "Update appointment (protected)",
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "integer" } }],
+        "requestBody": { "required": true, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/AppointmentCreate" } } } },
+        "responses": {
+          "200": { "description": "Updated" },
+          "400": { "description": "Bad Request" },
+          "401": { "description": "Unauthorized" }
+        }
+      },
+      "delete": {
+        "tags": ["Appointments"],
+        "summary": "Delete appointment (protected)",
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "integer" } }],
+        "responses": {
+          "200": { "description": "Deleted" },
           "401": { "description": "Unauthorized" }
         }
       }
     },
     "/api/members": {
       "get": {
-        "summary": "List members (protected)",
+        "tags": ["Members"],
+        "summary": "List members (protected, admin or self)",
         "security": [{ "bearerAuth": [] }],
         "responses": {
-          "200": { "description": "Array of members", "content": { "application/json": { "schema": { "type": "array", "items": { "type": "object" } } } } },
+          "200": { "description": "Array of members", "content": { "application/json": { "schema": { "type": "array", "items": { "$ref": "#/components/schemas/Member" } } } } },
+          "401": { "description": "Unauthorized" }
+        }
+      }
+    },
+    "/api/members/{id}": {
+      "get": {
+        "tags": ["Members"],
+        "summary": "Get member by id (protected)",
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "integer" } }],
+        "responses": {
+          "200": { "description": "Member", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Member" } } } },
+          "401": { "description": "Unauthorized" },
+          "404": { "description": "Not found" }
+        }
+      },
+      "put": {
+        "tags": ["Members"],
+        "summary": "Update member (protected)",
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "integer" } }],
+        "requestBody": { "required": true, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Member" } } } },
+        "responses": {
+          "200": { "description": "Updated" },
+          "400": { "description": "Bad Request" },
+          "401": { "description": "Unauthorized" }
+        }
+      },
+      "delete": {
+        "tags": ["Members"],
+        "summary": "Delete member (protected)",
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "integer" } }],
+        "responses": {
+          "200": { "description": "Deleted" },
           "401": { "description": "Unauthorized" }
         }
       }

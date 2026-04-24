@@ -1,108 +1,316 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Home, ChevronDown, Loader2 } from 'lucide-react';
-
-// PERBAIKAN: Jalur import disesuaikan dengan src/api/mockData.js
+import { appointmentAPI } from '../../services/api';
 import { mockHistory } from '../../api/mockData'; 
 
 const History = () => {
-  const navigate = useNavigate();
-  const [history, setHistory] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const navigate = useNavigate();
+  const [history, setHistory] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
-  useEffect(() => {
-    const fetchHistory = async () => {
-      try {
-        setLoading(true);
-        const response = await fetch('http://localhost:5000/appointments?userId=M0001');
-        const data = await response.json();
-        const completed = data.filter(item => item.status === 'Completed');
-        setHistory(completed);
-      } catch (error) {
-        console.warn("Server API offline, menggunakan data fallback dari mockData.js");
-        const localCompleted = mockHistory.filter(item => item.status === 'Completed');
-        setHistory(localCompleted);
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchHistory();
-  }, []);
+  useEffect(() => {
+    const fetchHistory = async () => {
+      try {
+        setLoading(true);
+        setError(null);
 
-  const FilterButton = ({ label }) => (
-    <button className="flex items-center justify-between gap-2 px-4 py-2 bg-white border border-gray-200 rounded-lg text-xs font-bold text-gray-600 hover:border-[#8D6E63] transition-all min-w-[100px] font-sans">
-      {label} <ChevronDown size={14} />
-    </button>
-  );
+        // Ambil data user dari localStorage
+        const activeUserStr = localStorage.getItem('active_user');
+        const userStr = localStorage.getItem('user');
+        const token = localStorage.getItem('token');
+        
+        console.log('🔍 Debug History - Token:', token ? 'EXISTS' : 'NOT FOUND');
+        console.log('🔍 Debug History - User data:', activeUserStr || userStr ? 'EXISTS' : 'NOT FOUND');
+        
+        let userData = null;
+        if (activeUserStr) {
+          userData = JSON.parse(activeUserStr);
+        } else if (userStr) {
+          userData = JSON.parse(userStr);
+        }
 
-  return (
-    /* font-sans (Inter) sebagai base */
-    <div className="min-h-screen bg-[#FDFBF7] p-4 md:p-8 font-sans">
-      
-      {/* NAVBAR: Icon Home / History */}
-      <nav className="flex items-center gap-3 text-[10px] md:text-xs mb-8 font-black uppercase tracking-[0.2em] text-gray-400 font-sans">
-        <button 
-          onClick={() => navigate('/member')} 
-          className="p-2 bg-white rounded-lg shadow-sm text-[#8D6E63] hover:bg-[#8D6E63] hover:text-white transition-all"
-        >
-          <Home size={16} />
-        </button>
-        <span>/</span>
-        <span className="text-[#8D6E63] bg-[#8D6E63]/10 px-4 py-1.5 rounded-full font-bold">
-          History
-        </span>
-      </nav>
+        if (!userData || !userData.id) {
+          console.warn('❌ User data tidak ditemukan di localStorage');
+          setError('Silakan login terlebih dahulu');
+          setLoading(false);
+          return;
+        }
 
-      <div className="max-w-6xl mx-auto">
-        {/* font-display (Poppins) untuk Judul */}
-        <h1 className="text-4xl md:text-6xl font-display font-bold text-[#8D6E63] mb-2 tracking-tighter">History</h1>
-        <p className="text-gray-500 mb-10 text-sm md:text-base italic font-sans">Daftar perawatan yang telah selesai dilakukan.</p>
+        if (!token) {
+          console.warn('❌ Token tidak ditemukan - user belum login dengan benar');
+          setError('Token tidak ditemukan. Silakan login ulang.');
+          setLoading(false);
+          return;
+        }
 
-        <div className="flex flex-wrap gap-3 mb-8">
-          {['Treatment', 'Waktu', 'Harga', 'More'].map(f => (
-            <FilterButton key={f} label={f} />
-          ))}
-        </div>
+        const memberId = userData.id;
+        console.log('📋 Fetching history for member:', memberId);
 
-        {loading ? (
-          <div className="flex justify-center py-20">
-            <Loader2 className="animate-spin text-[#8D6E63]" size={32} />
-          </div>
-        ) : (
-          <div className="bg-white rounded-[30px] shadow-sm border border-gray-100 overflow-hidden">
-            <div className="overflow-x-auto">
-              <table className="w-full text-left">
-                <tbody className="divide-y divide-gray-50 font-sans">
-                  {history.length > 0 ? (
-                    history.map((item) => (
-                      <tr key={item.id} className="hover:bg-gray-50 transition-colors group">
-                        {/* font-display (Poppins) untuk Nama Treatment agar tegas */}
-                        <td className="p-6 font-display font-bold text-[#5D4037] group-hover:text-[#8D6E63] transition-colors">
-                          {item.treatmentName}
-                        </td>
-                        <td className="p-6 text-sm text-gray-500 font-semibold font-sans">
-                          {item.date}
-                        </td>
-                        <td className="p-6 text-sm font-bold text-[#5D4037] text-right font-display">
-                          Rp {item.price.toLocaleString('id-ID')}
-                        </td>
-                      </tr>
-                    ))
-                  ) : (
-                    <tr>
-                      <td colSpan="3" className="p-20 text-center text-gray-400 italic font-sans">
-                        Belum ada riwayat perawatan.
-                      </td>
-                    </tr>
-                  )}
-                </tbody>
-              </table>
-            </div>
-          </div>
-        )}
-      </div>
-    </div>
-  );
+        // Panggil API endpoint untuk mendapatkan appointment berdasarkan member_id
+        const response = await appointmentAPI.getByMember(memberId);
+        console.log('✅ API Response:', response.data);
+
+        // Filter hanya appointment dengan status 'completed'
+        const completedAppointments = response.data.data.filter(item => item.status === 'completed');
+        console.log('✅ Completed appointments:', completedAppointments.length);
+        
+        // Mapping data dari database ke format yang dibutuhkan
+        const formattedHistory = completedAppointments.map(item => ({
+          id: item.id,
+          treatmentName: item.treatment_name || 'Treatment tidak tersedia',
+          date: item.date ? new Date(item.date).toLocaleDateString('id-ID', {
+            year: 'numeric',
+            month: 'long',
+            day: 'numeric'
+          }) : '-',
+          time: item.time || '-',
+          price: item.amount || 0,
+          status: item.status
+        }));
+
+        setHistory(formattedHistory);
+      } catch (error) {
+        console.error("❌ Server API error:", error);
+        console.error("❌ Error details:", {
+          message: error.message,
+          response: error.response?.data,
+          status: error.response?.status
+        });
+        
+        if (error.response?.status === 401) {
+          setError('Sesi Anda telah berakhir. Silakan login kembali.');
+          console.log("Token mungkin tidak valid atau expired");
+        } else {
+          console.log("⚠️ Menggunakan data fallback dari mockData.js");
+          
+          // Fallback ke mockData jika API tidak tersedia
+          const localCompleted = mockHistory.filter(item => item.status === 'Completed');
+          setHistory(localCompleted);
+        }
+      } finally {
+        setLoading(false);
+      }
+    };
+    
+    fetchHistory();
+  }, []);
+
+  const FilterButton = ({ label }) => (
+    <button className="flex items-center justify-between gap-2 px-4 py-2 bg-white border border-gray-200 rounded-lg text-xs font-bold text-gray-600 hover:border-[#8D6E63] transition-all min-w-[100px] font-sans">
+      {label} <ChevronDown size={14} />
+    </button>
+  );
+
+  return (
+    <div className="min-h-screen bg-[#FDFBF7] p-4 md:p-8 font-sans">
+      
+      {/* NAVBAR: Icon Home / History */}
+      <nav className="flex items-center gap-3 text-[10px] md:text-xs mb-8 font-black uppercase tracking-[0.2em] text-gray-400 font-sans">
+        <button 
+          onClick={() => navigate('/member')} 
+          className="p-2 bg-white rounded-lg shadow-sm text-[#8D6E63] hover:bg-[#8D6E63] hover:text-white transition-all"
+        >
+          <Home size={16} />
+        </button>
+        <span>/</span>
+        <span className="text-[#8D6E63] bg-[#8D6E63]/10 px-4 py-1.5 rounded-full font-bold">
+          Riwayat
+        </span>
+      </nav>
+
+      <div className="max-w-7xl mx-auto">
+        {/* Judul dan Deskripsi */}
+        <div className="mb-8">
+          <h1 className="text-4xl md:text-6xl font-display font-extrabold text-[#8D6E63] mb-3 tracking-tight leading-none">
+            Riwayat Perawatan
+          </h1>
+          <p className="text-gray-600 text-sm md:text-base font-medium font-sans">
+            Lihat semua perawatan yang telah Anda selesaikan
+          </p>
+        </div>
+
+        {/* Error Message */}
+        {error && (
+          <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-xl">
+            <p className="text-red-700 text-sm font-semibold">⚠️ {error}</p>
+            {error.includes('login') && (
+              <button 
+                onClick={() => navigate('/login')}
+                className="mt-2 text-xs text-red-600 underline hover:text-red-800"
+              >
+                Klik di sini untuk login
+              </button>
+            )}
+          </div>
+        )}
+
+        {loading ? (
+          <div className="flex justify-center py-20">
+            <Loader2 className="animate-spin text-[#8D6E63]" size={40} />
+          </div>
+        ) : (
+          <>
+            {/* Desktop Table View */}
+            <div className="hidden md:block bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden">
+              <div className="overflow-x-auto">
+                <table className="w-full">
+                  <thead>
+                    <tr className="bg-gradient-to-r from-[#8D6E63] to-[#6D4C41] text-white">
+                      <th className="px-6 py-4 text-left text-sm font-bold uppercase tracking-wider font-sans">
+                        Treatment
+                      </th>
+                      <th className="px-6 py-4 text-left text-sm font-bold uppercase tracking-wider font-sans">
+                        Tanggal
+                      </th>
+                      <th className="px-6 py-4 text-left text-sm font-bold uppercase tracking-wider font-sans">
+                        Waktu
+                      </th>
+                      <th className="px-6 py-4 text-right text-sm font-bold uppercase tracking-wider font-sans">
+                        Harga
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-100">
+                    {history.length > 0 ? (
+                      history.map((item, index) => (
+                        <tr 
+                          key={item.id} 
+                          className={`hover:bg-[#FFF8F5] transition-all duration-200 group ${
+                            index % 2 === 0 ? 'bg-white' : 'bg-gray-50/50'
+                          }`}
+                        >
+                          <td className="px-6 py-5">
+                            <div className="flex items-center gap-3">
+                              <div className="w-10 h-10 bg-gradient-to-br from-[#8D6E63] to-[#6D4C41] rounded-lg flex items-center justify-center text-white font-bold text-sm shadow-md">
+                                {index + 1}
+                              </div>
+                              <span className="font-display font-bold text-[#3E2723] text-base group-hover:text-[#8D6E63] transition-colors">
+                                {item.treatmentName}
+                              </span>
+                            </div>
+                          </td>
+                          <td className="px-6 py-5">
+                            <span className="text-sm text-gray-600 font-sans">
+                              {item.date}
+                            </span>
+                          </td>
+                          <td className="px-6 py-5">
+                            <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-bold bg-[#8D6E63]/10 text-[#8D6E63] font-sans">
+                              {item.time}
+                            </span>
+                          </td>
+                          <td className="px-6 py-5 text-right">
+                            <span className="text-base font-display font-bold text-[#3E2723]">
+                              Rp {item.price.toLocaleString('id-ID', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
+                            </span>
+                          </td>
+                        </tr>
+                      ))
+                    ) : (
+                      <tr>
+                        <td colSpan="4" className="px-6 py-16 text-center">
+                          <div className="flex flex-col items-center gap-3">
+                            <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center">
+                              <span className="text-3xl">📋</span>
+                            </div>
+                            <p className="text-gray-400 font-medium font-sans">
+                              Belum ada riwayat perawatan
+                            </p>
+                          </div>
+                        </td>
+                      </tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            {/* Mobile Card View */}
+            <div className="md:hidden space-y-4">
+              {history.length > 0 ? (
+                history.map((item, index) => (
+                  <div 
+                    key={item.id}
+                    className="bg-white rounded-2xl shadow-md border border-gray-100 overflow-hidden hover:shadow-lg transition-all duration-200"
+                  >
+                    {/* Card Header */}
+                    <div className="bg-gradient-to-r from-[#8D6E63] to-[#6D4C41] px-4 py-3 flex items-center justify-between">
+                      <div className="flex items-center gap-3">
+                        <div className="w-8 h-8 bg-white/20 backdrop-blur-sm rounded-lg flex items-center justify-center text-white font-bold text-sm">
+                          {index + 1}
+                        </div>
+                        <span className="text-white font-bold text-sm font-sans tracking-wide">
+                          RIWAYAT #{String(index + 1).padStart(3, '0')}
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* Card Body */}
+                    <div className="p-4 space-y-3">
+                      {/* Treatment Name */}
+                      <div>
+                        <p className="text-xs text-gray-500 font-semibold uppercase tracking-wide mb-1 font-sans">Treatment</p>
+                        <p className="text-lg font-display font-bold text-[#3E2723]">
+                          {item.treatmentName}
+                        </p>
+                      </div>
+
+                      <div className="h-px bg-gray-100"></div>
+
+                      {/* Date */}
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs text-gray-500 font-semibold uppercase tracking-wide font-sans">Tanggal</span>
+                        <span className="text-sm text-gray-700 font-sans">
+                          {item.date}
+                        </span>
+                      </div>
+
+                      {/* Time */}
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs text-gray-500 font-semibold uppercase tracking-wide font-sans">Waktu</span>
+                        <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-bold bg-[#8D6E63]/10 text-[#8D6E63] font-sans">
+                          {item.time}
+                        </span>
+                      </div>
+
+                      <div className="h-px bg-gray-100"></div>
+
+                      {/* Price */}
+                      <div className="flex items-center justify-between pt-2">
+                        <span className="text-xs text-gray-500 font-semibold uppercase tracking-wide font-sans">Total Biaya</span>
+                        <span className="text-xl font-display font-bold text-[#8D6E63]">
+                          Rp {item.price.toLocaleString('id-ID', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                ))
+              ) : (
+                <div className="bg-white rounded-2xl shadow-md border border-gray-100 p-12">
+                  <div className="flex flex-col items-center gap-3 text-center">
+                    <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center">
+                      <span className="text-3xl">📋</span>
+                    </div>
+                    <p className="text-gray-400 font-medium font-sans">
+                      Belum ada riwayat perawatan
+                    </p>
+                    <button
+                      onClick={() => navigate('/member/appointment')}
+                      className="mt-4 px-6 py-2 bg-[#8D6E63] text-white rounded-lg text-sm font-bold hover:bg-[#6D4C41] transition-colors"
+                    >
+                      Buat Appointment
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+          </>
+        )}
+      </div>
+    </div>
+  );
 };
 
 export default History;

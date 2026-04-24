@@ -1,55 +1,143 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Search, Plus, Home } from 'lucide-react';
+import { Search, Plus, Home, Loader2, AlertCircle } from 'lucide-react';
+import { treatmentAPI } from '../../../services/api';
 
 const BookingStep2 = () => {
   const navigate = useNavigate();
 
-  // 1. Data Katalog Treatment
-  const allTreatments = [
-    { id: 1, name: 'Facial Micro Diamond', category: 'Beauty Treatment', price: '120k', info: 'Pembersihan mendalam dengan microdiamond' },
-    { id: 2, name: 'Facial Peeling Ultimate', category: 'Ultimate Treatment', price: '175k', info: 'Whitening / Acne Treatment' },
-    { id: 3, name: 'Facial Detox', category: 'Beauty Treatment', price: '135k', info: 'Mengeluarkan racun pada kulit wajah' },
-    { id: 4, name: 'Facial Mesotherapy', category: 'Ultimate Treatment', price: '175k', info: 'Nutrisi wajah tanpa jarum' },
-    { id: 5, name: 'Mochint Signature', category: 'Special Treatment', price: '250k', info: 'Layanan eksklusif Signature Mochint' },
-  ];
-
-  // 2. State Management - Default "All"
+  // 1. State Management
+  const [allTreatments, setAllTreatments] = useState([]);
   const [selectedCategory, setSelectedCategory] = useState('All');
   const [searchTerm, setSearchTerm] = useState('');
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  // 2. Fetch treatments from backend
+  useEffect(() => {
+    const fetchTreatments = async () => {
+      try {
+        setLoading(true);
+        setError(null);
+        const response = await treatmentAPI.getAll();
+        
+        if (response.data && response.data.success) {
+          setAllTreatments(response.data.data);
+        } else {
+          throw new Error('Failed to fetch treatments');
+        }
+      } catch (err) {
+        console.error('Error fetching treatments:', err);
+        setError(err.message || 'Gagal memuat data treatment');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchTreatments();
+  }, []);
 
   // 3. Filter treatments secara otomatis dengan useMemo
   const filteredTreatments = useMemo(() => {
     let filtered = allTreatments;
     
-    // Filter berdasarkan kategori
+    // Filter berdasarkan kategori - Handle both array and string categories
     if (selectedCategory !== 'All') {
-      filtered = filtered.filter(t => t.category === selectedCategory);
+      filtered = filtered.filter(t => {
+        if (Array.isArray(t.category)) {
+          return t.category.includes(selectedCategory);
+        }
+        return t.category === selectedCategory;
+      });
     }
     
     // Filter berdasarkan pencarian
     if (searchTerm.trim() !== '') {
-      filtered = filtered.filter(t => 
-        t.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        t.category.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        t.info.toLowerCase().includes(searchTerm.toLowerCase())
-      );
+      filtered = filtered.filter(t => {
+        const categories = Array.isArray(t.category) ? t.category : [t.category];
+        return t.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          (t.description && t.description.toLowerCase().includes(searchTerm.toLowerCase())) ||
+          categories.some(cat => cat && cat.toLowerCase().includes(searchTerm.toLowerCase()));
+      });
     }
     
     return filtered;
-  }, [selectedCategory, searchTerm]);
+  }, [allTreatments, selectedCategory, searchTerm]);
 
-  // 4. Navigasi ke Step 3
+  // 4. Dapatkan unique categories dari data backend - Handle both array and string
+  const categories = useMemo(() => {
+    const uniqueCategories = new Set();
+    allTreatments.forEach(t => {
+      // Handle both array and string categories
+      if (Array.isArray(t.category)) {
+        t.category.forEach(cat => uniqueCategories.add(cat));
+      } else if (t.category) {
+        uniqueCategories.add(t.category);
+      }
+    });
+    return ['All', ...Array.from(uniqueCategories).sort()];
+  }, [allTreatments]);
+
+  // 5. Format harga - DIPERBAIKI sesuai dengan Treatment.jsx
+  const formatRupiah = (angka) => {
+    const number = parseInt(angka) || 0;
+    return 'Rp ' + number.toLocaleString('id-ID', { minimumFractionDigits: 0, maximumFractionDigits: 0 });
+  };
+
+  // 6. Navigasi ke Step 3 - DIPERBAIKI
   const handleBookNow = (treatment) => {
-    sessionStorage.setItem('selectedTreatment', JSON.stringify(treatment));
+    // Pastikan semua data treatment termasuk price tersimpan
+    const treatmentData = {
+      id: treatment.id || treatment._id,
+      name: treatment.name,
+      category: treatment.category,
+      description: treatment.description,
+      duration: treatment.duration,
+      price: parseInt(treatment.price) || 0, // Pastikan price tersimpan sebagai number
+      image: treatment.image,
+      facilities: treatment.facilities || []
+    };
+    
+    sessionStorage.setItem('selectedTreatment', JSON.stringify(treatmentData));
     navigate('/member/booking/step-3');
   };
 
-  // 5. Reset filter
+  // 7. Reset filter
   const handleResetFilter = () => {
     setSelectedCategory('All');
     setSearchTerm('');
   };
+
+  // 8. Loading State
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-[#FDFBF7] flex items-center justify-center">
+        <div className="text-center">
+          <Loader2 className="animate-spin text-[#8D6E63] mx-auto mb-4" size={48} />
+          <p className="text-gray-500 font-sans font-medium">Memuat data treatment...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // 9. Error State
+  if (error) {
+    return (
+      <div className="min-h-screen bg-[#FDFBF7] flex items-center justify-center p-4">
+        <div className="text-center bg-white p-8 rounded-[30px] shadow-sm border border-red-100 max-w-md">
+          <AlertCircle className="text-red-400 mx-auto mb-4" size={48} />
+          <h2 className="text-xl font-display font-bold text-[#5D4037] mb-2">Terjadi Kesalahan</h2>
+          <p className="text-gray-600 font-sans mb-6">{error}</p>
+          <button 
+            onClick={() => window.location.reload()}
+            className="px-6 py-2 bg-[#8D6E63] text-white text-sm font-display font-bold rounded-xl hover:bg-[#5D4037] transition-all"
+          >
+            Muat Ulang
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-[#FDFBF7] p-4 md:p-8 font-sans">
@@ -104,7 +192,7 @@ const BookingStep2 = () => {
           </div>
 
           <div className="space-y-4 mb-8">
-            {['All', 'Beauty Treatment', 'Special Treatment', 'Ultimate Treatment', 'Promo Treatment'].map((cat) => (
+            {categories.map((cat) => (
               <label key={cat} className="flex items-center gap-4 cursor-pointer group">
                 <div className="relative flex items-center justify-center">
                   <input 
@@ -160,7 +248,7 @@ const BookingStep2 = () => {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {filteredTreatments.length > 0 ? (
               filteredTreatments.map((item) => (
-                <div key={item.id} className="bg-white p-6 rounded-[30px] border border-gray-100 shadow-sm hover:shadow-md transition-all flex flex-col justify-between group">
+                <div key={item.id || item._id} className="bg-white p-6 rounded-[30px] border border-gray-100 shadow-sm hover:shadow-md transition-all flex flex-col justify-between group">
                   <div>
                     <div className="flex justify-between items-start mb-2">
                       <h4 className="font-display font-bold text-[#2D3436] group-hover:text-[#8D6E63] transition-colors tracking-tight text-lg">
@@ -170,15 +258,18 @@ const BookingStep2 = () => {
                         {item.category}
                       </span>
                     </div>
-                    <p className="text-sm font-sans text-gray-600 mb-4">{item.info}</p>
+                    <p className="text-sm font-sans text-gray-600 mb-2">{item.description || 'Perawatan berkualitas untuk kecantikan Anda'}</p>
+                    {item.duration && (
+                      <p className="text-xs font-sans text-gray-400 mb-4">⏱ Durasi: {item.duration}</p>
+                    )}
                   </div>
                   <div className="flex justify-between items-center pt-4 border-t border-gray-50">
-                    <span className="text-xl font-display font-bold text-[#2D3436]">{item.price}</span>
+                    <span className="text-xl font-display font-bold text-[#2D3436]">{formatRupiah(item.price)}</span>
                     <button 
                       onClick={() => handleBookNow(item)}
                       className="px-6 py-2 bg-[#8D6E63] text-white text-[10px] font-display font-bold rounded-xl hover:bg-[#5D4037] transition-all uppercase tracking-[0.2em] shadow-sm"
                     >
-                      Book Now
+                      Pesan
                     </button>
                   </div>
                 </div>

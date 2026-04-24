@@ -12,13 +12,12 @@ class Appointment {
         t.name as treatment_name,
         t.category as treatment_category,
         t.duration as treatment_duration,
-        th.name as therapist_name,
-        th.specialization as therapist_specialization
+        th.name as therapist_name
       FROM appointments a
       LEFT JOIN members m ON a.member_id = m.id
       LEFT JOIN treatments t ON a.treatment_id = t.id
       LEFT JOIN therapists th ON a.therapist_id = th.id
-      ORDER BY a.appointment_date DESC
+      ORDER BY a.date DESC
     `);
     return rows;
   }
@@ -32,6 +31,27 @@ class Appointment {
     return rows[0];
   }
 
+  // Get appointment by ID with details (JOIN)
+  static async getByIdWithDetails(id) {
+    const [rows] = await promisePool.query(`
+      SELECT 
+        a.*,
+        m.name as member_name,
+        m.email as member_email,
+        m.phone as member_phone,
+        t.name as treatment_name,
+        t.category as treatment_category,
+        t.duration as treatment_duration,
+        th.name as therapist_name
+      FROM appointments a
+      LEFT JOIN members m ON a.member_id = m.id
+      LEFT JOIN treatments t ON a.treatment_id = t.id
+      LEFT JOIN therapists th ON a.therapist_id = th.id
+      WHERE a.id = ?
+    `, [id]);
+    return rows[0];
+  }
+
   // Get last appointment ID
   static async getLastId() {
     const [rows] = await promisePool.query(
@@ -40,9 +60,17 @@ class Appointment {
     return rows[0];
   }
 
+  // Get last appointment_id (for generating next ID)
+  static async getLastAppointmentId() {
+    const [rows] = await promisePool.query(
+      'SELECT appointment_id FROM appointments ORDER BY appointment_id DESC LIMIT 1'
+    );
+    return rows[0];
+  }
+
   static async listByCustomer(customerId) {
     const [rows] = await promisePool.query(
-      'SELECT * FROM appointments WHERE member_id = ? ORDER BY appointment_date DESC',
+      'SELECT * FROM appointments WHERE member_id = ? ORDER BY date DESC',
       [customerId]
     );
     return rows;
@@ -51,27 +79,28 @@ class Appointment {
   // Create new appointment
   static async create(appointmentData) {
     const {
-      id,
+      appointment_id,
       member_id,
       customer_name,
       treatment_id,
       therapist_id,
-      appointment_date,
+      date,
+      time,
       amount,
-      status = 'pending',
-      notes
+      status = 'confirmed',
+  
     } = appointmentData;
 
     const [result] = await promisePool.query(
       `INSERT INTO appointments 
-       (id, member_id, customer_name, treatment_id, therapist_id, 
-        appointment_date, amount, status, notes)
+       (appointment_id, member_id, customer_name, treatment_id, therapist_id, 
+        date, time, amount, status)
        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-      [id, member_id, customer_name, treatment_id, therapist_id, 
-       appointment_date, amount, status, notes]
+      [appointment_id, member_id, customer_name, treatment_id, therapist_id, 
+       date, time, amount, status]
     );
     
-    return { id, insertId: result.insertId };
+    return { id: result.insertId, insertId: result.insertId };
   }
 
   // Update appointment
@@ -81,19 +110,20 @@ class Appointment {
       customer_name,
       treatment_id,
       therapist_id,
-      appointment_date,
+      date,
+      time,
       amount,
       status,
-      notes
+  
     } = appointmentData;
 
     const [result] = await promisePool.query(
       `UPDATE appointments SET
         member_id = ?, customer_name = ?, treatment_id = ?, therapist_id = ?,
-        appointment_date = ?, amount = ?, status = ?, notes = ?
+        date = ?, time = ?, amount = ?, status = ?
        WHERE id = ?`,
       [member_id, customer_name, treatment_id, therapist_id,
-       appointment_date, amount, status, notes, id]
+       date, time, amount, status, id]
     );
     
     return result.affectedRows;
@@ -154,7 +184,7 @@ class Appointment {
        LEFT JOIN treatments t ON a.treatment_id = t.id
        LEFT JOIN therapists th ON a.therapist_id = th.id
        WHERE a.status = ?
-       ORDER BY a.appointment_date DESC`,
+       ORDER BY a.date DESC`,
       [status]
     );
     return rows;
@@ -168,7 +198,7 @@ class Appointment {
        LEFT JOIN treatments t ON a.treatment_id = t.id
        LEFT JOIN therapists th ON a.therapist_id = th.id
        WHERE a.member_id = ?
-       ORDER BY a.appointment_date DESC`,
+       ORDER BY a.date DESC`,
       [memberId]
     );
     return rows;
@@ -182,7 +212,7 @@ class Appointment {
        LEFT JOIN members m ON a.member_id = m.id
        LEFT JOIN treatments t ON a.treatment_id = t.id
        WHERE a.therapist_id = ?
-       ORDER BY a.appointment_date DESC`,
+       ORDER BY a.date DESC`,
       [therapistId]
     );
     return rows;
@@ -197,8 +227,8 @@ class Appointment {
        LEFT JOIN members m ON a.member_id = m.id
        LEFT JOIN treatments t ON a.treatment_id = t.id
        LEFT JOIN therapists th ON a.therapist_id = th.id
-       WHERE DATE(a.appointment_date) = CURDATE()
-       ORDER BY a.appointment_date`
+       WHERE DATE(a.date) = CURDATE()
+       ORDER BY a.date`
     );
     return rows;
   }
@@ -212,10 +242,10 @@ class Appointment {
        LEFT JOIN members m ON a.member_id = m.id
        LEFT JOIN treatments t ON a.treatment_id = t.id
        LEFT JOIN therapists th ON a.therapist_id = th.id
-       WHERE a.appointment_date >= CURDATE() 
-         AND a.status IN ('pending', 'confirmed')
-         AND a.appointment_date <= DATE_ADD(CURDATE(), INTERVAL 7 DAY)
-       ORDER BY a.appointment_date ASC
+       WHERE a.date >= CURDATE() 
+         AND a.status IN ('confirmed')
+         AND a.date <= DATE_ADD(CURDATE(), INTERVAL 7 DAY)
+       ORDER BY a.date ASC
        LIMIT 20`
     );
     return rows;
@@ -226,12 +256,11 @@ class Appointment {
     const [rows] = await promisePool.query(`
       SELECT 
         COUNT(*) as total,
-        SUM(CASE WHEN status = 'pending' THEN 1 ELSE 0 END) as pending,
         SUM(CASE WHEN status = 'confirmed' THEN 1 ELSE 0 END) as confirmed,
         SUM(CASE WHEN status = 'completed' THEN 1 ELSE 0 END) as completed,
         COALESCE(SUM(amount), 0) as total_revenue,
-        COUNT(CASE WHEN DATE(appointment_date) = CURDATE() THEN 1 END) as today,
-        COUNT(CASE WHEN DATE(appointment_date) = DATE_ADD(CURDATE(), INTERVAL 1 DAY) THEN 1 END) as tomorrow
+        COUNT(CASE WHEN DATE(date) = CURDATE() THEN 1 END) as today,
+        COUNT(CASE WHEN DATE(date) = DATE_ADD(CURDATE(), INTERVAL 1 DAY) THEN 1 END) as tomorrow
       FROM appointments
     `);
     return rows[0];
@@ -241,13 +270,13 @@ class Appointment {
   static async getRevenueStats(days = 30) {
     const [rows] = await promisePool.query(`
       SELECT 
-        DATE(appointment_date) as date,
+        DATE(date) as date,
         COUNT(*) as appointment_count,
         SUM(amount) as daily_revenue
       FROM appointments
       WHERE status = 'completed'
-        AND appointment_date >= DATE_SUB(CURDATE(), INTERVAL ? DAY)
-      GROUP BY DATE(appointment_date)
+        AND date >= DATE_SUB(CURDATE(), INTERVAL ? DAY)
+      GROUP BY DATE(date)
       ORDER BY date DESC
     `, [days]);
     return rows;
@@ -268,7 +297,7 @@ class Appointment {
           OR t.name LIKE ?
           OR th.name LIKE ?
           OR a.id LIKE ?
-       ORDER BY a.appointment_date DESC`,
+       ORDER BY a.date DESC`,
       [
         `%${searchTerm}%`, `%${searchTerm}%`, `%${searchTerm}%`,
         `%${searchTerm}%`, `%${searchTerm}%`, `%${searchTerm}%`

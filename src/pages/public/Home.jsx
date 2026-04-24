@@ -1,5 +1,5 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { ArrowRight, MapPin, Phone, Star, ChevronLeft, ChevronRight, Loader } from 'lucide-react';
+﻿import React, { useState, useEffect, useRef } from 'react';
+import { ArrowRight, MapPin, Phone, Star, ChevronLeft, ChevronRight, Loader, MessageCircle } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 
@@ -11,10 +11,26 @@ const Home = () => {
   const [products, setProducts] = useState([]);
   const [testimonials, setTestimonials] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [pageContent, setPageContent] = useState({
+    hero: null,
+    about: null,
+    services: null,
+    promo_banner: null,
+    footer_contact: null
+  });
 
   // --- API URL ---
-  const API_URL_PRODUCTS = 'http://localhost:5000/api/products';
-  const API_URL_REVIEWS = 'http://localhost:5000/api/reviews';
+  const API_URL_PRODUCTS = '/api/products';
+  const API_URL_REVIEWS = '/api/reviews';
+  const API_URL_PAGE_INFO = '/api/page-info/public';
+
+  //  Format harga konsisten dengan Product.jsx
+  const formatPrice = (price) => {
+    return new Intl.NumberFormat('id-ID', { 
+      minimumFractionDigits: 0, 
+      maximumFractionDigits: 0 
+    }).format(price);
+  };
 
   // --- LOAD DATA DARI DATABASE ---
   useEffect(() => {
@@ -22,21 +38,82 @@ const Home = () => {
       try {
         setIsLoading(true);
         
-        // Mengambil data Produk dan Testimoni secara paralel
-        const [resProducts, resReviews] = await Promise.all([
+        console.log('Loading data from API...');
+        
+        // Mengambil data Produk, Testimoni, dan Page Content secara paralel
+        const [resProducts, resReviews, resPageInfo] = await Promise.all([
           axios.get(API_URL_PRODUCTS),
-          axios.get(API_URL_REVIEWS).catch(() => ({ data: [] })) 
+          axios.get(API_URL_REVIEWS),
+          axios.get(`${API_URL_PAGE_INFO}?page_type=home`)
         ]);
 
+        console.log('Products response:', resProducts.data);
+        console.log('Reviews response:', resReviews.data);
+        console.log('Page Info response:', resPageInfo.data);
+
         // Ambil 4 produk terbaru untuk ditampilkan di Home
-        setProducts((resProducts.data.data || resProducts.data).slice(0, 4));
+        const productsData = resProducts.data.data || resProducts.data || [];
+        setProducts(productsData.slice(0, 4));
         
-        // Set testimoni dari database
-        setTestimonials(resReviews.data.data);
+        // Set page content
+        const pageInfoData = resPageInfo.data.data || [];
+        const contentMap = {
+          hero: pageInfoData.find(item => item.section_key === 'hero'),
+          about: pageInfoData.find(item => item.section_key === 'about'),
+          services: pageInfoData.find(item => item.section_key === 'services'),
+          promo_banner: pageInfoData.find(item => item.section_key === 'promo_banner'),
+          footer_contact: pageInfoData.find(item => item.section_key === 'footer_contact')
+        };
+        setPageContent(contentMap);
         
-        console.log("Data loaded successfully from database");
+        // Set testimoni dari database - pastikan data valid
+        const reviewsData = resReviews.data.data || resReviews.data || [];
+        console.log('Raw reviews data:', reviewsData);
+        
+        // Debug setiap review
+        reviewsData.forEach((review, index) => {
+          console.log(`Review ${index + 1}:`, {
+            name: review.name,
+            location: review.location,
+            member_address: review.member_address,
+            display_location: review.display_location,
+            comment: review.comment,
+            rating: review.rating
+          });
+        });
+        
+        // Filter dan sort reviews (terbaru dulu) - HILANGKAN FILTER LOKASI
+        const validReviews = reviewsData
+          .filter(review => {
+            const isValid = review.name && review.comment && review.rating;
+            if (!isValid) {
+              console.log('Invalid review filtered out:', review);
+            }
+            return isValid;
+          })
+          .map(review => ({
+            ...review,
+            // Prioritas: location > member_address > display_location > default
+            location: review.location || review.member_address || review.display_location || 'Member Terverifikasi'
+          }))
+          .sort((a, b) => {
+            const dateA = new Date(b.createdAt || b.date || 0);
+            const dateB = new Date(a.createdAt || a.date || 0);
+            return dateA - dateB;
+          });
+        
+        console.log('Valid reviews after processing:', validReviews);
+        console.log('Valid reviews count:', validReviews.length);
+        
+        setTestimonials(validReviews);
+        
+        console.log("âœ… Data loaded successfully from database");
       } catch (error) {
-        console.error("Gagal memuat data dari database:", error);
+        console.error("âŒ Gagal memuat data dari database:", error);
+        console.error("Error details:", error.response?.data || error.message);
+        // Set empty array jika gagal
+        setTestimonials([]);
+        setProducts([]);
       } finally {
         setIsLoading(false);
       }
@@ -77,15 +154,28 @@ const Home = () => {
   return (
     <div className="min-h-screen font-sans text-gray-700 bg-white">
       
-      {/* Hero Section */}
-      <section className="relative py-24 md:py-32 bg-[#FDFBF7]">
-        <div className="absolute inset-0 opacity-10 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')]"></div>
-        <div className="container mx-auto px-4 relative z-10 text-center">
+      {/* Hero Section -  MARGIN ADDED */}
+      <section className="relative py-24 md:py-32 bg-[#FDFBF7] overflow-hidden">
+        {/* Background Image */}
+        <div 
+          className="absolute inset-0 bg-cover bg-center bg-no-repeat"
+          style={{
+            backgroundImage: `url('${pageContent.hero?.image_url || 'https://images.unsplash.com/photo-1560750588-73207b1ef5b8?auto=format&fit=crop&w=2000&q=80'}')`
+          }}
+        ></div>
+        
+        {/* Overlay Gradient */}
+        <div className="absolute inset-0 bg-gradient-to-r from-[#FDFBF7]/95 via-[#FDFBF7]/90 to-[#FDFBF7]/85"></div>
+        
+        {/* Decorative Pattern */}
+        <div className="absolute inset-0 opacity-5 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')]"></div>
+        
+        <div className="container mx-auto px-6 sm:px-8 lg:px-12 xl:px-16 relative z-10 text-center max-w-[1400px]">
           <h1 className="text-5xl md:text-7xl font-display font-bold text-[#5D4037] mb-6 tracking-tight">
-            Mochint Beauty Care
+            {pageContent.hero?.title || 'Mochint Beauty Care'}
           </h1>
           <p className="text-lg md:text-xl text-[#8D6E63] mb-10 max-w-2xl mx-auto font-medium font-sans">
-            Klinik kecantikan terpercaya dengan teknologi terkini dan bahan premium untuk perawatan kulit Anda.
+            {pageContent.hero?.subtitle || 'Klinik kecantikan terpercaya dengan teknologi terkini dan bahan premium untuk perawatan kulit Anda.'}
           </p>
           <button onClick={handleBookingClick} className="font-display inline-flex items-center px-10 py-4 bg-[#8D6E63] text-white text-lg font-bold rounded-full hover:bg-[#6D4C41] transition-all shadow-lg transform hover:-translate-y-1 mx-auto">
             Reservasi Sekarang <ArrowRight className="ml-2" size={20} />
@@ -93,27 +183,37 @@ const Home = () => {
         </div>
       </section>
 
-      {/* About Section */}
+      {/* About Section - MARGIN ADDED */}
       <section className="py-24 bg-white text-left">
-        <div className="container mx-auto px-6 flex flex-col lg:flex-row items-center gap-16">
+        <div className="container mx-auto px-6 sm:px-8 lg:px-12 xl:px-16 max-w-[1400px] flex flex-col lg:flex-row items-center gap-16">
           <div className="w-full lg:w-1/2 relative">
             <div className="absolute top-4 left-4 w-full h-full border-2 border-[#8D6E63] rounded-[30px] -z-10"></div>
             <div className="bg-gray-100 rounded-[30px] h-96 flex items-center justify-center border border-gray-200 overflow-hidden">
-              <img src="https://images.unsplash.com/photo-1612817288484-6f916006741a?auto=format&fit=crop&w=1200&q=80" alt="Clinic" className="w-full h-full object-cover" />
+              <img 
+                src={pageContent.about?.image_url || 'https://images.unsplash.com/photo-1612817288484-6f916006741a?auto=format&fit=crop&w=1200&q=80'} 
+                alt={pageContent.about?.title || 'Clinic'} 
+                className="w-full h-full object-cover" 
+              />
             </div>
           </div>
           <div className="w-full lg:w-1/2">
-            <div className="font-display inline-block px-3 py-1 bg-[#FDFBF7] text-[#8D6E63] text-xs font-bold tracking-widest uppercase mb-4 rounded-md">Kenali Mochint Lebih Dekat</div>
-            <h2 className="text-4xl md:text-5xl font-display font-bold text-[#3E2723] mb-6 tracking-tight leading-tight">Rumah Cantik <br/> Mochint Beauty Care</h2>
-            <p className="font-sans text-gray-500 mb-8 leading-relaxed text-lg font-normal">Selamat datang di Mochint Beauty Care, salon kecantikan yang berlokasi di Pandaan Pasuruan Jawa Timur. Kami hadir sebagai solusi bagi Anda yang ingin merawat kulit dengan teknologi terkini dan bahan premium.</p>
+            <div className="font-display inline-block px-3 py-1 bg-[#FDFBF7] text-[#8D6E63] text-xs font-bold tracking-widest uppercase mb-4 rounded-md">
+              {pageContent.about?.subtitle || 'Kenali Mochint Lebih Dekat'}
+            </div>
+            <h2 className="text-4xl md:text-5xl font-display font-bold text-[#3E2723] mb-6 tracking-tight leading-tight">
+              {pageContent.about?.title || 'Rumah Cantik Mochint Beauty Care'}
+            </h2>
+            <p className="font-sans text-gray-500 mb-8 leading-relaxed text-lg font-normal">
+              {pageContent.about?.content || 'Selamat datang di Mochint Beauty Care, salon kecantikan yang berlokasi di Pandaan Pasuruan Jawa Timur. Kami hadir sebagai solusi bagi Anda yang ingin merawat kulit dengan teknologi terkini dan bahan premium.'}
+            </p>
             <button onClick={handleAboutClick} className="font-display px-8 py-3 border-2 border-[#8D6E63] text-[#8D6E63] font-bold rounded-full hover:bg-[#8D6E63] hover:text-white transition-all">Tentang Kami</button>
           </div>
         </div>
       </section>
 
-      {/* Rekomendasi Produk */}
+      {/* Rekomendasi Produk - MARGIN ADDED */}
       <section className="py-24 bg-[#FAFAFA]">
-        <div className="container mx-auto px-6 text-center">
+        <div className="container mx-auto px-6 sm:px-8 lg:px-12 xl:px-16 max-w-[1400px] text-center">
           <div className="mb-16">
             <h2 className="text-4xl font-display font-bold text-[#5D4037] tracking-tight text-center">Rekomendasi Produk</h2>
             <p className="font-sans text-[#8D6E63] text-sm mt-3 tracking-widest uppercase font-bold text-center">Terbaik Untuk Anda</p>
@@ -125,7 +225,7 @@ const Home = () => {
                   <img src={product.image} alt={product.name} className="w-full h-full object-cover group-hover:scale-105 transition duration-700 ease-in-out" />
                   <div className="absolute bottom-4 left-0 right-0 text-center opacity-0 group-hover:opacity-100 transition duration-300">
                     <span className="bg-white/90 text-[#5D4037] px-4 py-2 rounded-full text-xs font-bold font-sans">
-                      Rp {product.price.toLocaleString('id-ID')}
+                      Rp {formatPrice(product.price)}
                     </span>
                   </div>
                 </div>
@@ -142,72 +242,143 @@ const Home = () => {
         </div>
       </section>
 
-      {/* Promo Banner */}
+      {/* Promo Banner -  MARGIN ADDED */}
       <section className="py-20">
-        <div className="container mx-auto px-6 text-left">
+        <div className="container mx-auto px-6 sm:px-8 lg:px-12 xl:px-16 max-w-[1400px] text-left">
           <div className="relative rounded-[30px] overflow-hidden bg-[#5D4037] text-white py-16 px-10 md:px-20 flex flex-col md:flex-row items-center justify-between shadow-2xl">
+            {/* Background Image jika ada */}
+            {pageContent.promo_banner?.image_url && (
+              <div 
+                className="absolute inset-0 bg-cover bg-center bg-no-repeat opacity-20"
+                style={{ backgroundImage: `url('${pageContent.promo_banner.image_url}')` }}
+              ></div>
+            )}
             <div className="absolute top-0 right-0 w-64 h-64 bg-[#8D6E63] rounded-full blur-3xl opacity-20 transform translate-x-1/2 -translate-y-1/2"></div>
             <div className="relative z-10 max-w-xl">
-              <h2 className="text-3xl md:text-5xl font-display font-bold mb-6 leading-tight tracking-tight text-white">Buka Peluang Bisnis <br/> <span className="text-[#D7CCC8]">Bersama Mochint!</span></h2>
-              <p className="font-sans text-[#D7CCC8]/80 text-lg mb-8 font-normal">Buka peluang penghasilan tambahan dengan menjadi Reseller resmi Mochint Beauty Care. Modal ringan, keuntungan pasti.</p>
-              <button onClick={handlePromoClick} className="font-display px-8 py-3 bg-white text-[#5D4037] font-bold rounded-full hover:bg-gray-100 transition shadow-lg">Gabung Mitra</button>
+              <h2 className="text-3xl md:text-5xl font-display font-bold mb-6 leading-tight tracking-tight text-white">
+                {pageContent.promo_banner?.title || 'Buka Peluang Bisnis'} <br/> 
+                <span className="text-[#D7CCC8]">{pageContent.promo_banner?.subtitle || 'Bersama Mochint!'}</span>
+              </h2>
+              <p className="font-sans text-[#D7CCC8]/80 text-lg mb-8 font-normal">
+                {pageContent.promo_banner?.content || 'Buka peluang penghasilan tambahan dengan menjadi Reseller resmi Mochint Beauty Care. Modal ringan, keuntungan pasti.'}
+              </p>
+              <button onClick={handlePromoClick} className="font-display px-8 py-3 bg-white text-[#5D4037] font-bold rounded-full hover:bg-gray-100 transition shadow-lg">
+                {pageContent.promo_banner?.additional_data?.button_text || 'Gabung Mitra'}
+              </button>
             </div>
           </div>
         </div>
       </section>
 
-      {/* Testimonials Section */}
+      {/* Testimonials Section -  MARGIN ADDED */}
       <section className="py-20 bg-white overflow-hidden relative text-center">
-        <div className="container mx-auto px-6">
+        <div className="container mx-auto px-6 sm:px-8 lg:px-12 xl:px-16 max-w-[1400px]">
           <div className="text-center mb-10">
             <h2 className="text-3xl md:text-5xl font-display font-bold text-[#3E2723] tracking-tighter">Apa Kata Mereka?</h2>
-            <p className="font-sans text-[#8D6E63] mt-2 font-bold uppercase tracking-[0.2em] text-xs">Ribuan pelanggan puas dengan layanan kami</p>
+            <p className="font-sans text-[#8D6E63] mt-2 font-bold uppercase tracking-[0.2em] text-xs">
+              {testimonials.length > 0 
+                ? `${testimonials.length} Ulasan dari pelanggan kami` 
+                : 'Belum ada ulasan'}
+            </p>
           </div>
 
           <div className="relative max-w-6xl mx-auto">
-            <button onClick={() => scroll('left')} className="absolute left-0 top-1/2 -translate-y-1/2 -translate-x-4 md:-translate-x-12 z-10 bg-white border border-gray-200 p-3 rounded-full shadow-md text-[#5D4037] hover:bg-[#FDFBF7] transition hidden md:block">
+            <button 
+              onClick={() => scroll('left')} 
+              className="absolute left-0 top-1/2 -translate-y-1/2 -translate-x-4 md:-translate-x-12 z-10 bg-white border border-gray-200 p-3 rounded-full shadow-md text-[#5D4037] hover:bg-[#FDFBF7] transition hidden md:block"
+            >
               <ChevronLeft size={24} />
             </button>
-            <div ref={scrollRef} className="flex gap-6 overflow-x-auto pb-8 px-4 snap-x snap-mandatory no-scrollbar" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
-              {testimonials.map((item) => (
-                <div key={item._id || item.id} className="min-w-[300px] md:min-w-[350px] bg-[#FDFBF7] p-8 rounded-[40px] border border-gray-100 shadow-sm snap-center flex-shrink-0 text-left transition-all duration-300 hover:shadow-xl">
-                  <div className="flex gap-1 text-yellow-400 mb-4">
-                    {[...Array(5)].map((_, i) => (
-                      <Star key={i} size={16} fill={i < Math.floor(item.rating) ? "currentColor" : "none"} className={i < Math.floor(item.rating) ? "" : "text-gray-200"} />
-                    ))}
-                  </div>
-                  <p className="font-sans text-[#4E342E] italic mb-6 leading-relaxed line-clamp-4 font-medium text-base">"{item.comment}"</p>
-                  <div className="flex items-center gap-4 mt-auto border-t border-gray-100 pt-6">
-                    <div className="w-10 h-10 bg-[#3E2723] rounded-2xl flex items-center justify-center text-white font-bold shrink-0 font-display">{item.name?.charAt(0).toUpperCase() || "M"}</div>
-                    <div>
-                      <h4 className="font-display font-bold text-[#3E2723] text-sm">{item.name}</h4>
-                      <p className="font-sans text-[10px] text-[#A1887F] font-black uppercase tracking-widest">{item.location || 'Pelanggan Setia'}</p>
-                    </div>
-                  </div>
+            
+            <div 
+              ref={scrollRef} 
+              className="flex gap-6 overflow-x-auto pb-8 px-4 snap-x snap-mandatory no-scrollbar" 
+              style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
+            >
+              {isLoading ? (
+                <div className="w-full text-center py-12">
+                  <p className="text-gray-400">Memuat ulasan...</p>
                 </div>
-              ))}
-              {testimonials.length === 0 && (
-                 <p className="text-center w-full text-gray-400 italic text-center">Belum ada ulasan saat ini.</p>
+              ) : testimonials.length > 0 ? (
+                testimonials.map((item, index) => {
+                  console.log(`Rendering review ${index + 1}:`, {
+                    name: item.name,
+                    location: item.location,
+                    comment: item.comment
+                  });
+                  
+                  return (
+                    <div 
+                      key={item.id || item._id || index} 
+                      className="min-w-[300px] md:min-w-[350px] bg-[#FDFBF7] p-8 rounded-[40px] border border-gray-100 shadow-sm snap-center flex-shrink-0 text-left transition-all duration-300 hover:shadow-xl"
+                    >
+                      {/* Rating Stars */}
+                      <div className="flex gap-1 text-yellow-400 mb-4">
+                        {[...Array(5)].map((_, i) => (
+                          <Star 
+                            key={i} 
+                            size={16} 
+                            fill={i < Math.floor(item.rating) ? "currentColor" : "none"} 
+                            className={i < Math.floor(item.rating) ? "" : "text-gray-200"} 
+                          />
+                        ))}
+                      </div>
+                      
+                      {/* Review Comment */}
+                      <p className="font-sans text-[#4E342E] italic mb-6 leading-relaxed line-clamp-4 font-medium text-base">
+                        "{item.comment}"
+                      </p>
+                      
+                      {/* User Info */}
+                      <div className="flex items-center gap-4 mt-auto border-t border-gray-100 pt-6">
+                        <div className="w-10 h-10 bg-[#3E2723] rounded-2xl flex items-center justify-center text-white font-bold shrink-0 font-display">
+                          {(item.name || 'M').charAt(0).toUpperCase()}
+                        </div>
+                        <div>
+                          <h4 className="font-display font-bold text-[#3E2723] text-sm">
+                            {item.name || 'Anonim'}
+                          </h4>
+                          <p className="font-sans text-[10px] text-[#A1887F] font-black uppercase tracking-widest">
+                            {item.location || item.member_address || item.display_location || 'Member Terverifikasi'}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })
+              ) : (
+                <div className="w-full text-center py-12">
+                  <div className="bg-gray-100 w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <Star size={32} className="text-gray-300" />
+                  </div>
+                  <p className="text-gray-400 italic text-center font-sans">
+                    Belum ada ulasan saat ini. Jadilah yang pertama memberikan review!
+                  </p>
+                </div>
               )}
             </div>
-            <button onClick={() => scroll('right')} className="absolute right-0 top-1/2 -translate-y-1/2 translate-x-4 md:translate-x-12 z-10 bg-white border border-gray-200 p-3 rounded-full shadow-md text-[#5D4037] hover:bg-[#FDFBF7] transition hidden md:block">
+            
+            <button 
+              onClick={() => scroll('right')} 
+              className="absolute right-0 top-1/2 -translate-y-1/2 translate-x-4 md:translate-x-12 z-10 bg-white border border-gray-200 p-3 rounded-full shadow-md text-[#5D4037] hover:bg-[#FDFBF7] transition hidden md:block"
+            >
               <ChevronRight size={24} />
             </button>
           </div>
         </div>
       </section>
 
-      {/* Footer Section dengan Real-Time Interactive Map */}
+      {/* Footer Section - MARGIN ADDED */}
       <footer className="py-20 bg-[#3E2723] text-white rounded-t-[50px] mt-10 text-left">
-        <div className="container mx-auto px-6">
+        <div className="container mx-auto px-6 sm:px-8 lg:px-12 xl:px-16 max-w-[1400px]">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-12 items-center">
             
             <div className="bg-white/5 p-4 rounded-3xl">
-              {/* Real-Time Interactive Map - Pandaan */}
+              {/* Real-Time Interactive Map */}
               <div className="w-full h-80 bg-gray-300 rounded-2xl overflow-hidden relative shadow-2xl">
                 <iframe
-                  title="Mochint Beauty Care Pandaan"
-                  src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3954.269438012674!2d112.69176317586522!3d-7.653118975718693!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x2dd7d91f72a480ad%3A0xe42c73733290811b!2sMOCHINT%20BEAUTY%20CARE%20Salon%20Kecantikan%20Di%20Pandaan%20Pasuruan%20Jawa%20Timur%20Mochint%20Beauty%20Skin%20Care!5e0!3m2!1sid!2sid!4v1706436000000!5m2!1sid!2sid"
+                  title={pageContent.footer_contact?.title || 'Mochint Beauty Care Pandaan'}
+                  src={pageContent.footer_contact?.additional_data?.map_embed_url || 'https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3954.269438012674!2d112.69176317586522!3d-7.653118975718693!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x2dd7d91f72a480ad%3A0xe42c73733290811b!2sMOCHINT%20BEAUTY%20CARE%20Salon%20Kecantikan%20Di%20Pandaan%20Pasuruan%20Jawa%20Timur%20Mochint%20Beauty%20Skin%20Care!5e0!3m2!1sid!2sid!4v1706436000000!5m2!1sid!2sid'}
                   width="100%"
                   height="100%"
                   style={{ border: 0 }}
@@ -220,30 +391,44 @@ const Home = () => {
             </div>
             
             <div className="space-y-8 flex flex-col justify-center">
-              <div className="space-y-2">
-                <h2 className="text-3xl font-display font-bold tracking-tight text-white">Kunjungi Kami</h2>
-                <div className="flex items-start gap-3">
-                  <MapPin className="text-[#8D6E63] shrink-0 mt-1" size={30} />
+              <div 
+                className="space-y-2 group cursor-pointer"
+                onClick={() => window.open(pageContent.footer_contact?.additional_data?.maps_url || 'https://maps.app.goo.gl/your-maps-link', '_blank')}
+              >
+                <h2 className="text-3xl font-display font-bold tracking-tight text-white">
+                  {pageContent.footer_contact?.title || 'Kunjungi Kami'}
+                </h2>
+                <div className="flex items-start gap-5">
+                  <div className="bg-[#8D6E63] p-4 rounded-2xl shadow-lg shrink-0 group-hover:bg-[#6D4C41] transition-colors">
+                    <MapPin size={24} className="text-white" />
+                  </div>
                   <p className="font-sans text-[#D7CCC8] font-medium opacity-80">
-                    Jl. Sidomukti No.13 RT03, RW.04, Pesantren, Pandaan,<br/> Kec. Pandaan, Pasuruan, Jawa Timur 67156
+                    {pageContent.footer_contact?.content || 'Jl. Sidomukti No.13 RT03, RW.04, Pesantren, Pandaan, Kec. Pandaan, Pasuruan, Jawa Timur 67156'}
                   </p>
                 </div>
               </div>
               
-              <div className="flex items-center gap-5 group cursor-pointer" onClick={() => window.open('https://wa.me/6281994204009')}>
+              <div 
+                className="flex items-center gap-5 group cursor-pointer" 
+                onClick={() => window.open(pageContent.footer_contact?.additional_data?.whatsapp_url || 'https://wa.me/6281994204009')}
+              >
                 <div className="bg-[#8D6E63] p-4 rounded-2xl shadow-lg group-hover:bg-[#6D4C41] transition-colors">
-                  <Phone size={24} className="text-white" />
+                  <MessageCircle size={24} className="text-white" /> 
                 </div>
                 <div className="font-sans">
-                  <h4 className="font-black text-[10px] uppercase tracking-widest text-[#D7CCC8]">WhatsApp</h4>
-                  <p className="text-lg font-display font-bold text-white">+62 819-9420-4009</p>
+                  <h4 className="font-black text-[10px] uppercase tracking-widest text-[#D7CCC8]">
+                    {pageContent.footer_contact?.subtitle || 'WhatsApp'}
+                  </h4>
+                  <p className="text-lg font-display font-bold text-white">
+                    {pageContent.footer_contact?.additional_data?.phone_display || '+62 819-9420-4009'}
+                  </p>
                 </div>
               </div>
             </div>
 
           </div>
           <div className="border-t border-white/5 mt-16 pt-8 text-center text-[#A1887F] text-xs font-sans font-black uppercase tracking-[0.3em]">
-            © 2026 Mochint Beauty Care.
+            Â© 2026 Mochint Beauty Care.
           </div>
         </div>
       </footer>

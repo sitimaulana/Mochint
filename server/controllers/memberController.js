@@ -1,5 +1,25 @@
 const Member = require('../models/Member');
 
+
+exports.getMemberHistoryById = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const history = await Member.getHistoryById(id);
+    res.json({ 
+      success: true, 
+      count: history.length,
+      data: history 
+    });
+  } catch (error) {
+    console.error('Error getting member history:', error);
+    res.status(500).json({ 
+      success: false,
+      error: 'Failed to get member history',
+      message: error.message 
+    });
+  }
+};
+
 // Get all members
 exports.getAllMembers = async (req, res) => {
   try {
@@ -92,21 +112,33 @@ exports.updateMember = async (req, res) => {
     const { id } = req.params;
     const memberData = req.body;
     
-    const affectedRows = await Member.update(id, memberData);
+    console.log('📝 Updating member:', id);
+    console.log('📦 Data to update:', memberData);
     
-    if (affectedRows === 0) {
+    const result = await Member.update(id, memberData);
+    
+    console.log('✅ Update result:', result);
+    
+    if (result.affectedRows === 0) {
+      console.warn('⚠️ Member not found with ID:', id);
       return res.status(404).json({ 
         success: false, 
         error: 'Member not found' 
       });
     }
     
+    // Return updated member data
+    const updatedMember = await Member.getById(id);
+    
+    console.log('✅ Member updated successfully:', updatedMember);
+    
     res.json({ 
       success: true, 
-      message: 'Member updated successfully' 
+      message: 'Member updated successfully',
+      data: updatedMember 
     });
   } catch (error) {
-    console.error('Error updating member:', error);
+    console.error('❌ Error updating member:', error);
     res.status(500).json({ 
       success: false, 
       error: 'Failed to update member',
@@ -120,9 +152,9 @@ exports.deleteMember = async (req, res) => {
   try {
     const { id } = req.params;
     
-    const affectedRows = await Member.delete(id);
+    const success = await Member.remove(id);
     
-    if (affectedRows === 0) {
+    if (!success) {
       return res.status(404).json({ 
         success: false, 
         error: 'Member not found' 

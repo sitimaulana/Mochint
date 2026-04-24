@@ -39,15 +39,15 @@ const BookingStep1 = () => {
           <ul className="space-y-4 text-gray-500 text-sm md:text-base leading-relaxed font-sans">
             <li className="flex gap-3">
               <span className="font-bold text-[#8D6E63] font-display">1.</span>
-              <span className="font-sans font-medium">Tentukan Jadwal: Pilih tanggal dan jam yang tersedia di sistem real-time kami.</span>
+              <span className="font-sans font-medium">Tentukan Jadwal dengan memilih tanggal dan jam yang tersedia di sistem real-time kami.</span>
             </li>
             <li className="flex gap-3">
               <span className="font-bold text-[#8D6E63] font-display">2.</span>
-              <span className="font-sans font-medium">Lengkapi Data: Pastikan data diri dan treatment yang dipilih sudah sesuai.</span>
+              <span className="font-sans font-medium">Lengkapi data diri Anda dan pilih treatment yang Anda inginkan.</span>
             </li>
             <li className="flex gap-3">
               <span className="font-bold text-[#8D6E63] font-display">3.</span>
-              <span className="font-sans font-medium">Konfirmasi: Selesaikan pesanan dan bed Anda akan otomatis dipesan oleh sistem.</span>
+              <span className="font-sans font-medium">Konfirmasi pesanan Anda.</span>
             </li>
           </ul>
         </div>

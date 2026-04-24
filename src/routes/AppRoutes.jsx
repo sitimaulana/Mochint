@@ -18,12 +18,19 @@ import AdminAppointment from '../pages/admin/Appointment';
 import AdminMemberManajemen from '../pages/admin/Member';
 import AdminTreatment from '../pages/admin/Treatment';
 import AdminProduct from '../pages/admin/Product';
-import AdminTherapist from '../pages/admin/Therapist'; 
+import AdminTherapist from '../pages/admin/Therapist';
+import AdminTherapistDetail from '../pages/admin/TherapistDetail';
 import AdminInformation from '../pages/admin/Information';
+import AdminPageContent from '../pages/admin/PageContent';
+import AdminBedManagement from '../pages/admin/BedManagement';
 
 // --- PAGES: AUTH & PUBLIC ---
 import Login from '../pages/auth/Login';
 import Register from '../pages/auth/Regist';
+import GoogleCallback from '../pages/auth/GoogleCallback';
+import EmailVerification from '../pages/auth/EmailVerification';
+import SetPassword from '../pages/auth/SetPassword';
+import ForgotPassword from '../pages/auth/ForgotPassword';
 import Home from '../pages/public/Home';
 import About from '../pages/public/About';
 import PublicTreatment from '../pages/public/Treatment';
@@ -38,7 +45,7 @@ import MemberDashboard from '../pages/member/Dashboard';
 import MemberProfile from '../pages/member/Profile'; 
 import MemberHistory from '../pages/member/History';
 import MemberAppointment from '../pages/member/Appointment';
-import MemberAppointmentDetail from '../pages/member/Appoinmentdetail';
+import MemberAppointmentDetail from '../pages/member/AppoinmentDetail';
 
 // --- PAGES: BOOKING STEPS ---
 import BookingStep1 from '../pages/member/booking/BookingStep1';
@@ -48,7 +55,7 @@ import BookingSuccess from '../pages/member/booking/BookingSuccess';
 
 // --- UTILITY FUNCTIONS ---
 const getUserRole = () => {
-  const userStr = localStorage.getItem('user');
+  const userStr = localStorage.getItem('user') || localStorage.getItem('active_user');
   if (!userStr) return null;
   
   try {
@@ -62,7 +69,7 @@ const getUserRole = () => {
 };
 
 const getUserData = () => {
-  const userStr = localStorage.getItem('user');
+  const userStr = localStorage.getItem('user') || localStorage.getItem('active_user');
   if (!userStr) return null;
   
   try {
@@ -75,7 +82,7 @@ const getUserData = () => {
 
 const isAuthenticated = () => {
   const token = localStorage.getItem('token');
-  const userStr = localStorage.getItem('user');
+  const userStr = localStorage.getItem('user') || localStorage.getItem('active_user');
   return !!(token && userStr);
 };
 
@@ -83,9 +90,9 @@ const isAuthenticated = () => {
 const ProtectedRoute = ({ children, allowedRoles = [] }) => {
   const location = useLocation();
   
-  // Check authentication
+  // Check authentication (check both 'user' and 'active_user')
   const token = localStorage.getItem('token');
-  const userStr = localStorage.getItem('user');
+  const userStr = localStorage.getItem('user') || localStorage.getItem('active_user');
   
   console.log('🔒 ProtectedRoute check:', {
     path: location.pathname,
@@ -188,7 +195,7 @@ const GlobalRedirect = () => {
   
   // Check if user is logged in
   const token = localStorage.getItem('token');
-  const userStr = localStorage.getItem('user');
+  const userStr = localStorage.getItem('user') || localStorage.getItem('active_user');
   
   if (token && userStr) {
     try {
@@ -268,6 +275,10 @@ const AppRoutes = () => {
               <Route path="/member-app" element={<MemberApp />} /> 
               <Route path="/login" element={<Login />} />
               <Route path="/register" element={<Register />} />
+              <Route path="/auth/google/callback" element={<GoogleCallback />} />
+              <Route path="/auth/verify-email" element={<EmailVerification />} />
+              <Route path="/auth/set-password" element={<SetPassword />} />
+              <Route path="/auth/forgot-password" element={<ForgotPassword />} />
 
               {/* === ZONA 3: MEMBER AREA === */}
               <Route path="/member" element={
@@ -300,12 +311,13 @@ const AppRoutes = () => {
               }>
                 <Route index element={<AdminDashboard />} />
                 <Route path="dashboard" element={<AdminDashboard />} />
-                <Route path="appointment" element={<AdminAppointment />} />
-                <Route path="member" element={<AdminMemberManajemen />} />
+                <Route path="appointment" element={<AdminAppointment />} />                <Route path="bed-management" element={<AdminBedManagement />} />                <Route path="member" element={<AdminMemberManajemen />} />
                 <Route path="treatment" element={<AdminTreatment />} />
                 <Route path="product" element={<AdminProduct />} />
-                <Route path="therapist" element={<AdminTherapist />} /> 
+                <Route path="therapist" element={<AdminTherapist />} />
+                <Route path="therapist/:id" element={<AdminTherapistDetail />} />
                 <Route path="information" element={<AdminInformation />} />
+                <Route path="page-content" element={<AdminPageContent />} />
               </Route>
 
               {/* Global Redirect for 404 */}

@@ -102,67 +102,108 @@ const Member = () => {
         </div>
       </div>
 
-      {/* --- POPUP EDIT PROFILE --- */}
+      {/* --- EDIT PROFILE MODAL - CENTERED --- */}
       {isEditing && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
-          <div className="fixed inset-0 bg-black/40 backdrop-blur-md" onClick={handleCancel}></div>
-
-          <div className="relative w-full max-w-lg overflow-hidden rounded-[40px] bg-white shadow-2xl animate-in zoom-in-95 duration-200">
-            {/* Header Popup */}
-            <div className="bg-[#8D6E63] p-10 text-white relative text-center">
-              <button onClick={handleCancel} className="absolute right-8 top-8 rounded-full bg-white/20 p-2 hover:bg-white/30 transition-colors">
-                <X size={20} />
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-in fade-in duration-200">
+          <div className="relative w-full max-w-2xl lg:max-w-3xl bg-white rounded-2xl sm:rounded-3xl shadow-2xl animate-in zoom-in-95 duration-200">
+            {/* Header */}
+            <div className="bg-[#8D6E63] px-6 sm:px-8 py-5 sm:py-6 text-white relative flex items-center justify-between rounded-t-2xl sm:rounded-t-3xl">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 sm:w-12 sm:h-12 bg-white/20 rounded-xl flex items-center justify-center border border-white/20">
+                  <Settings size={20} className="sm:w-6 sm:h-6" />
+                </div>
+                <div>
+                  <h3 className="text-base sm:text-lg md:text-xl font-display font-bold tracking-tight">
+                    Update My Information
+                  </h3>
+                  <p className="text-[10px] sm:text-xs text-white/70 mt-0.5 font-sans">
+                    Member ID: #{formData.id}
+                  </p>
+                </div>
+              </div>
+              <button 
+                onClick={handleCancel} 
+                className="opacity-70 hover:opacity-100 transition-opacity bg-white/10 rounded-full p-2 hover:bg-white/20"
+              >
+                <X size={18} className="sm:w-5 sm:h-5"/>
               </button>
-              <div className="w-20 h-20 bg-white/20 rounded-[25px] mx-auto mb-4 flex items-center justify-center border-2 border-white/20">
-                <Settings size={32} className="animate-spin-slow" />
-              </div>
-              <h3 className="text-2xl font-serif font-bold italic">Update My Information</h3>
-              <p className="text-[10px] opacity-80 uppercase tracking-[0.2em] font-bold mt-1">ID: #{formData.id}</p>
             </div>
-
+            
             {/* Form Body */}
-            <div className="p-10 space-y-6">
-              <div className="space-y-2">
-                <label className="text-[10px] font-bold text-gray-400 uppercase tracking-[0.2em] ml-1">Full Name</label>
-                <input
-                  type="text"
-                  name="name"
-                  value={formData.name || ''}
-                  onChange={handleChange}
-                  className="w-full rounded-2xl border border-gray-100 bg-gray-50 px-6 py-4 text-sm font-bold outline-none focus:border-[#8D6E63] transition-all"
-                />
-              </div>
+            <div className="p-6 sm:p-8">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-5">
+                {/* Full Name */}
+                <div className="md:col-span-2">
+                  <label className="text-[10px] sm:text-xs font-bold text-[#8D6E63] uppercase tracking-wider block mb-2 font-sans">
+                    Full Name
+                  </label>
+                  <input
+                    type="text"
+                    name="name"
+                    value={formData.name || ''}
+                    onChange={handleChange}
+                    placeholder="Enter your full name"
+                    className="w-full bg-[#FDFBF7] px-4 sm:px-5 py-2.5 sm:py-3 rounded-xl outline-none border-2 border-gray-200 focus:border-[#8D6E63] text-sm sm:text-base font-medium font-sans text-[#5D4037] placeholder:text-gray-400 transition-all"
+                  />
+                </div>
 
-              <div className="space-y-2">
-                <label className="text-[10px] font-bold text-gray-400 uppercase tracking-[0.2em] ml-1">Email</label>
-                <input
-                  type="email"
-                  name="email"
-                  value={formData.email || ''}
-                  onChange={handleChange}
-                  className="w-full rounded-2xl border border-gray-100 bg-gray-50 px-6 py-4 text-sm font-bold outline-none focus:border-[#8D6E63] transition-all"
-                />
-              </div>
+                {/* Email Address */}
+                <div>
+                  <label className="text-[10px] sm:text-xs font-bold text-[#8D6E63] uppercase tracking-wider block mb-2 font-sans">
+                    Email
+                  </label>
+                  <input
+                    type="email"
+                    name="email"
+                    value={formData.email || ''}
+                    onChange={handleChange}
+                    placeholder="your@email.com"
+                    className="w-full bg-[#FDFBF7] px-4 sm:px-5 py-2.5 sm:py-3 rounded-xl outline-none border-2 border-gray-200 focus:border-[#8D6E63] text-sm sm:text-base font-medium font-sans text-[#5D4037] placeholder:text-gray-400 transition-all"
+                  />
+                </div>
 
-              <div className="space-y-2">
-                <label className="text-[10px] font-bold text-gray-400 uppercase tracking-[0.2em] ml-1">Phone</label>
-                <input
-                  type="tel"
-                  name="phone"
-                  value={formData.phone || ''}
-                  onChange={handleChange}
-                  className="w-full rounded-2xl border border-gray-100 bg-gray-50 px-6 py-4 text-sm font-bold outline-none focus:border-[#8D6E63] transition-all"
-                />
+                {/* Phone Number */}
+                <div>
+                  <label className="text-[10px] sm:text-xs font-bold text-[#8D6E63] uppercase tracking-wider block mb-2 font-sans">
+                    Phone
+                  </label>
+                  <input
+                    type="tel"
+                    name="phone"
+                    value={formData.phone || ''}
+                    onChange={handleChange}
+                    placeholder="08123456789"
+                    className="w-full bg-[#FDFBF7] px-4 sm:px-5 py-2.5 sm:py-3 rounded-xl outline-none border-2 border-gray-200 focus:border-[#8D6E63] text-sm sm:text-base font-medium font-sans text-[#5D4037] placeholder:text-gray-400 transition-all"
+                  />
+                </div>
+                
+                {/* Info Box */}
+                <div className="md:col-span-2 bg-blue-50 border border-blue-200 rounded-xl p-3 sm:p-4 flex items-start gap-2.5">
+                  <div className="text-blue-600 shrink-0 mt-0.5">
+                    <svg className="w-4 h-4 sm:w-5 sm:h-5" fill="currentColor" viewBox="0 0 20 20">
+                      <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
+                    </svg>
+                  </div>
+                  <p className="text-[10px] sm:text-xs text-blue-800 font-medium font-sans leading-relaxed">
+                    Pastikan informasi akurat untuk layanan yang lebih baik.
+                  </p>
+                </div>
               </div>
             </div>
-
-            {/* Action Buttons */}
-            <div className="bg-gray-50 p-10 flex gap-4">
-              <button onClick={handleCancel} className="flex-1 rounded-2xl bg-white px-6 py-4 text-[10px] font-bold uppercase tracking-widest text-gray-400 border border-gray-100">
+            
+            {/* Footer - Action Buttons */}
+            <div className="bg-gray-50 px-6 sm:px-8 py-4 sm:py-5 flex gap-3 sm:gap-4 rounded-b-2xl sm:rounded-b-3xl border-t border-gray-200">
+              <button 
+                onClick={handleCancel}
+                className="flex-1 max-w-[140px] py-2.5 sm:py-3 bg-white border-2 border-gray-200 rounded-xl font-sans font-bold text-xs uppercase tracking-wider text-[#8D6E63] hover:bg-gray-100 transition-all active:scale-95"
+              >
                 Cancel
               </button>
-              <button onClick={handleSave} className="flex-1 rounded-2xl bg-[#8D6E63] px-6 py-4 text-[10px] font-bold uppercase tracking-widest text-white shadow-lg shadow-[#8D6E63]/30 hover:bg-[#5D4037] transition-all flex items-center justify-center gap-3">
-                <Save size={18} /> Save Profile
+              <button 
+                onClick={handleSave}
+                className="flex-1 py-2.5 sm:py-3 bg-[#8D6E63] text-white rounded-xl font-sans font-bold text-xs uppercase tracking-wider shadow-lg shadow-[#8D6E63]/20 hover:bg-[#5D4037] transition-all flex items-center justify-center gap-2 active:scale-95"
+              >
+                <Save size={14} className="sm:w-4 sm:h-4"/> Save Profile
               </button>
             </div>
           </div>

@@ -48,13 +48,6 @@ exports.createTreatment = async (req, res) => {
   try {
     const treatmentData = req.body;
     
-    // Generate ID jika tidak ada
-    if (!treatmentData.id) {
-      const lastTreatment = await Treatment.getLastId();
-      const lastNumber = lastTreatment ? parseInt(lastTreatment.id.substring(1)) : 0;
-      treatmentData.id = `T${String(lastNumber + 1).padStart(3, '0')}`;
-    }
-    
     // Validasi data required
     if (!treatmentData.name || !treatmentData.price) {
       return res.status(400).json({ 
@@ -63,15 +56,27 @@ exports.createTreatment = async (req, res) => {
       });
     }
     
+    // Sanitize dates - convert empty strings to null
+    if (treatmentData.promoStartDate === '' || treatmentData.promoStartDate === undefined) {
+      treatmentData.promoStartDate = null;
+    }
+    if (treatmentData.promoEndDate === '' || treatmentData.promoEndDate === undefined) {
+      treatmentData.promoEndDate = null;
+    }
+    
     const result = await Treatment.create(treatmentData);
+    
+    // Return created treatment data
+    const createdTreatment = await Treatment.getById(result.insertId);
     
     res.status(201).json({ 
       success: true, 
       message: 'Treatment created successfully',
-      data: { id: result.id }
+      data: createdTreatment
     });
   } catch (error) {
     console.error('Error creating treatment:', error);
+    console.error('Error stack:', error.stack);
     res.status(500).json({ 
       success: false, 
       error: 'Failed to create treatment',
@@ -86,6 +91,18 @@ exports.updateTreatment = async (req, res) => {
     const { id } = req.params;
     const treatmentData = req.body;
     
+    // Sanitize dates - convert empty strings to null
+    if (treatmentData.promoStartDate === '' || treatmentData.promoStartDate === undefined) {
+      treatmentData.promoStartDate = null;
+    }
+    if (treatmentData.promoEndDate === '' || treatmentData.promoEndDate === undefined) {
+      treatmentData.promoEndDate = null;
+    }
+    
+    // Log untuk debugging
+    console.log('Updating treatment:', id);
+    console.log('Treatment data:', JSON.stringify(treatmentData, null, 2));
+    
     const affectedRows = await Treatment.update(id, treatmentData);
     
     if (affectedRows === 0) {
@@ -95,12 +112,17 @@ exports.updateTreatment = async (req, res) => {
       });
     }
     
+    // Return updated treatment data
+    const updatedTreatment = await Treatment.getById(id);
+    
     res.json({ 
       success: true, 
-      message: 'Treatment updated successfully' 
+      message: 'Treatment updated successfully',
+      data: updatedTreatment 
     });
   } catch (error) {
     console.error('Error updating treatment:', error);
+    console.error('Error stack:', error.stack);
     res.status(500).json({ 
       success: false, 
       error: 'Failed to update treatment',

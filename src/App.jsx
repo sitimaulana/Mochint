@@ -3,7 +3,8 @@ import AppRoutes from './routes/AppRoutes';
 import { MemberProvider } from './context/MemberContext';
 import { AppointmentProvider } from './context/AppointmentContext';
 import { TherapistProvider } from './context/TherapistContext';
-import { TreatmentProvider } from './context/TreatmentContext'; 
+import { TreatmentProvider } from './context/TreatmentContext';
+import AppointmentList from "./pages/member/Appointment";
 
 function App() {
   return (
