@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { Home, ChevronRight, Calendar, User, Share2, ArrowLeft } from '/src/components/icons';
+import { Home, ChevronRight, Calendar, User, Share2, ArrowLeft } from '../../components/icons';
 import axios from 'axios';
 import Preloader from '../../components/common/Preloader';
 

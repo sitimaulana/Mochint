@@ -2,6 +2,14 @@
 import { useNavigate } from 'react-router-dom';
 import Preloader from '../../components/common/Preloader';
 import axios from 'axios';
+import {
+  Home,
+  SlidersHorizontal,
+  X,
+  Search,
+  Filter,
+  ArrowRight
+} from '../../components/icons';
 
 // Import komponen detailnya
 import TreatmentDetail from './TreatmentDetail'; 

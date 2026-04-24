@@ -2,6 +2,15 @@
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import Preloader from '../../components/common/Preloader';
+import {
+  Home,
+  SlidersHorizontal,
+  X,
+  Search,
+  Filter,
+  ArrowRight,
+  Play,
+} from '../../components/icons';
 
 const Information = () => {
   const navigate = useNavigate();
