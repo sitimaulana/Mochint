@@ -522,7 +522,7 @@ const Dashboard = () => {
                         onClick={() => navigate(`/member/appointment/${appointment.id}`)}
                       >
                         <div className="bg-[#8D6E63]/10 p-2 sm:p-3 rounded-lg sm:rounded-xl text-[#8D6E63] shrink-0">
-                          <Clock size={18} className="sm:w-5 sm:h-5" />
+                          <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="sm:w-5 sm:h-5"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
                         </div>
                         <div className="font-sans flex-1 min-w-0">
                           <p className="text-xs sm:text-sm font-bold text-[#5D4037] truncate">
@@ -586,7 +586,7 @@ const Dashboard = () => {
                 className="group bg-white p-5 sm:p-6 md:p-8 rounded-2xl sm:rounded-3xl md:rounded-[40px] shadow-sm border border-gray-100 hover:shadow-xl transition-all cursor-pointer active:scale-95"
               >
                 <div className="bg-[#8D6E63] w-11 h-11 sm:w-12 sm:h-12 md:w-14 md:h-14 rounded-xl sm:rounded-2xl flex items-center justify-center text-white mb-4 sm:mb-5 md:mb-6 group-hover:scale-110 transition-transform">
-                  <Clock size={20} className="sm:w-[22px] sm:h-[22px] md:w-6 md:h-6" />
+                  <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="sm:w-[22px] sm:h-[22px] md:w-6 md:h-6"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
                 </div>
                 <h3 className="text-base sm:text-lg md:text-xl font-display font-bold text-[#5D4037]">
                   Janji Temu

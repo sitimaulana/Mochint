@@ -140,7 +140,7 @@ const TreatmentDetail = ({ isOpen, onClose, treatment }) => {
                   )}
                 </div>
                 <div className="bg-[#5D4037] p-4 rounded-2xl flex flex-col justify-center items-center text-white">
-                  <Clock size={20} className="text-[#D7CCC8] mb-1" />
+                  <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#D7CCC8" strokeWidth="2" className="mb-1"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
                   <span className="text-[11px] font-bold text-center leading-tight">
                     {treatment.duration || '60-90 Menit'}
                   </span>
@@ -204,7 +204,7 @@ const TreatmentDetail = ({ isOpen, onClose, treatment }) => {
                   )}
                 </div>
                 <div className="px-4 lg:px-6 py-2 lg:py-3 bg-[#5D4037] text-white rounded-xl lg:rounded-2xl flex items-center gap-3 shadow-lg">
-                  <Clock size={18} className="text-[#D7CCC8]" />
+                  <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#D7CCC8" strokeWidth="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
                   <span className="text-[11px] lg:text-[12px] font-bold font-sans">
                     {treatment.duration || '60 - 90 Menit'}
                   </span>

@@ -567,17 +567,17 @@ const BookingStep3 = () => {
 
               <div>
                 <label className="text-[10px] font-black text-[#5D4037] mb-4 uppercase flex items-center gap-2 tracking-widest font-sans ml-1">
-                  <i className="fas fa-clock" style={{ color: '#8D6E63', fontSize: '14px' }}></i> 2. Pilih Jam Mulai
+                  <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#8D6E63" strokeWidth="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg> 2. Pilih Jam Mulai
                 </label>
                 
                 {!selectedDate ? (
                   <div className="text-center py-12 bg-gray-50 rounded-2xl">
-                    <Clock size={48} className="mx-auto text-gray-300 mb-4" />
+                    <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#d1d5db" strokeWidth="2" className="mx-auto mb-4"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
                     <p className="text-gray-500 font-medium">Silakan pilih tanggal terlebih dahulu</p>
                   </div>
                 ) : loading ? (
                   <div className="text-center py-12 bg-gray-50 rounded-2xl">
-                    <i className="fas fa-spinner fa-spin" style={{ color: '#8D6E63', fontSize: '48px' }} className="mx-auto mb-4"></i>
+                    <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#8D6E63" strokeWidth="2" className="animate-spin mx-auto mb-4"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
                     <p className="text-gray-500 font-medium">Memuat jadwal tersedia...</p>
                   </div>
                 ) : (
@@ -652,7 +652,7 @@ const BookingStep3 = () => {
                         </div>
                         
                         <div className="text-xs font-medium text-gray-600 bg-white px-3 py-1.5 rounded-full border border-gray-200 flex items-center gap-2">
-                          <i className="fas fa-clock" style={{ color: '#8D6E63', fontSize: '14px' }}></i>
+                          <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#8D6E63" strokeWidth="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
                           Jam Operasional: 08:00 - 20:00
                         </div>
                       </div>
@@ -675,7 +675,7 @@ const BookingStep3 = () => {
                 <p className="text-[9px] text-[#3E2723] uppercase font-black mb-1.5 tracking-widest">Treatment</p>
                 <p className="text-sm font-bold leading-snug mb-2">{treatment?.name || "-"}</p>
                 <div className="flex items-center gap-2 mt-2 text-xs text-gray-600 bg-white px-3 py-2 rounded-lg">
-                  <Clock size={12} className="text-[#8D6E63]" />
+                  <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#8D6E63" strokeWidth="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
                   <p>Durasi standar: <span className="font-bold text-[#8D6E63]">90 menit</span></p>
                 </div>
                 <p className="text-[9px] text-gray-500 mt-2 leading-relaxed">

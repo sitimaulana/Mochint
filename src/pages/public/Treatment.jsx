@@ -466,7 +466,7 @@ const Treatment = () => {
                       
                       {item.duration && (
                         <div className="px-2 py-1 mb-2 sm:mb-3 bg-gray-50 text-[7px] sm:text-[8px] font-bold text-[#8D6E63] rounded-lg flex items-center gap-1 w-fit">
-                          <i className="fas fa-clock text-[10px] sm:text-[12px]"></i>
+                          <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
                           {item.duration}
                         </div>
                       )}
@@ -571,7 +571,7 @@ const Treatment = () => {
                       <div className="flex flex-wrap gap-2 sm:gap-3 items-center">
                         {item.duration && (
                           <div className="px-2 sm:px-3 py-1 bg-gray-50 text-[9px] sm:text-[10px] font-bold text-[#8D6E63] rounded-lg flex items-center gap-1">
-                            <i className="fas fa-clock text-[11px] sm:text-[13px]"></i>
+                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
                             {item.duration}
                           </div>
                         )}
