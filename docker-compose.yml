@@ -1,10 +1,10 @@
+version: '3.8'
+
 services:
   app:
     build: .
     container_name: app-mochint
     restart: always
-    ports:
-      - "80:5000"
     environment:
       - NODE_ENV=production
       - DATABASE_URL=mysql://root:password@db:3306/beauty_clinic
@@ -12,7 +12,7 @@ services:
       - JWT_SECRET=mochint_secret_key
       - GOOGLE_CLIENT_ID=541701158147-a1i4201q30oseloc60f4dh9ok034kbku.apps.googleusercontent.com
       - GOOGLE_CLIENT_SECRET=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
-      - GOOGLE_CALLBACK_URL=http://103.185.38.16:5000/api/auth/google/callback
+      - GOOGLE_CALLBACK_URL=http://103.185.38.16/api/auth/google/callback
       - SESSION_SECRET=mochint_session_secret_development_only
       - EMAIL_SERVICE=gmail
       - EMAIL_USER=mochintclinic@gmail.com
@@ -23,7 +23,6 @@ services:
     networks:
       - app-network
 
-  # Database MySQL
   db:
     image: mysql:8.0
     container_name: db-mochint
@@ -40,14 +39,27 @@ services:
     networks:
       - app-network
 
-  # phpMyAdmin
   phpmyadmin:
     image: phpmyadmin/phpmyadmin
     container_name: pma-mochint
+    restart: always
     environment:
       PMA_HOST: db
+      PMA_ABSOLUTE_URI: http://103.185.38.16/pma/
+    networks:
+      - app-network
+
+  nginx:
+    image: nginx:latest
+    container_name: nginx-mochint
+    restart: always
     ports:
       - "80:80"
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf
+    depends_on:
+      - app
+      - phpmyadmin
     networks:
       - app-network
 
