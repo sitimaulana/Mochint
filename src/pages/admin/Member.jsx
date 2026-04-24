@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
-import { Trash2, Edit2, History, AlertCircle, Search, AlertTriangle, Beaker, CheckCircle as CheckCircleIcon, XCircle } from 'lucide-react';
 import Preloader from '../../components/common/Preloader';
 
 const Member = () => {

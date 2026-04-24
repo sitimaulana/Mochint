@@ -1,6 +1,5 @@
 ﻿import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Home, Play, ArrowRight, Calendar } from 'lucide-react';
 import axios from 'axios';
 import Preloader from '../../components/common/Preloader';
 
@@ -127,7 +126,7 @@ const Information = () => {
                       <p className="text-[10px] sm:text-xs text-gray-400 font-bold font-sans uppercase tracking-wider sm:tracking-widest flex items-center gap-2">
                         Mochint Guide
                         <span className="flex items-center gap-1">
-                          <Calendar size={12} className="sm:w-3 sm:h-3" />
+                          <i className="fas fa-calendar" style={{ fontSize: '10px' }}></i>
                           {new Date(item.updated_at || item.created_at).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })}
                         </span>
                       </p>

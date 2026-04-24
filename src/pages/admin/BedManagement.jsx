@@ -1,5 +1,4 @@
 ﻿import React, { useState, useEffect, useMemo } from 'react';
-import { Bed, Calendar, Clock, RefreshCw, Users, CheckCircle, AlertCircle, Check, X } from 'lucide-react';
 import Preloader from '../../components/common/Preloader';
 
 const BedManagement = () => {
@@ -426,7 +425,7 @@ const BedManagement = () => {
                   }`}
                   title={isDisabled ? 'Aktifkan slot ini' : 'Nonaktifkan slot ini'}
                 >
-                  {isDisabled ? <Check size={12} /> : <X size={12} />}
+                  {isDisabled ? <i className="fas fa-check" style={{ fontSize: '12px' }}></i> : <i className="fas fa-x" style={{ fontSize: '12px' }}></i>}
                 </button>
                 
                 <div className="text-center mt-2">
